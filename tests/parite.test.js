@@ -200,11 +200,12 @@ test('chaque clé de DOMAINES, PERIODICITES, STATUTS et TYPES_SECTION a un libel
   OAD.ETATS_MODULE.forEach(k => assert.ok(OAD.ETATS_MODULE_LIBELLES[k], k));
 });
 // Pourquoi : trois modules ajoutés après pulve-entretien, B9 ; glossaire en
-// dernier, B10 ; effeuillage avant le glossaire, B11.
+// dernier, B10 ; effeuillage avant le glossaire, B11 ; réglages selon le
+// stade après la couverture, B12.
 test('modules() suit l\'ordre de contenu/index.js', () => {
   assert.deepStrictEqual(MODULES.map(m => m.id),
     ['pulve-reglage-volume', 'pulve-entretien', 'pulve-filtration', 'pulve-remise-en-route',
-      'pulve-couverture', 'sol-outil-interceps', 'effeuillage-calage', 'glossaire']);
+      'pulve-couverture', 'pulve-reglages-stade', 'sol-outil-interceps', 'effeuillage-calage', 'glossaire']);
 });
 test('navigateur : modules() lit window.OAD_CONTENU à l\'appel et dédoublonne par id', () => {
   const src = fs.readFileSync(path.join(RACINE, 'moteur-oad.js'), 'utf8');
@@ -1211,7 +1212,8 @@ test('rendu à blanc de chaque section des 3 nouveaux modules', () => {
   const rosee = rendre(c, '#/module/pulve-couverture/rosee');
   assert.strictEqual(rosee.blocs[1].lectureGraphique, true);
   const cat = rendre(c, '#/').domainesCatalogue.find(g => g.libelle === 'Pulvérisation');
-  assert.strictEqual(cat.modules.length, 5);
+  // Pourquoi : module de réglages selon le stade ajouté, B12 (était 5).
+  assert.strictEqual(cat.modules.length, 6);
 });
 
 // ----------------------------------------------------------------------
@@ -1286,6 +1288,43 @@ test('rendu à blanc de chaque section du module effeuillage', () => {
   const c = new Component({});
   EFFEUILLAGE.sections.forEach(s => rendre(c, '#/module/effeuillage-calage/' + s.id));
   assert.strictEqual(rendre(c, '#/module/effeuillage-calage/principes').blocs[0].estTableau, true);
+});
+
+// ----------------------------------------------------------------------
+section('§19 B12 — réglages selon le stade');
+
+const STADE = MODULES.find(m => m.id === 'pulve-reglages-stade');
+test('module conforme, brouillon, aucun élément chiffré sans source', () => {
+  assert.deepStrictEqual(OAD.validerModule(STADE), []);
+  assert.deepStrictEqual(OAD.elementsChiffresSansSource(STADE).map(x => x.sectionId), []);
+  assert.strictEqual(STADE.statut, 'brouillon');
+  assert.deepStrictEqual(STADE.sources.map(s => s.code), ['F-CGE', 'F-CGA', 'F-JET', 'F-PRE', 'F-IDE', 'A-LVC']);
+});
+test('chaque section a une technologie autre que « toutes » (D-B12-1)', () => {
+  STADE.sections.forEach(s => assert.ok(s.technologie && s.technologie !== 'toutes', s.id));
+});
+test('4 à 6 cas ou questions, chacun citant « fiche <matériel> (<organisme>, <année>) »', () => {
+  const items = [].concat(...STADE.sections.map(s => s.type === 'quiz' ? s.questions.map(q => q.enonce) : [s.situation]));
+  assert.ok(items.length >= 4 && items.length <= 6, String(items.length));
+  items.forEach(t => assert.ok(/fiches? .+\((CIVC|Magister|GDV 51|Comité Champagne)[^)]*, 20(14|16)\)/.test(t), t));
+});
+test('statique : ni « TVI », ni « anti-dérive », ni « Grégoire »', () => {
+  const t = textesModule(STADE);
+  ['TVI', 'anti-dérive', 'Grégoire'].forEach(x => assert.ok(!t.includes(x), x));
+});
+test('aucun choix de quiz ni option de cas ne se réduit à un nombre (D-B12-3)', () => {
+  const re = /^[\d\s,.]+\s*(tr\/min|L|bar|km\/h|cm)?$/;
+  STADE.sections.forEach(s => {
+    const choix = s.type === 'quiz' ? [].concat(...s.questions.map(q => q.choix)) : s.options.map(o => o.texte);
+    choix.forEach(c => assert.ok(!re.test(c.trim()), s.id + ' : ' + c));
+  });
+});
+test('rendu à blanc : badge de technologie sur chaque section', () => {
+  const c = new Component({});
+  STADE.sections.forEach(s => {
+    const out = rendre(c, '#/module/pulve-reglages-stade/' + s.id);
+    assert.strictEqual(out.section.aTechno, true, s.id);
+  });
 });
 
 console.log(`\n${passed} ok, ${failed} FAIL, ${skipped} skip`);

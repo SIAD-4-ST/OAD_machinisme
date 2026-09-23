@@ -75,7 +75,8 @@ module : sections consultées, quiz, quiz réussis, état ; effacement).
 
 **Catalogue.** Pulvérisation : régler le volume par hectare ; entretenir le
 pulvérisateur ; comprendre la filtration ; remettre le pulvérisateur en
-route ; contrôler la couverture. Travail du sol : régler et entretenir un
+route ; contrôler la couverture ; comprendre les réglages selon le stade.
+Travail du sol : régler et entretenir un
 outil interceps. Effeuillage : caler une effeuilleuse. Plus le glossaire,
 atteint par la navigation. Tous en `brouillon`.
 
@@ -292,7 +293,7 @@ tant que la porte n'est pas levée.
 | Porte | Objet | Qui la lève | Prompts concernés | Levée le |
 |---|---|---|---|---|
 | **G1** | Droit de reprendre les valeurs et schémas des fiches du Groupe Machinisme Champenois (CC BY-NC-ND 3.0) et des articles B20 (*Le Vigneron Champenois*, avril–mai 2020) | Direction de la communication / service juridique du Comité Champagne ; co-auteurs des fiches cosignées (CA 51, Magister, GDV 51, CV-CNF) | B1 à B3 (valeurs par défaut et origines affichées), B7 à B12 | |
-| **G2** | Validité en 2026 des valeurs 2014–2016, et désignation des valideurs | Référent pulvérisation / machinisme du Service vigne | Passage d'un module en `valide` ; B12 en entier | |
+| **G2** | Validité en 2026 des valeurs 2014–2016, et désignation des valideurs | Référent pulvérisation / machinisme du Service vigne | Passage d'un module en `valide` ; B12 en entier (module `pulve-reglages-stade`) | |
 | **G3** | Hébergement public et mise en ligne | DSI et direction de la communication | Tout déploiement (B13 est un essai, pas un déploiement) | |
 | **G4** | Consigne de buse anti-dérive en jets portés (TVI) | Responsable pulvérisation du Comité Champagne | Aucun prompt du lot : sujet exclu | |
 
@@ -352,6 +353,12 @@ contrôler une à une sur le document primaire.
 | Réorienter 2 à 4 fois au printemps ; plaque, piquet rouillé, carton, ardoise ; brins de pied | `pulve-couverture` › controler | A-LVC | | | |
 | Rosée : jet porté 150 L/ha, dépôt équivalent ; jet projeté 400 L/ha, −40 % et −55 % (**lecture graphique**) | `pulve-couverture` › rosee | D-IDR | | | |
 | Passages au chenillard (pleine végétation, vigueur moyenne, 5,1 km/h) : tous les 2 rangs 230 L/ha, −30 %, équivalent ; 3 rangs 150 L/ha, −50 %, −60 % ; 4 rangs 117 L/ha, −65 %, −70 % | `pulve-couverture` › passages, cas-passage | D-IDR | | | |
+| CG Expert, 7 rangs : cellule Speedair 3 300 tr/min en début, 3 600 en pleine végétation — valeur 2014–2016, validité 2026 à confirmer (G2) | `pulve-reglages-stade` › q-cellule | F-CGE | | | |
+| Début de végétation : couper le diffuseur du haut — validité 2026 à confirmer (G2) | `pulve-reglages-stade` › q-diffuseur-haut | F-CGA, F-JET | | | |
+| Jet 5000/6000, début de végétation : angle horizontal de 10° par rapport au rang ; mains qui ne se font pas face — valeur 2014–2016, validité 2026 à confirmer (G2) | `pulve-reglages-stade` › cas-flux-opposes | F-JET, A-LVC | | | |
+| Jets portés : 2 hauteurs de buses en début de végétation, 3 en pleine végétation — valeur 2014–2016, validité 2026 à confirmer (G2) | `pulve-reglages-stade` › q-hauteurs-stade | F-PRE, F-IDE | | | |
+| Fin de saison, grappes fermées, rognage > 1,30 m : remonter la rampe de 10 cm — valeur 2014–2016, validité 2026 à confirmer (G2) | `pulve-reglages-stade` › q-remonter-rampe | F-IDE (F-PRE sans la condition de hauteur) | | | |
+| Début de végétation, jets portés : décaler les descentes (avant / arrière) — validité 2026 à confirmer (G2) | `pulve-reglages-stade` › cas-decaler-descentes | F-PRE, F-IDE | | | |
 
 ## 14. Consignes retirées, à reproposer au valideur
 
@@ -646,3 +653,27 @@ travail du sol, avant le glossaire ; catalogue : groupe « Effeuillage ».
 Le tableau qualitatif, qui combine F-EPN, F-ERO et D-EF17 dans la synthèse,
 porte le code D-EF17 (diaporama des deux familles de machines). Dates de F-EPN
 et F-ERO : « sans date (retours d'expérience 2016) », comme la synthèse.
+
+### B12 — réglages selon le stade, en exercices de raisonnement (23/09/2026, portes G1 et G2)
+
+> **Ne pas fusionner dans `main` avant la réponse du référent sur la validité
+> 2026 de ces valeurs (G2).**
+
+- **D-B12-1** : chaque question ou cas est rattaché à une technologie
+  (`pneumatique` : CG Expert, CG Airmist, Jet 5000/6000 ; `jets-portes` :
+  Precijet, Idéal) et cite la fiche, l'organisme et l'année dans l'énoncé.
+- **D-B12-2** : 6 items en 4 sections : vitesse de cellule (CG Expert),
+  diffuseur du haut coupé, mains qui ne se font pas face (Jet 5000/6000),
+  hauteurs de buses, rampe remontée en fin de saison (Idéal), descentes
+  décalées (Precijet, Idéal). Chaque retour explique un principe
+  (couverture, pénétration, flux opposés) sans prescrire.
+- **D-B12-3** : exclus : réponse qui serait un chiffre de réglage (testé par
+  expression régulière), fiche Grégoire (source constructeur), buses
+  anti-dérive (G4).
+- **D-B12-4** : mention G2 en tête du module (commentaire du fichier) et ici ;
+  porte G2 de la section 12 mise à jour.
+
+Point à trancher par le valideur : les explications « Principe : … » sont
+des raisonnements pédagogiques construits à partir des consignes des
+fiches ; la synthèse cite les consignes, pas toujours leur justification
+(sauf l'opposition des flux, A-LVC). À relire en priorité.
