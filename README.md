@@ -52,7 +52,9 @@ contenu/index.js      ordre du catalogue (Node)
 support.js            runtime <x-dc> figé — ne jamais modifier
 vendor/               React 18.3.1 UMD — ne jamais modifier
 tests/parite.test.js  tests Node sans dépendance
-docs/                 architecture, guide de contenu, décisions, provenance du runtime
+docs/                 architecture, guide de contenu, décisions, provenance du runtime, essai service worker
+docs/corpus/          synthèse du corpus — locale, ignorée par git (D-B0-2)
+.github/workflows/    CI : tests à chaque push
 ```
 
 ## 3. Interface
@@ -158,16 +160,25 @@ par les valideurs pulvérisation et travail du sol.
 
 ## 6. Tests
 
-`node tests/parite.test.js` — 67 tests au 23/09/2026 :
+`node tests/parite.test.js` — 150 tests au 23/09/2026 (fin du lot B) ; CI
+GitHub à chaque push (`.github/workflows/tests.yml`) :
 
 | Section | Objet |
 |---|---|
-| §1 Formules | 7 formules, gardes de saisie, registre avec défauts |
-| §2 Contenu et schéma | conformité des 3 modules, `validerModule` sur un module fabriqué |
+| §1 Formules | formules, gardes de saisie, registre avec défauts |
+| §2 Contenu et schéma | conformité des modules, `validerModule` sur un module fabriqué, unicité des sections évaluées |
 | §3 A1 — ajouts | routes, libellés, registre, ordre du catalogue, dédoublonnage navigateur, quiz, progression |
 | §4 A2 | sorties brutes, `substituer`, date injectée, `origineDefaut`, moteur sans horloge ni formatage |
-| §5 A3 — statiques | pas de `<form>`/JSX/réseau, pas de directive dans `table`/`select`, ordre `<helmet>`, calcul délégué, SHA de `support.js` et `vendor/` |
-| §6 A3 — rendu à blanc | chaque route (34) sans exception ni clé manquante ; saisie Q = 12 → 480 L/ha ; quiz validé → score ; progression écrite et relue ; stockage refusé |
+| §5 A3 — statiques | pas de `<form>`/JSX/réseau, pas de directive dans `table`/`select`, ordre `<helmet>`, calcul délégué, horloge unique, SHA de `support.js` et `vendor/` |
+| §6 A3 — rendu à blanc | chaque route sans exception ni clé manquante ; saisie Q = 12 → 187 L/ha ; quiz validé → score ; progression écrite et relue ; stockage refusé |
+| §7 B0 | `.gitignore`, CI, corpus non suivi |
+| §8 B1 | défauts recalés, plage de pression de la buse |
+| §9 B2 | largeur traitée, débit à la cuve, hauteurs de buses |
+| §10 B3 | écart entre diffuseurs (liste, seuil strict, tableau) |
+| §11 B4 | sources à code, technologies, tableau, lecture graphique, semestrielle, chiffres sans source |
+| §12 B5 | exercices corrigés par le moteur, `CAS_CHIFFRES` |
+| §13 B6 | états consulté / maîtrisé, édition du contenu, progression v1 relue |
+| §14–§19 B7–B12 | contenu : conformité, aucun chiffre sans source, mots interdits, rendu à blanc |
 
 Vérificateur du skill oad-maquette : `python <skill>/scripts/verifier_maquette.py .`
 → OK, sans avertissement.
@@ -296,6 +307,14 @@ tant que la porte n'est pas levée.
 | **G2** | Validité en 2026 des valeurs 2014–2016, et désignation des valideurs | Référent pulvérisation / machinisme du Service vigne | Passage d'un module en `valide` ; B12 en entier (module `pulve-reglages-stade`) | |
 | **G3** | Hébergement public et mise en ligne | DSI et direction de la communication | Tout déploiement (B13 est un essai, pas un déploiement) | |
 | **G4** | Consigne de buse anti-dérive en jets portés (TVI) | Responsable pulvérisation du Comité Champagne | Aucun prompt du lot : sujet exclu | |
+
+**Essai de cache hors ligne (B13), 23/09/2026 : compatible.** Dans Chrome de
+bureau, servi en http, l'outil fonctionne hors ligne après une première
+visite, avec un service worker et sans modifier `support.js` (rechargement,
+calculateur, quiz, progression, lien profond observés) ; en `file://`, rien
+ne change. Non observé sur Safari ni sur la tablette cible. Rapport :
+`docs/ESSAI-SERVICE-WORKER.md` ; code de l'essai sur la branche `essai-sw`,
+jamais fusionnée. Tout déploiement reste soumis à G3.
 
 ### Écart avec la synthèse du corpus, §1
 
@@ -677,3 +696,24 @@ Point à trancher par le valideur : les explications « Principe : … » sont
 des raisonnements pédagogiques construits à partir des consignes des
 fiches ; la synthèse cite les consignes, pas toujours leur justification
 (sauf l'opposition des flux, A-LVC). À relire en priorité.
+
+### B13 — essai de cache hors ligne, branche jetable (23/09/2026)
+
+- **D-B13-1** : branche `essai-sw` depuis `lot-b`, jamais fusionnée ; seul
+  `docs/ESSAI-SERVICE-WORKER.md` est rapporté dans `lot-b`.
+- **D-B13-2** : cache d'abord, liste explicite des fichiers ; nom du cache
+  avec l'édition du contenu ; enregistrement seulement en http(s).
+- **D-B13-3** : aucune requête hors de l'origine.
+
+Résultat : **compatible** dans Chrome 154 (bureau, sans interface, piloté par
+le protocole DevTools) : (a) à (e) et le cas `file://` observés, sans erreur
+de console imputable à l'essai. Le test statique « aucun appel réseau » reste
+vert avec l'enregistrement. Limites : Safari et tablette non essayés ;
+l'édition est recopiée en dur dans `sw.js`, ce qui ferait un second endroit à
+tenir à jour en cas de déploiement (G3).
+
+Ajouts hors prompt, en fin de lot : vérification du rendu réel de `lot-b`
+dans Chrome en `file://` (catalogue, calculateurs, exercice, filtration,
+glossaire, progression) et dans un cadre de 400 px (tableau d'écart lisible
+sans défilement de la page ; tableau de filtration à 5 colonnes défilant dans
+son conteneur). Vérificateur du skill oad-maquette : OK.
