@@ -333,6 +333,11 @@ contrôler une à une sur le document primaire.
 | Filtre de cabine : 1 fois par an ou toutes les 500 h | `pulve-entretien` › plan-entretien | A-WEB | | | |
 | Filtres A2P3 : au moins 2 fois par an | `pulve-entretien` › plan-entretien | A-WEB | | | |
 | Contrôle de tous les débits et traque des fuites en remise en route | `pulve-entretien` › plan-entretien | A-WEB | | | |
+| Profondeur de lame 3 à 6 cm pour le désherbage, à adapter (couvert dense, sol compact) | `sol-outil-interceps` › reglage-interceps, `q-profondeur` | F-BOI, F-BRA | | | |
+| Palpeur 5 cm en avant de la lame, sur toute sa longueur, le plus bas possible | `sol-outil-interceps` › reglage-interceps | F-BOI, F-BRA | | | |
+| Besoin hydraulique 6 à 15 L/min par moteur, environ 90 bar | `sol-outil-interceps` › hydraulique | F-BOI, F-BRA | | | |
+| Charrue sans palpeur : lame à environ 45° vers l'arrière | `sol-outil-interceps` › types-outils | F-DER | | | |
+| Outils d'ouverture : griffe 4 et 8 cm ; couteau ≈ 1 cm ; cœur 12–20 cm ; rasette 20–35 cm ; disques quelques mm, 1 à 2 passages par an | `sol-outil-interceps` › types-outils (tableau) | F-OUV | | | |
 
 ## 14. Consignes retirées, à reproposer au valideur
 
@@ -352,6 +357,12 @@ sont retirées (pas reformulées) et attendent la décision du valideur.
 | pulve-entretien | « Faire réviser pompe, régulation et rampe » — **chaque année** | Absente du corpus | |
 | pulve-entretien | « Mesurer le débit de chaque buse et remplacer les buses hors tolérance » | Remplacée par le contrôle de tous les débits (A-WEB) et le contrôle diffuseur par diffuseur (F-VHA) | |
 | pulve-entretien | « Sécurité : moins de fuites et de contacts avec la bouillie » ; « Durée de vie : moins de corrosion et de pannes » | Absentes du corpus ; remplacées par l'usure et la durée de vie des buses (B20-1) | |
+| sol-outil-interceps | « Contrôler le travail et l'absence de blessure des ceps **après 50 m**, puis corriger » | Absente du corpus | |
+| sol-outil-interceps | « Mesurer la vitesse réelle et vérifier que l'outil suit le rang sans à-coups » | Absente du corpus (aucune vitesse d'interceps, synthèse §7.3) ; le calculateur de vitesse reste disponible | |
+| sol-outil-interceps | « Mettre l'outil d'aplomb et régler la hauteur de travail sur sol plat » ; « Régler la profondeur selon l'état du sol et l'objectif » ; « … puis vérifier l'effacement sur quelques ceps » | Remplacées par les réglages communs F-BOI / F-BRA (porte-outil horizontal, 3 à 6 cm, palpeur) | |
+| sol-outil-interceps | Familles : « lames : travail en profondeur » ; « disques : buttage ou débuttage » ; « outils rotatifs ou à doigts : sans palpeur » ; « fils ou brosses : sans travail du sol » | Caractérisations absentes du corpus ; remplacées par les familles de D-SOL | |
+| sol-outil-interceps | Alerte « palpeur trop peu sensible : blesse les ceps ; trop sensible : laisse de l'herbe » et question associée | Absente du corpus ; remplacée par « sensibilité selon l'âge de la vigne » (F-BOI, F-BRA) | |
+| sol-outil-interceps | **À rédiger par le valideur** : plan d'entretien (nettoyage à chaque utilisation, usure et hydraulique chaque jour, graissage chaque semaine, remisage) | Conservé tel quel, sans source (D-B8-4) : le corpus ne contient aucune consigne d'entretien des outils de sol ; périodicités à valider | |
 
 ## 15. Édition du contenu
 
@@ -535,3 +546,22 @@ restent en `brouillon` ; aucun élément chiffré sans source (testé).
   la mesure de débit, procédure de rinçage de fin de traitement (sécurité :
   relecture du valideur requise).
 - `dureeMin` de `pulve-reglage-volume` : 30 → 50 min (9 → 16 sections).
+
+### B8 — contenu : module interceps (23/09/2026, porte G1)
+
+- **D-B8-1** : sources F-BOI, F-BRA, F-DER, F-OUV, D-SOL.
+- **D-B8-2** : évaluation colorée D-SOL non reprise (pas de légende).
+- **D-B8-3** : réglages propres à chaque marque non repris ; l'introduction
+  de la procédure renvoie à la notice.
+- **D-B8-4** : entretien sans consigne dans le corpus : tâches conservées sans
+  source ni chiffre, signalées en section 14 ; l'écran les présente comme
+  « plan indicatif, en attente de validation ».
+
+Contenu : charrue sans palpeur (F-DER), tableau des 6 outils d'ouverture
+(F-OUV), réglages communs (profondeur 3 à 6 cm, palpeur à 5 cm, outil
+d'ouverture, fils au sol), besoin hydraulique (6 à 15 L/min, ≈ 90 bar),
+questions `q-profondeur` et `q-ouverture`. « Après 50 m » retiré (testé).
+
+Choix : les réglages communs, cités par F-BOI **et** F-BRA, portent le code
+F-BOI (un code par élément) ; la section 13 nomme les deux. `q-palpeur`
+réécrite sur l'âge de la vigne. `dureeMin` 25 → 30 min (6 → 7 sections).

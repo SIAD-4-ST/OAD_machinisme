@@ -1129,5 +1129,35 @@ test('rendu à blanc des nouvelles sections', () => {
   assert.strictEqual(rendre(c, '#/module/pulve-reglage-volume').mod.aChiffresSansSource, false);
 });
 
+// ----------------------------------------------------------------------
+section('§15 B8 — contenu interceps');
+
+const INTERCEPS = MODULES.find(m => m.id === 'sol-outil-interceps');
+test('module interceps conforme, aucun élément chiffré sans source', () => {
+  assert.deepStrictEqual(OAD.validerModule(INTERCEPS), []);
+  assert.deepStrictEqual(OAD.elementsChiffresSansSource(INTERCEPS).map(x => x.sectionId), []);
+  assert.strictEqual(INTERCEPS.statut, 'brouillon');
+});
+test('tableau des outils d\'ouverture : 6 lignes, 4 colonnes', () => {
+  const t = INTERCEPS.sections.find(s => s.id === 'types-outils').blocs.find(b => b.type === 'tableau');
+  assert.strictEqual(t.lignes.length, 6);
+  assert.strictEqual(t.entetes.length, 4);
+  t.lignes.forEach(l => assert.strictEqual(l.length, 4));
+  assert.strictEqual(t.source, 'F-OUV');
+});
+test('statique : aucun texte du module ne contient « 50 m »', () => {
+  assert.ok(!/\b50\s?m\b/.test(textesModule(INTERCEPS)));
+});
+test('codes : F-BOI, F-BRA, F-DER, F-OUV, D-SOL ; quiz q-profondeur et q-ouverture sourcés', () => {
+  assert.deepStrictEqual(INTERCEPS.sources.map(s => s.code), ['F-BOI', 'F-BRA', 'F-DER', 'F-OUV', 'D-SOL']);
+  const q = INTERCEPS.sections.find(s => s.id === 'quiz-interceps').questions;
+  ['q-profondeur', 'q-ouverture'].forEach(id => assert.ok(q.find(x => x.id === id).source, id));
+});
+test('rendu à blanc des sections du module interceps', () => {
+  const c = new Component({});
+  INTERCEPS.sections.forEach(s => rendre(c, '#/module/sol-outil-interceps/' + s.id));
+  assert.strictEqual(rendre(c, '#/module/sol-outil-interceps/types-outils').blocs.filter(b => b.estTableau).length, 1);
+});
+
 console.log(`\n${passed} ok, ${failed} FAIL, ${skipped} skip`);
 if (failed > 0) process.exit(1);
