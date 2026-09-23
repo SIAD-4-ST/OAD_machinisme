@@ -94,11 +94,14 @@ test('saisie nulle, négative, vide ou illisible : NaN, jamais d\'exception', ()
   assert.ok(Number.isNaN(OAD.pressionPourVolume(8, 150, 180, 0)));
   assert.ok(Number.isNaN(OAD.vitesseMesuree(100, 0)));
 });
+// Pourquoi : écart entre diffuseurs, B3 — ses défauts montrent volontairement
+// un diffuseur hors seuil (D-B3-5) : une alerte attendue, les autres aucune.
+const ALERTES_DEFAUT = { ecartDiffuseurs: 1 };
 test('chaque calculateur du registre calcule avec ses valeurs par défaut', () => {
   Object.values(OAD.CALCULATEURS).forEach(c => {
     const r = c.compute(defauts(c));
     assert.ok(r.etapes.length >= 1 && r.resultats.length >= 1, c.id);
-    assert.deepStrictEqual(r.alertes, [], c.id + ' : aucune alerte attendue avec les défauts');
+    assert.strictEqual(r.alertes.length, ALERTES_DEFAUT[c.id] || 0, c.id + ' : alertes avec les défauts');
     // A2 : sorties brutes finies (D-A2-1).
     r.etapes.forEach(et => {
       et.operandes.forEach(o => assert.ok(Number.isFinite(o.valeur), c.id + ' opérande'));
@@ -293,14 +296,15 @@ test('enregistrerQuiz : la date vient de l\'appelant ; absente → null', () => 
   assert.strictEqual(OAD.progressionSection(OAD.enregistrerQuiz(p0, 'm', 'q', { taux: 1 }, 42), 'm', 'q').quiz.date, null);
 });
 // Pourquoi : défauts recalés sur le corpus, B1 — +pMin, +pMax (était 15) ;
-// puis 3 calculateurs ajoutés, B2 — +7 entrées (était 17).
-test('chaque entrée de chaque calculateur a un origineDefaut non vide (24 entrées)', () => {
+// puis 3 calculateurs ajoutés, B2 — +7 entrées (était 17) ; puis écart entre
+// diffuseurs, B3 — +1 entrée liste (était 24).
+test('chaque entrée de chaque calculateur a un origineDefaut non vide (25 entrées)', () => {
   let n = 0;
   Object.values(OAD.CALCULATEURS).forEach(c => c.entrees.forEach(e => {
     n++;
     assert.ok(typeof e.origineDefaut === 'string' && e.origineDefaut.trim(), c.id + '.' + e.id);
   }));
-  assert.strictEqual(n, 24);   // 3 + 4 + 6 + 2 + 2 + 2 + 2 + 3
+  assert.strictEqual(n, 25);   // 3 + 4 + 6 + 2 + 2 + 2 + 2 + 3 + 1
 });
 // Pourquoi : défauts recalés sur le corpus, B1 — seuls n et debitChantier
 // restent sans source (D-B1-3, D-B1-4).
@@ -699,20 +703,88 @@ test('volumeApresChangementVitesse(150, 6, 7) = 128,5714 L/ha', () => {
 test('cohérence : volumeHectare(debitParNiveauCuve(48, 5), 5, largeurTraitee(7, 1,10)) = 149,6104 (comme B1)', () => {
   assertClose(OAD.volumeHectare(OAD.debitParNiveauCuve(48, 5), 5, OAD.largeurTraitee(7, 1.10)), 149.6104, 1e-4);
 });
-test('registre : les nouvelles entrées ont un origineDefaut non vide ; 8 calculateurs listés', () => {
+// Pourquoi : le catalogue de calculateurs évolue, B3 — la page liste tout le
+// registre (8 à la fin de B2, 9 après B3) : comparé au registre, pas en dur.
+test('registre : les nouvelles entrées ont un origineDefaut non vide ; la page liste tout le registre', () => {
   ['largeurTraitee', 'debitCuve', 'hauteursBuses'].forEach(id => {
     const c = OAD.CALCULATEURS[id];
     assert.ok(c, id);
     c.entrees.forEach(e => assert.ok(typeof e.origineDefaut === 'string' && e.origineDefaut.trim(), id + '.' + e.id));
   });
   const c = new Component({});
-  assert.strictEqual(rendre(c, '#/outils').outilsListe.length, 8);
+  assert.strictEqual(rendre(c, '#/outils').outilsListe.length, Object.keys(OAD.CALCULATEURS).length);
 });
 test('rendu à blanc : #/outils/largeurTraitee, debitCuve, hauteursBuses', () => {
   const c = new Component({});
   assert.strictEqual(rendre(c, '#/outils/largeurTraitee').calcCourant.resultats[0].texte, '7,7 m');
   assert.strictEqual(rendre(c, '#/outils/debitCuve').calcCourant.resultats[0].texte, '9,6 L/min');
   assert.strictEqual(rendre(c, '#/outils/hauteursBuses').calcCourant.resultats[0].texte, '120 L/ha');
+});
+
+// ----------------------------------------------------------------------
+section('§10 B3 — écart entre diffuseurs');
+// Valeurs vérifiées sous Node le 23/09/2026.
+
+const centieme = x => Math.round(x * 10000) / 100;   // fraction → % au centième
+test('défaut : moyenne 1,392857 ; écarts +0,51 −0,92 +9,13 +1,23 −10,26 −0,21 +0,51 ; hors seuil [5]', () => {
+  const r = OAD.ecartsALaMoyenne(defauts(OAD.CALCULATEURS.ecartDiffuseurs).debits, OAD.ECART_DIFFUSEUR_MAX);
+  assertClose(r.moyenne, 1.392857, 1e-6);
+  assert.deepStrictEqual(r.ecarts.map(x => centieme(x.ecart)), [0.51, -0.92, 9.13, 1.23, -10.26, -0.21, 0.51]);
+  assert.deepStrictEqual(r.horsSeuil, [5]);
+});
+test('[1,1 ; 0,9] : moyenne 1, écarts ±10 %, aucun hors seuil (« supérieur à 10 % », D-B3-2)', () => {
+  const r = OAD.ecartsALaMoyenne([1.1, 0.9], 0.10);
+  assertClose(r.moyenne, 1, 1e-12);
+  assert.deepStrictEqual(r.ecarts.map(x => centieme(x.ecart)), [10, -10]);
+  assert.deepStrictEqual(r.horsSeuil, []);
+});
+test('[1,12 ; 0,88] : hors seuil [1, 2]', () => {
+  assert.deepStrictEqual(OAD.ecartsALaMoyenne([1.12, 0.88], 0.10).horsSeuil, [1, 2]);
+});
+test('[1,4] : résultat null et alerte de saisie', () => {
+  const r = OAD.CALCULATEURS.ecartDiffuseurs.compute({ debits: [1.4] });
+  assert.strictEqual(r.resultats[0].valeur, null);
+  assert.strictEqual(r.resultats[1].valeur, null);
+  assert.ok(r.alertes.some(a => typeof a === 'string' && a.startsWith('Calcul impossible')));
+});
+test('[1,4 ; NaN ; 1,3] : moyenne 1,35, alerte « Valeur n° 2 illisible »', () => {
+  const r = OAD.CALCULATEURS.ecartDiffuseurs.compute({ debits: [1.4, NaN, 1.3] });
+  assertClose(r.resultats[0].valeur, 1.35, 1e-12);
+  const a = r.alertes.find(x => typeof x === 'object');
+  assert.ok(OAD.substituer(a.gabarit, a.operandes.map(o => String(o.valeur))).startsWith('Valeur n° 2 illisible'));
+  assert.deepStrictEqual(r.detail.map(x => x.rang), [1, 3]);
+});
+test('registre : une entrée liste a un défaut tableau (garde de schéma)', () => {
+  assert.deepStrictEqual(OAD.erreursRegistre(OAD.CALCULATEURS), []);
+  const faux = { x: { id: 'x', entrees: [{ id: 'l', label: 'L', type: 'liste', defaut: 3, origineDefaut: 'o' }] } };
+  assert.ok(OAD.erreursRegistre(faux).some(e => e.includes('défaut tableau')));
+});
+const versListe = new Function(SCRIPT.slice(SCRIPT.indexOf('function versNombre'), SCRIPT.indexOf('function texteListe')) +
+  'return versListe;')();
+test('vue : versListe(\'1,40 ; 1,38;;1,52\') → [1.4, 1.38, 1.52]', () => {
+  assert.deepStrictEqual(versListe('1,40 ; 1,38;;1,52'), [1.4, 1.38, 1.52]);
+});
+test('rendu à blanc #/outils/ecartDiffuseurs : tableau de 7 lignes, une seule « hors-seuil »', () => {
+  const c = new Component({});
+  const out = rendre(c, '#/outils/ecartDiffuseurs');
+  assert.strictEqual(out.calcCourant.aTableau, true);
+  assert.strictEqual(out.calcCourant.entrees[0].valeur, '1,40 ; 1,38 ; 1,52 ; 1,41 ; 1,25 ; 1,39 ; 1,40');
+  assert.strictEqual(out.calcCourant.entrees[0].estListe, true);
+  const tbody = out.calcCourant.tableau.c.find(x => x && x.t === 'tbody');
+  const lignes = [].concat(...tbody.c);
+  assert.strictEqual(lignes.length, 7);
+  const hors = lignes.filter(l => l.p.className === 'hors-seuil');
+  assert.strictEqual(hors.length, 1);
+  assert.ok(hors[0].c[2].c[0].endsWith('— à contrôler'), hors[0].c[2].c[0]);
+  assert.strictEqual(hors[0].c[2].c[0], '−10,26 % — à contrôler');
+  assert.ok(out.calcCourant.alertes[0].startsWith('Diffuseur n° 5 : écart de −10,26 % à la moyenne'), out.calcCourant.alertes[0]);
+});
+test('saisie d\'une liste dans la vue : « 1,1 ; abc ; 0,9 » → alerte n° 2, 2 lignes', () => {
+  const c = new Component({});
+  c.onSaisie(evt('1,1 ; abc ; 0,9', { 'data-calc': 'ecartDiffuseurs', 'data-entree': 'debits' }));
+  const out = rendre(c, '#/outils/ecartDiffuseurs');
+  assert.ok(out.calcCourant.alertes.some(a => a.startsWith('Valeur n° 2 illisible')));
+  assert.strictEqual([].concat(...out.calcCourant.tableau.c.find(x => x && x.t === 'tbody').c).length, 2);
 });
 
 console.log(`\n${passed} ok, ${failed} FAIL, ${skipped} skip`);

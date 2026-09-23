@@ -157,6 +157,36 @@ function volumeApresChangementVitesse(V1, v1, v2) {
   return fini(positif(V1) * positif(v1) / positif(v2));
 }
 
+// Seuil d'écart d'un diffuseur à la moyenne : F-VHA, CIVC, février 2014
+// (« intervention si écart > 10 % à la moyenne », synthèse §2.1).
+const ECART_DIFFUSEUR_MAX = 0.10;
+// Tolérance de calcul flottant : 1,1 contre une moyenne de 1,0 donne
+// 0,10000000000000009, qui n'est pas « supérieur à 10 % » (D-B3-2).
+const TOLERANCE_FLOTTANTE = 1e-9;
+
+// Débit lisible : nombre fini, positif ou nul (0 = diffuseur bouché, à signaler).
+function debitLisible(x) { return typeof x === 'number' && Number.isFinite(x) && x >= 0; }
+
+/* Écart de chaque débit mesuré q à la moyenne m des débits lisibles :
+   m = Σ q / n ; e = (q − m) / m (fraction, pas pourcentage). rang = position
+   dans la liste saisie (à partir de 1) ; les valeurs illisibles sont
+   ignorées mais gardent leur rang. Signalé si |e| > seuil (strict).
+   Moins de 2 débits lisibles, ou moyenne nulle : moyenne NaN, aucun écart. */
+function ecartsALaMoyenne(debits, seuil) {
+  const s = Number(seuil);
+  const lus = (Array.isArray(debits) ? debits : [])
+    .map((d, i) => ({ rang: i + 1, debit: d }))
+    .filter(x => debitLisible(x.debit));
+  const somme = lus.reduce((a, x) => a + x.debit, 0);
+  const moyenne = lus.length >= 2 && somme > 0 ? somme / lus.length : NaN;
+  if (!Number.isFinite(moyenne)) return { moyenne: NaN, ecarts: [], horsSeuil: [] };
+  const ecarts = lus.map(x => {
+    const ecart = (x.debit - moyenne) / moyenne;
+    return { rang: x.rang, debit: x.debit, ecart, horsSeuil: Number.isFinite(s) && Math.abs(ecart) > s + TOLERANCE_FLOTTANTE };
+  });
+  return { moyenne, ecarts, horsSeuil: ecarts.filter(x => x.horsSeuil).map(x => x.rang) };
+}
+
 /* --- 3. Registre des calculateurs ------------------------------------
    Chaque calculateur : entrées (avec l'origine de leur valeur par défaut)
    et compute(valeurs numériques) → { etapes, resultats, alertes }.
@@ -200,6 +230,11 @@ const ORIGINE_DUREE_CUVE = 'Durée pour pneumatiques et jets portés ; 2 min pou
 // A-LVC : article Le Vigneron Champenois, M.-P. Vacavant, avril 2014 — 180 L/ha
 // avec 3 hauteurs de buses par descente → 120 L/ha avec 2 (synthèse §2.1).
 const ORIGINE_HAUTEURS_ALVC = 'Exemple de l\'article Le Vigneron Champenois, avril 2014';
+// D-B3-5 : liste inventée pour montrer un diffuseur signalé (−10,26 %) et un
+// autre juste sous le seuil (+9,13 %). Aucune mesure réelle.
+const ORIGINE_EXERCICE = 'Exemple fabriqué pour l\'exercice';
+
+const ALERTE_LISTE_COURTE = 'Calcul impossible : saisissez au moins deux débits lisibles, séparés par un point-virgule.';
 
 const ALERTE_SAISIE = 'Calcul impossible : chaque valeur doit être un nombre strictement positif.';
 
@@ -413,8 +448,73 @@ const CALCULATEURS = {
         alertes: alertesSaisie(resultats)
       };
     }
+  },
+
+  ecartDiffuseurs: {
+    id: 'ecartDiffuseurs',
+    titre: 'Écart entre diffuseurs',
+    description: 'Débit mesuré diffuseur par diffuseur : écart de chacun à la moyenne. Au-delà de 10 %, intervenir : nettoyage, changement de buse ou de pastille, vérification des anti-gouttes.',
+    entrees: [
+      { id: 'debits', type: 'liste', label: 'Débits mesurés par diffuseur', unite: 'L/min',
+        defaut: [1.40, 1.38, 1.52, 1.41, 1.25, 1.39, 1.40], origineDefaut: ORIGINE_EXERCICE }
+    ],
+    compute(e) {
+      const liste = Array.isArray(e.debits) ? e.debits : [];
+      const r = ecartsALaMoyenne(liste, ECART_DIFFUSEUR_MAX);
+      const lisibles = r.ecarts.map(x => x.debit);
+      const ok = Number.isFinite(r.moyenne);
+      const resultats = [
+        resultat('Débit moyen', r.moyenne, 'L/min', 2),
+        resultat('Diffuseurs à contrôler', ok ? r.horsSeuil.length : NaN, '', 0)
+      ];
+      const alertes = [];
+      liste.forEach((d, i) => {
+        if (!debitLisible(d)) alertes.push(alerteChiffree('Valeur n° {0} illisible : elle est ignorée.', [operande(i + 1, 0)]));
+      });
+      if (!ok) alertes.push(ALERTE_LISTE_COURTE);
+      r.ecarts.filter(x => x.horsSeuil).forEach(x => alertes.push(alerteChiffree(
+        'Diffuseur n° {0} : écart de {1} % à la moyenne, au-delà de {2} % : à contrôler.',
+        [operande(x.rang, 0), operande(x.ecart * 100, 2), operande(ECART_DIFFUSEUR_MAX * 100, 0)])));
+      // Exemple d'écart : le diffuseur le plus éloigné de la moyenne.
+      const loin = r.ecarts.reduce((a, x) => (!a || Math.abs(x.ecart) > Math.abs(a.ecart)) ? x : a, null);
+      return {
+        etapes: [
+          etape('Moyenne', 'm = Σ q / n',
+            '(' + (lisibles.length ? lisibles.map((_, i) => '{' + i + '}').join(' + ') : '—') + ') / {' + lisibles.length + '}',
+            lisibles.map(q => operande(q, 2)).concat([operande(ok ? lisibles.length : NaN, 0)]),
+            r.moyenne, 'L/min', 2),
+          etape('Écart du diffuseur le plus éloigné de la moyenne', 'e = (q − m) / m × 100', '({0} − {1}) / {1} × 100',
+            [operande(loin ? loin.debit : NaN, 2), operande(r.moyenne, 2)],
+            loin ? loin.ecart * 100 : NaN, '%', 2)
+        ],
+        resultats,
+        alertes,
+        detail: r.ecarts
+      };
+    }
   }
 };
+
+/* Garde de schéma du registre : erreurs (chaînes), vide = conforme. Une
+   entrée de type liste a un défaut tableau ; toute autre, un défaut nombre. */
+function erreursRegistre(calculateurs) {
+  const err = [];
+  Object.keys(calculateurs || {}).forEach(k => {
+    const c = calculateurs[k];
+    if (!c || c.id !== k) { err.push(k + ' : id différent de la clé'); return; }
+    (c.entrees || []).forEach(en => {
+      const ou = k + '.' + (en && en.id);
+      if (!en || !estTexte(en.id) || !estTexte(en.label)) err.push(ou + ' : id et libellé attendus');
+      else if (en.type === 'liste') {
+        if (!Array.isArray(en.defaut) || !en.defaut.every(x => typeof x === 'number' && Number.isFinite(x)))
+          err.push(ou + ' : entrée liste sans défaut tableau de nombres');
+      } else if (en.type !== undefined) err.push(ou + ' : type d\'entrée inconnu « ' + en.type + ' »');
+      else if (typeof en.defaut !== 'number' || !Number.isFinite(en.defaut)) err.push(ou + ' : défaut numérique attendu');
+      if (en && !estTexte(en.origineDefaut)) err.push(ou + ' : origine du défaut manquante');
+    });
+  });
+  return err;
+}
 
 /* Remplace chaque marqueur {i} du gabarit par textes[i]. Un marqueur sans
    texte correspondant reste tel quel (garde : ne lève pas). La vue passe
@@ -720,8 +820,9 @@ const OAD = {
   volumeHectare, debitTotalPourVolume, debitParBuse, ajustementPuissance,
   pressionPourVolume, vitesseMesuree, debitChantierTheorique,
   largeurTraitee, debitParNiveauCuve, volumeSelonHauteurs, volumeApresChangementVitesse,
+  ECART_DIFFUSEUR_MAX, ecartsALaMoyenne,
   // calculateurs
-  CALCULATEURS, substituer,
+  CALCULATEURS, erreursRegistre, substituer,
   // schéma, quiz, progression
   validerModule, noterQuestion, noterQuiz,
   VERSION_PROGRESSION, progressionVide, marquerVue, basculerEtape, basculerTache,

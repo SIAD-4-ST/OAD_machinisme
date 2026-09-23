@@ -143,6 +143,7 @@ button { font: inherit; cursor: pointer; }
 .calc-portee { font-size: .92rem; color: var(--texte-doux); margin-top: -4px; }
 .champs { display: grid; gap: 12px; grid-template-columns: repeat(auto-fill, minmax(min(100%, 220px), 1fr)); }
 .champ label { display: block; font-weight: 600; }
+.champ-large { grid-column: 1 / -1; }
 .champ input { width: 100%; min-height: 44px; font: inherit; font-size: 1.1rem; padding: 6px 10px; margin-top: 4px;
   border: 1px solid var(--bord); border-radius: 6px; background: var(--fond); color: var(--texte); }
 .unite { font-weight: 400; color: var(--texte-doux); }
@@ -184,6 +185,7 @@ button { font: inherit; cursor: pointer; }
 .tableau caption { text-align: left; font-weight: 600; padding: 8px 0; }
 .tableau th, .tableau td { border: 1px solid var(--bord); padding: 8px; text-align: left; vertical-align: top; }
 .tableau thead th { background: var(--surface-2); }
+.tableau tr.hors-seuil th, .tableau tr.hors-seuil td { font-weight: 700; color: var(--erreur); background: var(--erreur-fond); }
 
 @media print {
   .entete, .pied, .sommaire, .suite, .actions, .nav, .bouton-discret, .bandeau-erreur { display: none !important; }
@@ -375,9 +377,15 @@ button { font: inherit; cursor: pointer; }
             <sc-if value="{{ calcCourant.aPortee }}"><p class="calc-portee">{{ calcCourant.portee }}</p></sc-if>
             <div class="champs">
               <sc-for list="{{ calcCourant.entrees }}" as="en" hint-placeholder-count="3">
-                <div class="champ">
+                <div class="{{ en.classe }}">
                   <label for="{{ en.inputId }}">{{ en.label }} <span class="unite">{{ en.uniteTxt }}</span></label>
-                  <input id="{{ en.inputId }}" type="text" inputmode="decimal" autocomplete="off" value="{{ en.valeur }}" onInput="{{ onSaisie }}" data-calc="{{ en.calc }}" data-entree="{{ en.id }}" aria-describedby="{{ en.origineId }}">
+                  <sc-if value="{{ en.estListe }}">
+                    <p class="consigne" id="{{ en.consigneId }}">Séparez les valeurs par un point-virgule.</p>
+                    <input id="{{ en.inputId }}" type="text" inputmode="text" autocomplete="off" value="{{ en.valeur }}" onInput="{{ onSaisie }}" data-calc="{{ en.calc }}" data-entree="{{ en.id }}" aria-describedby="{{ en.decritPar }}">
+                  </sc-if>
+                  <sc-if value="{{ !en.estListe }}">
+                    <input id="{{ en.inputId }}" type="text" inputmode="decimal" autocomplete="off" value="{{ en.valeur }}" onInput="{{ onSaisie }}" data-calc="{{ en.calc }}" data-entree="{{ en.id }}" aria-describedby="{{ en.origineId }}">
+                  </sc-if>
                   <p class="origine" id="{{ en.origineId }}">Par défaut : {{ en.defautTxt }}. {{ en.origine }}</p>
                 </div>
               </sc-for>
@@ -390,6 +398,9 @@ button { font: inherit; cursor: pointer; }
                 <ul class="alertes"><sc-for list="{{ calcCourant.alertes }}" as="al"><li>{{ al }}</li></sc-for></ul>
               </sc-if>
             </div>
+            <sc-if value="{{ calcCourant.aTableau }}">
+              <div class="tableau-conteneur">{{ calcCourant.tableau }}</div>
+            </sc-if>
             <h3>Détail du calcul</h3>
             <ol class="etapes-calc">
               <sc-for list="{{ calcCourant.etapes }}" as="fe" hint-placeholder-count="1">
@@ -552,6 +563,23 @@ function texteSaisie(n) { return String(n).replace('.', ','); }
 function versNombre(txt) {
   const s = String(txt == null ? '' : txt).replace(/[\s  ]/g, '').replace(',', '.');
   return s === '' ? NaN : Number(s);
+}
+// Liste saisie « 1,40 ; 1,38 » → [1.4, 1.38] : seul point de conversion des
+// listes. Morceaux vides ignorés ; morceau illisible → NaN (le moteur le signale).
+function versListe(txt) {
+  return String(txt == null ? '' : txt).split(';')
+    .filter(m => m.trim() !== '')
+    .map(versNombre);
+}
+// Liste par défaut → texte de saisie, deux décimales : « 1,40 ; 1,38 ; … ».
+function texteListe(tab) {
+  return (Array.isArray(tab) ? tab : []).map(n => Number(n).toFixed(2).replace('.', ',')).join(' ; ');
+}
+// Écart (fraction) → « +9,13 % », « −10,26 % ».
+function pourcentSigne(fraction, decimales) {
+  const x = Number(fraction) * 100;
+  if (!Number.isFinite(x)) return '—';
+  return (x > 0 ? '+' : '') + fmtNombre(x, decimales) + ESPACE + '%';
 }
 function valeurDe(e) { const t = e && (e.currentTarget || e.target); return t ? String(t.value) : ''; }
 function attributDe(e, nom) { const t = e && (e.currentTarget || e.target); return t && t.getAttribute ? t.getAttribute(nom) : null; }
@@ -772,7 +800,7 @@ class Component extends DCLogic {
       quiz: { questions: [] }, cas: { options: [] },
       aPrec: false, aSuiv: false, prec: {}, suiv: {},
       outilsListe: [], outilsTitre: '', outilsMessage: '',
-      aCalc: false, calcCourant: { entrees: [], etapes: [], resultats: [], alertes: [], portee: '', aPortee: false },
+      aCalc: false, calcCourant: { entrees: [], etapes: [], resultats: [], alertes: [], portee: '', aPortee: false, tableau: null, aTableau: false },
       progResume: '', tableauProgression: null,
       basculerTheme: this.basculerTheme, onSaisie: this.onSaisie, reinitialiserCalc: this.reinitialiserCalc,
       onChoix: this.onChoix, validerQuiz: this.validerQuiz, recommencerQuiz: this.recommencerQuiz,
@@ -989,21 +1017,28 @@ class Component extends DCLogic {
     const saisie = this.state.saisies[calcId] || {};
     const textes = {}, nombres = {};
     C.entrees.forEach(en => {
-      const t = saisie[en.id] !== undefined ? saisie[en.id] : texteSaisie(en.defaut);
+      const liste = en.type === 'liste';
+      const t = saisie[en.id] !== undefined ? saisie[en.id] : (liste ? texteListe(en.defaut) : texteSaisie(en.defaut));
       textes[en.id] = t;
-      nombres[en.id] = versNombre(t);
+      nombres[en.id] = liste ? versListe(t) : versNombre(t);
     });
     const r = C.compute(nombres);   // tout calcul vient du moteur
     return {
       id: C.id, titre: C.titre, description: C.description,
-      entrees: C.entrees.map(en => ({
-        id: en.id, calc: C.id, label: en.label,
-        inputId: 'calc-' + C.id + '-' + en.id, origineId: 'origine-' + C.id + '-' + en.id,
-        uniteTxt: en.unite ? '(' + en.unite + ')' : '',
-        valeur: textes[en.id],
-        defautTxt: avecUnite(fmtNombre(en.defaut, 3), en.unite),
-        origine: en.origineDefaut
-      })),
+      entrees: C.entrees.map(en => {
+        const liste = en.type === 'liste';
+        const origineId = 'origine-' + C.id + '-' + en.id, consigneId = 'consigne-' + C.id + '-' + en.id;
+        return {
+          id: en.id, calc: C.id, label: en.label,
+          estListe: liste, classe: liste ? 'champ champ-large' : 'champ',
+          inputId: 'calc-' + C.id + '-' + en.id, origineId, consigneId,
+          decritPar: consigneId + ' ' + origineId,
+          uniteTxt: en.unite ? '(' + en.unite + ')' : '',
+          valeur: textes[en.id],
+          defautTxt: avecUnite(liste ? texteListe(en.defaut) : fmtNombre(en.defaut, 3), en.unite),
+          origine: en.origineDefaut
+        };
+      }),
       etapes: r.etapes.map(et => ({
         titre: et.titre, formule: et.formule,
         substitution: OAD.substituer(et.gabarit, et.operandes.map(o => fmtNombre(o.valeur, o.decimales))),
@@ -1011,8 +1046,25 @@ class Component extends DCLogic {
       })),
       resultats: r.resultats.map(x => ({ label: x.label, texte: avecUnite(fmtNombre(x.valeur, x.decimales), x.unite) })),
       portee: C.portee || '', aPortee: !!C.portee,
+      tableau: Array.isArray(r.detail) && r.detail.length ? this.tableauEcarts(r.detail) : null,
+      aTableau: Array.isArray(r.detail) && r.detail.length > 0,
       alertes: r.alertes.map(a => this.texteAlerte(OAD, a)), aAlertes: r.alertes.length > 0
     };
+  }
+
+  /* Détail par diffuseur (calculateur d'écart) : tableau construit par
+     React.createElement, aucune directive dans <table> (D-A3-3, D-B3-4).
+     Ligne hors seuil : classe et texte « à contrôler » (pas la seule couleur). */
+  tableauEcarts(detail) {
+    const e = React.createElement;
+    return e('table', { className: 'tableau' },
+      e('caption', null, 'Écart de chaque diffuseur à la moyenne'),
+      e('thead', null, e('tr', null,
+        ['Diffuseur', 'Débit (L/min)', 'Écart à la moyenne'].map(t => e('th', { key: t, scope: 'col' }, t)))),
+      e('tbody', null, detail.map(x => e('tr', { key: x.rang, className: x.horsSeuil ? 'hors-seuil' : null },
+        e('th', { scope: 'row' }, 'n° ' + x.rang),
+        e('td', null, fmtNombre(x.debit, 2)),
+        e('td', null, pourcentSigne(x.ecart, 2) + (x.horsSeuil ? ' — à contrôler' : ''))))));
   }
 
   valsOutils(ctx) {

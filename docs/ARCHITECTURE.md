@@ -12,7 +12,7 @@ contenu/<id>.js  ──►  moteur-oad.js  ──►  index.html (<x-dc> + compo
 | Couche | Rôle | Interdits |
 |---|---|---|
 | `contenu/` | Un module par fichier, objet littéral dans une enveloppe qui l'expose à Node (`module.exports`) ou au navigateur (`window.OAD_CONTENU`). `contenu/index.js` fixe l'ordre du catalogue (Node). | Code, calcul. |
-| `moteur-oad.js` | Vocabulaires, 11 formules, registre de 8 calculateurs (sorties brutes), schéma (`validerModule`), quiz, réducteurs de progression, registre de contenu, routes. | DOM, état, réseau, horloge, mise en forme. |
+| `moteur-oad.js` | Vocabulaires, 12 formules, registre de 9 calculateurs (sorties brutes, entrées nombre ou liste), schéma (`validerModule`), quiz, réducteurs de progression, registre de contenu, routes. | DOM, état, réseau, horloge, mise en forme. |
 | `index.html` | Gabarit `<x-dc>`, feuille de style, composant `DCLogic` : état d'écran, persistance, conversion des saisies, mise en forme fr-FR. | Formule, seuil, règle de notation. |
 | `support.js`, `vendor/` | Runtime `<x-dc>` et React. | Toute modification. |
 

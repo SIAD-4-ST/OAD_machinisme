@@ -100,6 +100,12 @@ questions ; `aria-pressed` sur les choix ; focus visible.
 | Largeur traitée (`largeurTraitee`) | L = n × e | 7 rangs, 1,10 m → 7,7 m |
 | Débit total par le niveau de la cuve (`debitCuve`) | Q = volume refait / durée | 48 L, 5 min → 9,6 L/min |
 | Volume selon le nombre de hauteurs de buses (`hauteursBuses`) | V2 = V1 × h2 / h1 | 180 L/ha, 3 → 2 hauteurs → 120 L/ha |
+| Écart entre diffuseurs (`ecartDiffuseurs`) | m = Σ q / n ; e = (q − m) / m | 1,40 ; 1,38 ; 1,52 ; 1,41 ; 1,25 ; 1,39 ; 1,40 L/min → moyenne 1,39 L/min ; diffuseur n° 5 à −10,26 %, à contrôler |
+
+Neuf calculateurs. `ecartDiffuseurs` reçoit une **liste** (valeurs séparées
+par un point-virgule, la virgule restant décimale) et affiche le détail par
+diffuseur dans un tableau ; un diffuseur est signalé si son écart dépasse
+strictement 10 % (`ECART_DIFFUSEUR_MAX`, F-VHA).
 
 Formule sans calculateur, utilisée par les tests du cas pratique :
 `volumeApresChangementVitesse(V1, v1, v2) = V1 × v1 / v2`.
@@ -122,6 +128,7 @@ désigné ne l'a pas tranchée.
 | Débit par buse | Nombre de buses n | 12 | Référent pulvérisation (D-B1-3 : le corpus ne donne pas de nombre de buses par matériel) |
 | Débit de chantier théorique | Vitesse v | 6 km/h | Référent travail du sol (D-B1-4 : aucune vitesse d'interceps dans le corpus) |
 | Débit de chantier théorique | Largeur L | 2,5 m | Référent travail du sol (D-B1-4) |
+| Écart entre diffuseurs | Liste des débits | 1,40 ; 1,38 ; 1,52 ; 1,41 ; 1,25 ; 1,39 ; 1,40 L/min | Exemple fabriqué pour l'exercice (D-B3-5), sans valeur de réglage ; affiché « Exemple fabriqué pour l'exercice » |
 
 Depuis B1, les autres valeurs par défaut sont reprises de la synthèse du
 corpus et listées en section 13 (à contrôler au document primaire). Hors
@@ -168,6 +175,10 @@ fait : tout ce qui suit sur le matériel cible.**
 6. **Navigation privée, stockage refusé** : l'outil reste utilisable (sans
    mémoire de progression).
 7. **Impression d'une procédure** : seule la section s'imprime, lisible.
+7 bis. **Écart entre diffuseurs sur 400 px** : le tableau de 7 diffuseurs se
+   lit sans défilement horizontal de la page (le tableau défile dans son
+   conteneur s'il le faut) ; la ligne « à contrôler » reste lisible dans les
+   deux thèmes.
 8. Parcours d'acceptation (Chrome de bureau, Wi-Fi coupé) : catalogue affiché ;
    « Volume par hectare », Q = 12 (v = 5, L = 7,7) → 187 L/ha ; quiz validé →
    score affiché ; page rechargée → progression conservée ; onglet réseau des
@@ -295,6 +306,7 @@ contrôler une à une sur le document primaire.
 | 7 rangs × 1,10 m | `largeurTraitee.n`, `.e` | F-VHA | | | |
 | Durée de mesure au niveau de cuve : 5 min (pneumatiques, jets portés), 2 min (jets projetés) | `debitCuve.duree` | F-VHA | | | |
 | 180 L/ha avec 3 hauteurs de buses → 120 L/ha avec 2 | `hauteursBuses.V1`, `.h1`, `.h2` | A-LVC | | | |
+| Intervention si écart d'un diffuseur > 10 % à la moyenne (strict : « supérieur à ») | `ECART_DIFFUSEUR_MAX`, calculateur `ecartDiffuseurs` | F-VHA | | | |
 
 ## 14. Journal d'arbitrages — lot B
 
@@ -353,3 +365,23 @@ buses « sourcé » (absent du corpus). **Point de révision.** `n` et
 La page Calculateurs liste 8 calculateurs (testé). Le compte de routes du
 test §6 est calculé à partir des modules et des calculateurs, pas écrit en
 dur : pas de modification.
+
+### B3 — écart entre diffuseurs (23/09/2026)
+
+- **D-B3-1** : nouveau type d'entrée `liste` ; saisie « 1,40 ; 1,38 ; … »,
+  convertie par la vue (`versListe`, seul point de conversion des listes) ;
+  le moteur reçoit un tableau de nombres, NaN compris.
+- **D-B3-2** : `ECART_DIFFUSEUR_MAX = 0.10` (F-VHA) ; signalé si |écart| >
+  seuil + 1e-9 : 10 % tout juste n'est pas signalé (testé sur [1,1 ; 0,9]).
+- **D-B3-3** : au moins 2 valeurs lisibles, sinon résultat `null` et alerte ;
+  une valeur illisible → « Valeur n° k illisible », calcul sur les autres.
+- **D-B3-4** : détail par diffuseur en tableau `React.createElement`
+  (`tableauEcarts`), ligne hors seuil en classe `hors-seuil` **et** texte
+  « à contrôler ».
+- **D-B3-5** : liste par défaut fabriquée pour l'exercice.
+
+Ajouts : un débit de 0 est lisible (diffuseur bouché, justement à signaler) ;
+seuls les négatifs et les illisibles sont écartés. Garde de schéma du
+registre `erreursRegistre` (entrée liste ⇒ défaut tableau), testée. Le test
+§1 « aucune alerte avec les défauts » admet l'alerte volontaire de
+`ecartDiffuseurs` (commentée).

@@ -44,7 +44,7 @@ catalogue.
 | `fiche` | `blocs: [{ type: 'paragraphe' \| 'alerte' \| 'formule', texte }, { type: 'liste', items: ['…'] }]` |
 | `procedure` | `intro?`, `etapes: [{ id, texte, detail? }]` |
 | `entretien` | `intro?`, `taches: [{ id, texte, periodicite }]` — périodicités : `chaque-utilisation`, `quotidienne`, `hebdomadaire`, `debut-campagne`, `fin-campagne`, `annuelle` |
-| `calculateur` | `intro?`, `calculateur: 'volHa' \| 'debitBuse' \| 'pressionPourVolume' \| 'vitesseMesuree' \| 'debitChantier' \| 'largeurTraitee' \| 'debitCuve' \| 'hauteursBuses'` |
+| `calculateur` | `intro?`, `calculateur: 'volHa' \| 'debitBuse' \| 'pressionPourVolume' \| 'vitesseMesuree' \| 'debitChantier' \| 'largeurTraitee' \| 'debitCuve' \| 'hauteursBuses' \| 'ecartDiffuseurs'` |
 | `quiz` | `questions: [{ id, enonce, choix: ['…'], bonnes: [indices à partir de 0], explication }]` — plusieurs bonnes réponses = question à choix multiples |
 | `cas` | `situation`, `options: [{ texte, correct: true/false, retour }]`, au moins une option correcte |
 
