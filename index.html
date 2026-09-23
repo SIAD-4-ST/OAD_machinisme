@@ -253,6 +253,7 @@ li > .source-element { margin: 0; }
                   <span class="{{ carte.statutClasse }}">{{ carte.statutLibelle }}</span>
                   <span>{{ carte.dureeTxt }}</span>
                   <span>{{ carte.etatLibelle }} · {{ carte.avancementTxt }}</span>
+                  <span>{{ carte.quizTxt }}</span>
                 </p>
                 <div class="jauge" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="{{ carte.pct }}" aria-label="{{ carte.jaugeLabel }}"><span style="width:{{ carte.pct }}%"></span></div>
               </li>
@@ -515,6 +516,7 @@ li > .source-element { margin: 0; }
 
   <footer class="pied">
     <p>Outil de formation. Les valeurs proposées dans les calculateurs sont des exemples : l'origine de chacune est indiquée sous son champ.</p>
+    <sc-if value="{{ aEdition }}"><p>{{ editionTxt }}</p></sc-if>
   </footer>
 </div>
 </x-dc>
@@ -873,6 +875,7 @@ class Component extends DCLogic {
       outilsListe: [], outilsTitre: '', outilsMessage: '',
       aCalc: false, calcCourant: { entrees: [], etapes: [], resultats: [], alertes: [], technosTxt: '', aTechnos: false, tableau: null, aTableau: false },
       progResume: '', tableauProgression: null,
+      aEdition: false, editionTxt: '',
       basculerTheme: this.basculerTheme, onSaisie: this.onSaisie, reinitialiserCalc: this.reinitialiserCalc,
       onChoix: this.onChoix, validerQuiz: this.validerQuiz, recommencerQuiz: this.recommencerQuiz,
       choisirCas: this.choisirCas, basculerEtape: this.basculerEtape, basculerTache: this.basculerTache,
@@ -894,6 +897,8 @@ class Component extends DCLogic {
     const vue = ctx.route.vue;
 
     out.enChargement = false;
+    out.editionTxt = OAD.EDITION_CONTENU ? 'Édition du contenu : ' + dateFr(OAD.EDITION_CONTENU) : '';
+    out.aEdition = !!out.editionTxt;
     out.lienCatalogue = OAD.lien();
     out.lienOutils = OAD.lien('outils');
     out.lienProgression = OAD.lien('progression');
@@ -913,10 +918,17 @@ class Component extends DCLogic {
     return out;
   }
 
+  // « Quiz réussis : x / y », quiz et exercices confondus (D-B6-3).
+  quizTxt(OAD, m, prog) {
+    const b = OAD.bilanEvaluation(prog, m);
+    return b.total ? 'Quiz réussis : ' + b.reussies + ' / ' + b.total : 'Pas de quiz dans ce module';
+  }
+
   carte(OAD, m, prog) {
     const a = OAD.avancement(prog, m);
     const pct = Math.round(a.taux * 100);
     return {
+      quizTxt: this.quizTxt(OAD, m, prog),
       titre: m.titre, resume: m.resume, lien: OAD.lien('module', m.id),
       statutLibelle: OAD.STATUTS_LIBELLES[m.statut] || m.statut,
       statutClasse: 'badge badge-' + m.statut,
@@ -1226,11 +1238,12 @@ class Component extends DCLogic {
 
   valsProgression(ctx, prog) {
     const OAD = ctx.OAD;
-    const termines = ctx.modules.filter(m => OAD.etatModule(prog, m) === 'termine').length;
+    const n = etat => ctx.modules.filter(m => OAD.etatModule(prog, m) === etat).length;
+    const pl = (k, mot) => k + ' ' + mot + (k > 1 ? 's' : '');
     return {
       estProgression: true,
-      progResume: termines + ' module' + (termines > 1 ? 's' : '') + ' terminé' + (termines > 1 ? 's' : '') +
-        ' sur ' + ctx.modules.length + '.',
+      progResume: pl(n('maitrise'), 'module maîtrisé') + ', ' + pl(n('consulte'), 'consulté') +
+        ' sans être maîtrisé, sur ' + ctx.modules.length + '.',
       tableauProgression: this.tableauProgression(ctx, prog)
     };
   }
@@ -1251,12 +1264,13 @@ class Component extends DCLogic {
         e('th', { scope: 'row' }, e('a', { href: OAD.lien('module', m.id) }, m.titre)),
         e('td', null, a.vues + ' / ' + a.total),
         e('td', null, quiz.length ? quiz.map((t, i) => e('div', { key: i }, t)) : '—'),
+        e('td', null, this.quizTxt(OAD, m, prog).replace(/^Quiz réussis : /, '')),
         e('td', null, OAD.ETATS_MODULE_LIBELLES[OAD.etatModule(prog, m)]));
     });
     return e('table', { className: 'tableau' },
       e('caption', null, 'Avancement par module'),
       e('thead', null, e('tr', null,
-        ['Module', 'Sections consultées', 'Quiz', 'État'].map(t => e('th', { key: t, scope: 'col' }, t)))),
+        ['Module', 'Sections consultées', 'Quiz', 'Quiz réussis', 'État'].map(t => e('th', { key: t, scope: 'col' }, t)))),
       e('tbody', null, lignes));
   }
 }

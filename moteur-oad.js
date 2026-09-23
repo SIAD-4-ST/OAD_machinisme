@@ -75,11 +75,14 @@ const PERIODICITES_LIBELLES = {
   annuelle: 'Chaque année'
 };
 
-const ETATS_MODULE = ['non-commence', 'en-cours', 'termine'];
+// État calculé, jamais stocké (D-B6-1) : « consulté » = toutes les sections
+// ouvertes ; « maîtrisé » = en plus, tous les quiz et exercices réussis.
+const ETATS_MODULE = ['non-commence', 'en-cours', 'consulte', 'maitrise'];
 const ETATS_MODULE_LIBELLES = {
   'non-commence': 'Non commencé',
   'en-cours': 'En cours',
-  termine: 'Terminé'
+  consulte: 'Consulté',
+  maitrise: 'Maîtrisé'
 };
 
 /* --- 2. Formules -----------------------------------------------------
@@ -860,15 +863,47 @@ function avancement(p, module) {
   return { vues: n, total: sections.length, taux: sections.length ? n / sections.length : 0 };
 }
 
+/* ASSUMÉ — formation, pas certification : tentatives illimitées, toutes les
+   réponses justes (dernier taux ≥ 1). À trancher par le référent
+   pédagogique si un usage certifiant apparaît (D-B6-2, arbitrage A4). */
+const SEUIL_MAITRISE = 1;
+
+// Sections qui se réussissent : quiz et exercices.
+function sectionsEvaluees(module) {
+  const sections = (module && Array.isArray(module.sections)) ? module.sections : [];
+  return sections.filter(s => s && (s.type === 'quiz' || s.type === 'exercice'));
+}
+
+// { reussies, total } : sections évaluées dont le dernier taux atteint SEUIL_MAITRISE.
+function bilanEvaluation(p, module) {
+  const ev = sectionsEvaluees(module);
+  const quiz = lireModuleProg(p, module && module.id).quiz;
+  const reussies = ev.filter(s => {
+    const q = quiz[s.id];
+    return !!q && Number.isFinite(q.taux) && q.taux >= SEUIL_MAITRISE;
+  }).length;
+  return { reussies, total: ev.length };
+}
+
+/* non-commence → en-cours → consulte (toutes les sections ouvertes) →
+   maitrise (en plus, toutes les sections évaluées réussies). Un module sans
+   quiz ni exercice plafonne à « consulte » (D-B6-3). */
 function etatModule(p, module) {
   const a = avancement(p, module);
   if (a.vues === 0) return 'non-commence';
-  return a.vues >= a.total ? 'termine' : 'en-cours';
+  if (a.vues < a.total) return 'en-cours';
+  const b = bilanEvaluation(p, module);
+  return b.total > 0 && b.reussies >= b.total ? 'maitrise' : 'consulte';
 }
 
 /* --- 7. Registre de contenu ------------------------------------------
    Le contenu vit hors du moteur (contenu/<id>.js), pour que des experts le
    rédigent sans toucher au code. */
+
+/* Date d'édition du contenu (ISO), affichée en pied de page (D-B6-4) : à
+   changer à CHAQUE modification de contenu/, et à reporter dans la section
+   « Édition du contenu » du README (test statique). */
+const EDITION_CONTENU = '2026-09-23';
 
 /* SEUL ACCÈS GLOBAL DU MOTEUR. Lu au moment de l'appel, jamais à la
    définition : l'ordre de chargement des scripts de <helmet> n'est pas
@@ -983,6 +1018,7 @@ const OAD = {
   validerModule, elementsChiffresSansSource, noterQuestion, noterQuiz, attenduExercice, corrigerExercice,
   VERSION_PROGRESSION, progressionVide, marquerVue, basculerEtape, basculerTache,
   enregistrerQuiz, progressionSection, avancement, etatModule,
+  SEUIL_MAITRISE, sectionsEvaluees, bilanEvaluation, EDITION_CONTENU,
   // registre de contenu, routes
   modules, ordonnerModules, erreursContenu, listerModules, trouverModule, trouverSection,
   lireRoute, lien

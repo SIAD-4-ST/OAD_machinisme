@@ -247,7 +247,8 @@ test('progression : réducteurs purs, avancement et état', () => {
   assert.strictEqual(OAD.marquerVue(p1, 'm', 's1'), p1, 'aucun changement ⇒ même objet');
   assert.strictEqual(OAD.etatModule(p0, m), 'non-commence');
   assert.strictEqual(OAD.etatModule(p1, m), 'en-cours');
-  assert.strictEqual(OAD.etatModule(OAD.marquerVue(p1, 'm', 's2'), m), 'termine');
+  // Pourquoi : consulté n'est plus terminé, B6 (sections sans quiz : plafond « consulte »).
+  assert.strictEqual(OAD.etatModule(OAD.marquerVue(p1, 'm', 's2'), m), 'consulte');
   assert.deepStrictEqual(OAD.avancement(p1, m), { vues: 1, total: 2, taux: 0.5 });
   const p2 = OAD.basculerEtape(p1, 'm', 's1', 'e1');
   assert.deepStrictEqual(OAD.progressionSection(p2, 'm', 's1').etapes, ['e1']);
@@ -985,6 +986,77 @@ test('rendu à blanc : exercice saisi puis vérifié → progression écrite ave
     assert.strictEqual(rendre(c, h).exo.verdict, 'À revoir.');
     assert.strictEqual(OAD.progressionSection(c.state.prog, 'fabrique', 'exo-test-vitesse').quiz.taux, 0);
   });
+});
+
+// ----------------------------------------------------------------------
+section('§13 B6 — états et édition');
+
+const mod3 = { id: 'm3', sections: [{ id: 'a', type: 'fiche' }, { id: 'b', type: 'fiche' }, { id: 'q', type: 'quiz' }] };
+const voir = (p, m, ids) => ids.reduce((acc, id) => OAD.marquerVue(acc, m.id, id), p);
+test('module à 3 sections dont 1 quiz : non-commence, en-cours, consulte, maitrise, quiz à 0,5 → consulte', () => {
+  const p0 = OAD.progressionVide();
+  assert.strictEqual(OAD.etatModule(p0, mod3), 'non-commence');
+  assert.strictEqual(OAD.etatModule(voir(p0, mod3, ['a']), mod3), 'en-cours');
+  const tout = voir(p0, mod3, ['a', 'b', 'q']);
+  assert.strictEqual(OAD.etatModule(tout, mod3), 'consulte');
+  assert.strictEqual(OAD.etatModule(OAD.enregistrerQuiz(tout, 'm3', 'q', { taux: 1 }, 'd'), mod3), 'maitrise');
+  assert.strictEqual(OAD.etatModule(OAD.enregistrerQuiz(tout, 'm3', 'q', { taux: 0.5 }, 'd'), mod3), 'consulte');
+  // Quiz réussi mais une section non ouverte : pas maîtrisé.
+  assert.strictEqual(OAD.etatModule(OAD.enregistrerQuiz(voir(p0, mod3, ['a', 'q']), 'm3', 'q', { taux: 1 }, 'd'), mod3), 'en-cours');
+});
+test('module sans quiz, toutes sections vues → consulte ; bilanEvaluation → { 0, 0 }', () => {
+  const m = { id: 'sq', sections: [{ id: 'a', type: 'fiche' }, { id: 'b', type: 'procedure' }] };
+  const p = voir(OAD.progressionVide(), m, ['a', 'b']);
+  assert.strictEqual(OAD.etatModule(p, m), 'consulte');
+  assert.deepStrictEqual(OAD.bilanEvaluation(p, m), { reussies: 0, total: 0 });
+});
+test('exercice réussi + quiz réussi, toutes sections vues → maitrise', () => {
+  const m = { id: 'mx', sections: [{ id: 'f', type: 'fiche' }, { id: 'q', type: 'quiz' }, { id: 'x', type: 'exercice' }] };
+  let p = voir(OAD.progressionVide(), m, ['f', 'q', 'x']);
+  p = OAD.enregistrerQuiz(p, 'mx', 'q', { taux: 1 }, 'd');
+  assert.strictEqual(OAD.etatModule(p, m), 'consulte');
+  p = OAD.enregistrerQuiz(p, 'mx', 'x', { taux: 1, bonnes: 1, total: 1 }, 'd');
+  assert.strictEqual(OAD.etatModule(p, m), 'maitrise');
+  assert.deepStrictEqual(OAD.bilanEvaluation(p, m), { reussies: 2, total: 2 });
+  assert.deepStrictEqual(OAD.sectionsEvaluees(m).map(s => s.id), ['q', 'x']);
+});
+test('EDITION_CONTENU au format ISO ; README : même date en jj/mm/aaaa dans « Édition du contenu »', () => {
+  assert.ok(/^\d{4}-\d{2}-\d{2}$/.test(OAD.EDITION_CONTENU));
+  const [a, mo, j] = OAD.EDITION_CONTENU.split('-');
+  const readme = fs.readFileSync(path.join(RACINE, 'README.md'), 'utf8').replace(/\r\n/g, '\n');
+  const titre = readme.match(/^## [\d. ]*Édition du contenu$/m);
+  assert.ok(titre, 'section « Édition du contenu » absente du README');
+  const suite = readme.slice(titre.index + titre[0].length);
+  const sectionEd = suite.slice(0, suite.search(/^## /m) > 0 ? suite.search(/^## /m) : undefined);
+  assert.ok(sectionEd.includes(j + '/' + mo + '/' + a), 'date ' + j + '/' + mo + '/' + a + ' absente');
+});
+test('pied de page : « Édition du contenu : jj/mm/aaaa »', () => {
+  const out = rendre(new Component({}), '#/');
+  const [a, mo, j] = OAD.EDITION_CONTENU.split('-');
+  assert.strictEqual(out.editionTxt, 'Édition du contenu : ' + j + '/' + mo + '/' + a);
+});
+test('progression du format v1 écrite avant B6 : états recalculés sans exception, sans migration', () => {
+  const ancienne = { version: 1, modules: {
+    'pulve-entretien': { vues: ['pourquoi', 'plan-entretien', 'rincage-fin-traitement', 'quiz-entretien', 'cas-buse'],
+      etapes: {}, taches: { 'plan-entretien': ['rincage'] },
+      quiz: { 'quiz-entretien': { taux: 1, bonnes: 2, total: 2, date: '2026-09-20T08:00:00.000Z' } } },
+    'module-disparu': { vues: ['x'] }
+  } };
+  MAGASIN['formation-machines:progression:v1'] = JSON.stringify(ancienne);
+  try {
+    const c = new Component({});
+    const out = rendre(c, '#/progression');
+    assert.ok(out.tableauProgression);
+    const pe = MODULES.find(m => m.id === 'pulve-entretien');
+    assert.ok(['consulte', 'maitrise', 'en-cours'].includes(OAD.etatModule(c.state.prog, pe)));
+    const carte = rendre(c, '#/').domainesCatalogue[0].modules.find(x => x.titre === pe.titre);
+    assert.ok(carte.quizTxt.startsWith('Quiz réussis : ') || carte.quizTxt === 'Pas de quiz dans ce module');
+  } finally { delete MAGASIN['formation-machines:progression:v1']; }
+});
+test('tableau de progression : colonne « Quiz réussis »', () => {
+  const t = rendre(new Component({}), '#/progression').tableauProgression;
+  const thead = t.c.find(x => x && x.t === 'thead');
+  assert.deepStrictEqual([].concat(...thead.c[0].c).map(th => th.c[0]), ['Module', 'Sections consultées', 'Quiz', 'Quiz réussis', 'État']);
 });
 
 console.log(`\n${passed} ok, ${failed} FAIL, ${skipped} skip`);

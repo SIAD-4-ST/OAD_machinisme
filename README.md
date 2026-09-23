@@ -25,7 +25,9 @@ l'origine est affichée ; aucune donnée ne quitte l'appareil.
 11. Points ouverts
 12. Lot B — portes et état
 13. À contrôler au document primaire
-14. Journal d'arbitrages — lot B
+14. Consignes retirées, à reproposer au valideur
+15. Édition du contenu
+16. Journal d'arbitrages — lot B
 
 ## 1. Démarrage rapide
 
@@ -67,9 +69,16 @@ la fermeture du navigateur ; l'outil reste utilisable si le stockage est
 refusé.
 
 **Parcours.** Catalogue (modules groupés par domaine, statut, durée,
-avancement) → module (sommaire, section courante, sections voisines) ; page
+état, quiz réussis) → module (sommaire, section courante, sections voisines) ; page
 Calculateurs (les calculateurs hors module) ; page Progression (tableau par
-module, effacement). Navigation par hash : liens profonds et bouton retour.
+module : sections consultées, quiz, quiz réussis, état ; effacement).
+
+**Progression.** L'état d'un module est calculé, jamais stocké : *Non
+commencé*, *En cours*, *Consulté* (toutes les sections ouvertes), *Maîtrisé*
+(en plus, tous les quiz et exercices réussis à 100 %, tentatives illimitées).
+Un module sans quiz ni exercice plafonne à *Consulté* (« Pas de quiz dans ce
+module »). Clé et format de stockage inchangés : une progression enregistrée
+avant B6 se relit sans migration. Pied de page : date d'édition du contenu. Navigation par hash : liens profonds et bouton retour.
 
 **Restitution.** Calculateurs : résultats en tête, puis « Détail du calcul »
 (formule symbolique, formule avec les valeurs, résultat), et sous chaque champ
@@ -311,7 +320,22 @@ contrôler une à une sur le document primaire.
 | 180 L/ha avec 3 hauteurs de buses → 120 L/ha avec 2 | `hauteursBuses.V1`, `.h1`, `.h2` | A-LVC | | | |
 | Intervention si écart d'un diffuseur > 10 % à la moyenne (strict : « supérieur à ») | `ECART_DIFFUSEUR_MAX`, calculateur `ecartDiffuseurs` | F-VHA | | | |
 
-## 14. Journal d'arbitrages — lot B
+## 14. Consignes retirées, à reproposer au valideur
+
+Consignes présentes dans la rédaction initiale mais absentes du corpus : elles
+sont retirées (pas reformulées) et attendent la décision du valideur.
+
+| Module | Consigne retirée | Raison | Décision du valideur |
+|---|---|---|---|
+
+## 15. Édition du contenu
+
+Édition en cours : **23/09/2026** (`EDITION_CONTENU = '2026-09-23'` dans
+`moteur-oad.js`). À changer à chaque modification de `contenu/`, ici et dans
+le moteur ; l'écran l'affiche en pied de page, pour savoir quelle version un
+apprenant a sous les yeux et retirer une consigne erronée.
+
+## 16. Journal d'arbitrages — lot B
 
 ### B0 — préparation (23/09/2026)
 
@@ -433,3 +457,20 @@ quiz et exercices ; ainsi l'horloge reste lue une seule fois, dans
 `validerQuiz` (contrainte du `CLAUDE.md`, test statique inchangé). Unicité
 des ids de quiz, cas et exercices vérifiée aussi par `erreursContenu`
 (bandeau « Contenu à corriger »), plus seulement par un test.
+
+### B6 — états « consulté » / « maîtrisé », édition du contenu (23/09/2026)
+
+- **D-B6-1** : `ETATS_MODULE` = non-commence, en-cours, consulte, maitrise ;
+  `termine` disparaît. État calculé, aucune migration (testé sur une
+  progression v1 écrite en dur).
+- **D-B6-2** : `SEUIL_MAITRISE = 1`, ASSUMÉ (formation, pas certification ;
+  à trancher par le référent pédagogique si un usage certifiant apparaît).
+- **D-B6-3** : sans quiz ni exercice, plafond « consulté » ; l'écran dit
+  « Pas de quiz dans ce module ».
+- **D-B6-4** : `EDITION_CONTENU` (section 7 du moteur), affiché en pied de
+  page « Édition du contenu : jj/mm/aaaa » ; même date en section 15 du README (testé).
+  Règle ajoutée au `CLAUDE.md` : toute modification de `contenu/` change
+  `EDITION_CONTENU`.
+
+Ajout : le résumé de la page Progression distingue modules maîtrisés et
+consultés (il comptait les modules « terminés »).
