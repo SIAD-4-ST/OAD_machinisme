@@ -23,6 +23,9 @@ l'origine est affichée ; aucune donnée ne quitte l'appareil.
 9. Journal d'arbitrages — portage x-dc, A2 (23/09/2026)
 10. Journal d'arbitrages — portage x-dc, A3 (23/09/2026)
 11. Points ouverts
+12. Lot B — portes et état
+13. À contrôler au document primaire
+14. Journal d'arbitrages — lot B
 
 ## 1. Démarrage rapide
 
@@ -248,3 +251,56 @@ puis message d'échec) ; préférence de thème stockée à part.
   applique strictement la règle de vocabulaire visible.
 - Charte graphique éventuelle du Comité Champagne.
 - Recette sur la tablette cible (section 7).
+
+## 12. Lot B — portes et état
+
+Le lot B (audit du 23/09/2026, arbitrages A1 à A5) se fait sur la branche
+`lot-b`. Le dépôt est public : fusionner dans `main`, c'est publier. Un
+prompt soumis à une porte peut être exécuté sur `lot-b`, mais pas fusionné
+tant que la porte n'est pas levée.
+
+| Porte | Objet | Qui la lève | Prompts concernés | Levée le |
+|---|---|---|---|---|
+| **G1** | Droit de reprendre les valeurs et schémas des fiches du Groupe Machinisme Champenois (CC BY-NC-ND 3.0) et des articles B20 (*Le Vigneron Champenois*, avril–mai 2020) | Direction de la communication / service juridique du Comité Champagne ; co-auteurs des fiches cosignées (CA 51, Magister, GDV 51, CV-CNF) | B1 à B3 (valeurs par défaut et origines affichées), B7 à B12 | |
+| **G2** | Validité en 2026 des valeurs 2014–2016, et désignation des valideurs | Référent pulvérisation / machinisme du Service vigne | Passage d'un module en `valide` ; B12 en entier | |
+| **G3** | Hébergement public et mise en ligne | DSI et direction de la communication | Tout déploiement (B13 est un essai, pas un déploiement) | |
+| **G4** | Consigne de buse anti-dérive en jets portés (TVI) | Responsable pulvérisation du Comité Champagne | Aucun prompt du lot : sujet exclu | |
+
+### Écart avec la synthèse du corpus, §1
+
+La synthèse du corpus (`docs/corpus/synthese-corpus-formation-machines.md`,
+hors dépôt, D-B0-2) décrit en §1 une spécification antérieure qui n'a pas été
+retenue : `synthesePulve` / `syntheseSol`, `OAD.CONTENU`, buse de référence
+`BUSE_REF` ATR Blanche, clé de stockage `oad-formation-machines-v1`,
+typographie 36 / 22 / 13,5 / 11,5 px. **Le dépôt fait foi pour
+l'architecture. La synthèse fait foi pour les valeurs**, sous réserve de
+D-B0-4 : c'est une source secondaire ; chaque valeur reprise porte son code
+source (F-VHA, B20-1…) et figure en §13 jusqu'au contrôle au document
+primaire ; aucune valeur absente de la synthèse n'est ajoutée.
+
+## 13. À contrôler au document primaire
+
+Valeurs reprises de la synthèse du corpus (source secondaire, D-B0-4), à
+contrôler une à une sur le document primaire.
+
+| Valeur | Où dans l'outil | Code source | Page | Contrôlé le | Par |
+|---|---|---|---|---|---|
+
+## 14. Journal d'arbitrages — lot B
+
+### B0 — préparation (23/09/2026)
+
+- **D-B0-1** : tout le lot se fait sur la branche `lot-b`. Fusion dans `main`
+  seulement après la levée de G1 (dépôt public).
+- **D-B0-2** : la synthèse du corpus est copiée dans `docs/corpus/`, ignoré
+  par git (`.gitignore`) : elle reproduit des valeurs de documents dont les
+  droits sont en question (G1). Testé : aucun fichier suivi sous ce dossier.
+- **D-B0-5** : CI GitHub (`.github/workflows/tests.yml`) : `node
+  tests/parite.test.js` sous Node 18 à chaque push et pull request. Aucune
+  dépendance npm.
+
+Ajout hors prompt : `.gitattributes` interdit la conversion de fin de ligne
+sur `support.js` et `vendor/`. Constat : sous Windows avec
+`core.autocrlf=true`, ces fichiers étaient extraits en CRLF, et les trois
+tests d'empreinte échouaient (64 ok, 3 FAIL au lieu de 67 ok). Les octets du
+dépôt n'ont jamais changé ; seule la copie de travail différait.

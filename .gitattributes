@@ -1,0 +1,4 @@
+# Runtime et React figés : octets identiques aux empreintes vérifiées par
+# tests/parite.test.js. Aucune conversion de fin de ligne (core.autocrlf).
+support.js -text
+vendor/** -text

@@ -575,5 +575,32 @@ test('stockage refusé (navigation privée) : aucune exception, l\'outil reste u
   } finally { window.localStorage = sauve; }
 });
 
+// ----------------------------------------------------------------------
+section('§7 B0 — préparation');
+
+test('.gitignore contient la ligne docs/corpus/ (D-B0-2)', () => {
+  const gi = fs.readFileSync(path.join(RACINE, '.gitignore'), 'utf8');
+  assert.ok(gi.split(/\r?\n/).map(l => l.trim()).includes('docs/corpus/'));
+});
+test('.github/workflows/tests.yml existe et lance node tests/parite.test.js (D-B0-5)', () => {
+  const wf = path.join(RACINE, '.github', 'workflows', 'tests.yml');
+  assert.ok(fs.existsSync(wf));
+  assert.ok(fs.readFileSync(wf, 'utf8').includes('node tests/parite.test.js'));
+});
+(() => {
+  let sortie = null;
+  try {
+    sortie = require('child_process').execSync('git ls-files docs/corpus',
+      { cwd: RACINE, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] });
+  } catch (e) { sortie = null; }
+  if (sortie === null) {
+    skip('aucun fichier suivi par git sous docs/corpus/', null, 'LIMITE ASSUMÉE — git indisponible');
+  } else {
+    test('aucun fichier suivi par git sous docs/corpus/ (D-B0-2)', () => {
+      assert.strictEqual(sortie.trim(), '');
+    });
+  }
+})();
+
 console.log(`\n${passed} ok, ${failed} FAIL, ${skipped} skip`);
 if (failed > 0) process.exit(1);
