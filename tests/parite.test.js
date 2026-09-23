@@ -94,11 +94,14 @@ test('saisie nulle, négative, vide ou illisible : NaN, jamais d\'exception', ()
   assert.ok(Number.isNaN(OAD.pressionPourVolume(8, 150, 180, 0)));
   assert.ok(Number.isNaN(OAD.vitesseMesuree(100, 0)));
 });
+// Pourquoi : écart entre diffuseurs, B3 — ses défauts montrent volontairement
+// un diffuseur hors seuil (D-B3-5) : une alerte attendue, les autres aucune.
+const ALERTES_DEFAUT = { ecartDiffuseurs: 1 };
 test('chaque calculateur du registre calcule avec ses valeurs par défaut', () => {
   Object.values(OAD.CALCULATEURS).forEach(c => {
     const r = c.compute(defauts(c));
     assert.ok(r.etapes.length >= 1 && r.resultats.length >= 1, c.id);
-    assert.deepStrictEqual(r.alertes, [], c.id + ' : aucune alerte attendue avec les défauts');
+    assert.strictEqual(r.alertes.length, ALERTES_DEFAUT[c.id] || 0, c.id + ' : alertes avec les défauts');
     // A2 : sorties brutes finies (D-A2-1).
     r.etapes.forEach(et => {
       et.operandes.forEach(o => assert.ok(Number.isFinite(o.valeur), c.id + ' opérande'));
@@ -121,7 +124,8 @@ test('LIMITE ASSUMÉE — débit de chantier théorique : ni demi-tours ni temps
 // ----------------------------------------------------------------------
 section('§2 Contenu et schéma');
 
-test('les 3 modules livrés sont conformes au schéma', () => {
+// Pourquoi : le catalogue s'étend à partir de B9 : nom sans le nombre.
+test('les modules livrés sont conformes au schéma', () => {
   assert.deepStrictEqual(OAD.erreursContenu(MODULES), []);
 });
 test('chaque fichier contenu/<id>.js porte le module de même id', () => {
@@ -130,7 +134,9 @@ test('chaque fichier contenu/<id>.js porte le module de même id', () => {
     assert.strictEqual(require(path.join(RACINE, 'contenu', m.id + '.js')).id, m.id);
   });
 });
-test('les 6 types de section sont utilisés par le contenu', () => {
+// Pourquoi : type « exercice » ajouté en B5 et utilisé par le contenu depuis
+// B7 : de nouveau, tous les types du vocabulaire sont utilisés.
+test('tous les types de section sont utilisés par le contenu', () => {
   const types = new Set();
   MODULES.forEach(m => m.sections.forEach(s => types.add(s.type)));
   assert.deepStrictEqual([...types].sort(), OAD.TYPES_SECTION.slice().sort());
@@ -158,9 +164,10 @@ test('erreursContenu signale un module en double', () => {
   const e = OAD.erreursContenu([MODULES[0], MODULES[0]]);
   assert.ok(e.some(x => x.includes('module en double')));
 });
-test('identifiants de section quiz et cas uniques sur tout le catalogue (clés d\'état de l\'écran)', () => {
+// B5 : les exercices s'ajoutent aux quiz et cas (clés d'état de l'écran).
+test('identifiants de section quiz, cas et exercice uniques sur tout le catalogue (clés d\'état de l\'écran)', () => {
   const ids = [];
-  MODULES.forEach(m => m.sections.filter(s => s.type === 'quiz' || s.type === 'cas').forEach(s => ids.push(s.id)));
+  MODULES.forEach(m => m.sections.filter(s => OAD.TYPES_SECTION_EVALUES.includes(s.type)).forEach(s => ids.push(s.id)));
   assert.strictEqual(new Set(ids).size, ids.length);
 });
 
@@ -192,9 +199,13 @@ test('chaque clé de DOMAINES, PERIODICITES, STATUTS et TYPES_SECTION a un libel
   OAD.TYPES_SECTION.forEach(k => assert.ok(OAD.TYPES_SECTION_LIBELLES[k], k));
   OAD.ETATS_MODULE.forEach(k => assert.ok(OAD.ETATS_MODULE_LIBELLES[k], k));
 });
+// Pourquoi : trois modules ajoutés après pulve-entretien, B9 ; glossaire en
+// dernier, B10 ; effeuillage avant le glossaire, B11 ; réglages selon le
+// stade après la couverture, B12.
 test('modules() suit l\'ordre de contenu/index.js', () => {
   assert.deepStrictEqual(MODULES.map(m => m.id),
-    ['pulve-reglage-volume', 'pulve-entretien', 'sol-outil-interceps']);
+    ['pulve-reglage-volume', 'pulve-entretien', 'pulve-filtration', 'pulve-remise-en-route',
+      'pulve-couverture', 'pulve-reglages-stade', 'sol-outil-interceps', 'effeuillage-calage', 'glossaire']);
 });
 test('navigateur : modules() lit window.OAD_CONTENU à l\'appel et dédoublonne par id', () => {
   const src = fs.readFileSync(path.join(RACINE, 'moteur-oad.js'), 'utf8');
@@ -240,7 +251,8 @@ test('progression : réducteurs purs, avancement et état', () => {
   assert.strictEqual(OAD.marquerVue(p1, 'm', 's1'), p1, 'aucun changement ⇒ même objet');
   assert.strictEqual(OAD.etatModule(p0, m), 'non-commence');
   assert.strictEqual(OAD.etatModule(p1, m), 'en-cours');
-  assert.strictEqual(OAD.etatModule(OAD.marquerVue(p1, 'm', 's2'), m), 'termine');
+  // Pourquoi : consulté n'est plus terminé, B6 (sections sans quiz : plafond « consulte »).
+  assert.strictEqual(OAD.etatModule(OAD.marquerVue(p1, 'm', 's2'), m), 'consulte');
   assert.deepStrictEqual(OAD.avancement(p1, m), { vues: 1, total: 2, taux: 0.5 });
   const p2 = OAD.basculerEtape(p1, 'm', 's1', 'e1');
   assert.deepStrictEqual(OAD.progressionSection(p2, 'm', 's1').etapes, ['e1']);
@@ -260,17 +272,21 @@ test('volHa.compute({Q:6, v:6, L:2.5}) : opérandes bruts et résultat 240', () 
   assert.strictEqual(r.etapes[0].resultat.valeur, 240);   // 600 × 6 / (6 × 2,5)
   assert.strictEqual(r.etapes[0].gabarit, '600 × {0} / ({1} × {2})');
 });
-test('pressionPourVolume avec les défauts : 8 × (180/150)² = 11,52 bar', () => {
+// Pourquoi : défauts recalés sur le corpus, B1 (était 8 bar → 11,52 bar).
+test('pressionPourVolume avec les défauts : 3 × (180/150)² = 4,32 bar', () => {
   const c = OAD.CALCULATEURS.pressionPourVolume;
   const r = c.compute(defauts(c));
-  assertClose(r.etapes[r.etapes.length - 1].resultat.valeur, 11.52, 1e-9);
-  assertClose(r.resultats[0].valeur, 11.52, 1e-9);
+  assertClose(r.etapes[r.etapes.length - 1].resultat.valeur, 4.32, 1e-9);
+  assertClose(r.resultats[0].valeur, 4.32, 1e-9);
 });
-test('alerte de pression : bornes lues dans PLAGE_PRESSION_ALERTE_BAR', () => {
-  assert.deepStrictEqual(OAD.PLAGE_PRESSION_ALERTE_BAR, [1, 25]);   // ASSUMÉ, voir README
-  const r = OAD.CALCULATEURS.pressionPourVolume.compute({ P1: 8, V1: 150, V2: 300, b: 0.5 });   // 32 bar
+// Pourquoi : défauts recalés sur le corpus, B1 — PLAGE_PRESSION_ALERTE_BAR
+// supprimée, la plage vient des entrées pMin / pMax (D-B1-2).
+test('alerte de pression : bornes lues dans les entrées pMin et pMax', () => {
+  const r = OAD.CALCULATEURS.pressionPourVolume.compute({ P1: 8, V1: 150, V2: 300, b: 0.5, pMin: 1, pMax: 25 });   // 32 bar
   assert.strictEqual(r.alertes.length, 1);
-  assert.ok(r.alertes[0].includes('1 à 25 bar'));
+  assert.deepStrictEqual(r.alertes[0].operandes, [{ valeur: 1, decimales: 2 }, { valeur: 25, decimales: 2 }]);
+  assert.ok(OAD.substituer(r.alertes[0].gabarit, ['1', '25'])
+    .startsWith('Pression calculée hors de la plage de la buse (1 à 25\u00a0bar) :'));
 });
 test('substituer(\'600 × {0} / ({1} × {2})\', [\'6\', \'6\', \'2,5\'])', () => {
   assert.strictEqual(OAD.substituer('600 × {0} / ({1} × {2})', ['6', '6', '2,5']), '600 × 6 / (6 × 2,5)');
@@ -288,20 +304,28 @@ test('enregistrerQuiz : la date vient de l\'appelant ; absente → null', () => 
   assert.strictEqual(OAD.progressionSection(p2, 'm', 'q').quiz.date, null);
   assert.strictEqual(OAD.progressionSection(OAD.enregistrerQuiz(p0, 'm', 'q', { taux: 1 }, 42), 'm', 'q').quiz.date, null);
 });
-test('chaque entrée de chaque calculateur a un origineDefaut non vide (15 entrées)', () => {
+// Pourquoi : défauts recalés sur le corpus, B1 — +pMin, +pMax (était 15) ;
+// puis 3 calculateurs ajoutés, B2 — +7 entrées (était 17) ; puis écart entre
+// diffuseurs, B3 — +1 entrée liste (était 24).
+test('chaque entrée de chaque calculateur a un origineDefaut non vide (25 entrées)', () => {
   let n = 0;
   Object.values(OAD.CALCULATEURS).forEach(c => c.entrees.forEach(e => {
     n++;
     assert.ok(typeof e.origineDefaut === 'string' && e.origineDefaut.trim(), c.id + '.' + e.id);
   }));
-  assert.strictEqual(n, 15);   // 3 + 4 + 4 + 2 + 2
+  assert.strictEqual(n, 25);   // 3 + 4 + 6 + 2 + 2 + 2 + 2 + 3 + 1
 });
-test('origines non ASSUMÉ : b de pressionPourVolume, d et t de vitesseMesuree (D-A2-3)', () => {
+// Pourquoi : défauts recalés sur le corpus, B1 — seuls n et debitChantier
+// restent sans source (D-B1-3, D-B1-4).
+test('origines : b IFV, d et t F-VHA, Q déduit, n et debitChantier sans source', () => {
   const o = (c, e) => OAD.CALCULATEURS[c].entrees.find(x => x.id === e).origineDefaut;
+  const SANS_SOURCE = 'Valeur d\'exemple, sans source : à confirmer par le référent';
   assert.ok(o('pressionPourVolume', 'b').startsWith('Valeur fixe de l\'outil IFV'));
-  assert.strictEqual(o('vitesseMesuree', 'd'), 'Exemple de calcul, sans valeur de réglage');
-  assert.strictEqual(o('vitesseMesuree', 't'), 'Exemple de calcul, sans valeur de réglage');
-  assert.ok(o('volHa', 'Q').startsWith('ASSUMÉ'));
+  assert.strictEqual(o('vitesseMesuree', 'd'), 'Mesure sur 50 m (fiche Volume/hectare, CIVC, février 2014)');
+  assert.strictEqual(o('volHa', 'Q'), 'Exemple déduit de 150 L/ha à 5 km/h sur 7,7 m');
+  assert.strictEqual(o('debitBuse', 'n'), SANS_SOURCE);
+  assert.strictEqual(o('debitChantier', 'v'), SANS_SOURCE);
+  assert.strictEqual(o('debitChantier', 'L'), SANS_SOURCE);
 });
 const MOTEUR_SANS_COMMENTAIRES = fs.readFileSync(path.join(RACINE, 'moteur-oad.js'), 'utf8')
   .replace(/\/\*[\s\S]*?\*\//g, ' ').replace(/^[ \t]*\/\/.*$/gm, ' ');
@@ -466,7 +490,8 @@ test('chaque route (' + ROUTES.length + ') rend sans exception, toutes les clés
 test('routes : bon écran affiché', () => {
   const c = new Component({});
   assert.strictEqual(rendre(c, '').estCatalogue, true);
-  assert.strictEqual(rendre(c, '').domainesCatalogue.length, 2);
+  // Pourquoi : domaine effeuillage ajouté au catalogue, B11 (était 2).
+  assert.strictEqual(rendre(c, '').domainesCatalogue.length, 3);
   assert.strictEqual(rendre(c, '#/module/inconnu').estInconnu, true);
   const o = rendre(c, '#/module/pulve-reglage-volume');
   assert.strictEqual(o.estModule, true);
@@ -476,30 +501,34 @@ test('routes : bon écran affiché', () => {
   assert.strictEqual(rendre(c, '#/outils').aCalc, false);
   assert.ok(rendre(c, '#/progression').tableauProgression);
 });
-test('calculateur « Volume par hectare » : Q = 12 → 480 L/ha, formule ouverte en fr-FR', () => {
+// Pourquoi : défauts recalés sur le corpus, B1 — v = 5, L = 7,7 (était
+// 480 L/ha avec v = 6, L = 2,5). 600 × 12 / (5 × 7,7) = 187,01.
+test('calculateur « Volume par hectare » : Q = 12 → 187 L/ha, formule ouverte en fr-FR', () => {
   const c = new Component({});
   rendre(c, '#/outils/volHa');
   c.onSaisie(evt('12', { 'data-calc': 'volHa', 'data-entree': 'Q' }));
   const out = rendre(c, '#/outils/volHa');
-  assert.strictEqual(out.calcCourant.resultats[0].texte, '480 L/ha');
-  assert.strictEqual(out.calcCourant.etapes[0].substitution, '600 × 12 / (6 × 2,5)');
-  assert.strictEqual(out.calcCourant.entrees[2].valeur, '2,5');
-  assert.ok(out.calcCourant.entrees[0].origine.startsWith('ASSUMÉ'));
+  assert.strictEqual(out.calcCourant.resultats[0].texte, '187 L/ha');
+  assert.strictEqual(out.calcCourant.etapes[0].substitution, '600 × 12 / (5 × 7,7)');
+  assert.strictEqual(out.calcCourant.entrees[2].valeur, '7,7');
+  assert.strictEqual(out.calcCourant.entrees[0].origine, 'Exemple déduit de 150 L/ha à 5 km/h sur 7,7 m');
 });
 test('calculateur : saisie « 12, » acceptée, saisie vide → tiret et alerte', () => {
   const c = new Component({});
   c.onSaisie(evt('12,', { 'data-calc': 'volHa', 'data-entree': 'Q' }));
-  assert.strictEqual(rendre(c, '#/outils/volHa').calcCourant.resultats[0].texte, '480 L/ha');
+  // Pourquoi : défauts recalés sur le corpus, B1 (était 480 puis 240 L/ha).
+  assert.strictEqual(rendre(c, '#/outils/volHa').calcCourant.resultats[0].texte, '187 L/ha');
   c.onSaisie(evt('', { 'data-calc': 'volHa', 'data-entree': 'Q' }));
   const out = rendre(c, '#/outils/volHa');
   assert.strictEqual(out.calcCourant.resultats[0].texte, '— L/ha');
   assert.strictEqual(out.calcCourant.aAlertes, true);
   c.reinitialiserCalc(evt('volHa'));
-  assert.strictEqual(rendre(c, '#/outils/volHa').calcCourant.resultats[0].texte, '240 L/ha');
+  assert.strictEqual(rendre(c, '#/outils/volHa').calcCourant.resultats[0].texte, '150 L/ha');   // 149,61
 });
-test('pression : 11,52 bar affiché 11,5 bar (1 décimale)', () => {
+// Pourquoi : défauts recalés sur le corpus, B1 (était 11,52 → « 11,5 bar »).
+test('pression : 4,32 bar affiché 4,3 bar (1 décimale)', () => {
   const c = new Component({});
-  assert.strictEqual(rendre(c, '#/outils/pressionPourVolume').calcCourant.resultats[0].texte, '11,5 bar');
+  assert.strictEqual(rendre(c, '#/outils/pressionPourVolume').calcCourant.resultats[0].texte, '4,3 bar');
 });
 test('quiz répondu puis validé : score affiché et enregistré avec la date', () => {
   const c = new Component({});
@@ -539,7 +568,8 @@ test('procédure et entretien : cocher met à jour la progression', () => {
   rendre(c, h);
   c.basculerEtape(evt('on', { 'data-etape': 'baliser' }));
   const out = rendre(c, h);
-  assert.strictEqual(out.procedure.compteur, '1 / 5 étapes cochées');
+  // Pourquoi : aller-retour retiré de la mesure de vitesse (absent du corpus), B7.
+  assert.strictEqual(out.procedure.compteur, '1 / 4 étapes cochées');
   assert.strictEqual(out.procedure.etapes[0].fait, true);
   const h2 = '#/module/pulve-entretien/plan-entretien';
   rendre(c, h2);
@@ -573,6 +603,728 @@ test('stockage refusé (navigation privée) : aucune exception, l\'outil reste u
     rendre(c, '#/progression');
     c.effacerProgression();
   } finally { window.localStorage = sauve; }
+});
+
+// ----------------------------------------------------------------------
+section('§7 B0 — préparation');
+
+test('.gitignore contient la ligne docs/corpus/ (D-B0-2)', () => {
+  const gi = fs.readFileSync(path.join(RACINE, '.gitignore'), 'utf8');
+  assert.ok(gi.split(/\r?\n/).map(l => l.trim()).includes('docs/corpus/'));
+});
+test('.github/workflows/tests.yml existe et lance node tests/parite.test.js (D-B0-5)', () => {
+  const wf = path.join(RACINE, '.github', 'workflows', 'tests.yml');
+  assert.ok(fs.existsSync(wf));
+  assert.ok(fs.readFileSync(wf, 'utf8').includes('node tests/parite.test.js'));
+});
+(() => {
+  let sortie = null;
+  try {
+    sortie = require('child_process').execSync('git ls-files docs/corpus',
+      { cwd: RACINE, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] });
+  } catch (e) { sortie = null; }
+  if (sortie === null) {
+    skip('aucun fichier suivi par git sous docs/corpus/', null, 'LIMITE ASSUMÉE — git indisponible');
+  } else {
+    test('aucun fichier suivi par git sous docs/corpus/ (D-B0-2)', () => {
+      assert.strictEqual(sortie.trim(), '');
+    });
+  }
+})();
+
+// ----------------------------------------------------------------------
+section('§8 B1 — défauts recalés, plage de buse');
+// Valeurs calculées à la main, vérifiées sous Node le 23/09/2026.
+
+const CALC = OAD.CALCULATEURS;
+test('volHa({Q: 9,6, v: 5, L: 7,7}) = 5 760 / 38,5 = 149,6104 L/ha, affiché 150 L/ha', () => {
+  assertClose(CALC.volHa.compute({ Q: 9.6, v: 5, L: 7.7 }).resultats[0].valeur, 149.6104, 1e-4);
+  const c = new Component({});
+  assert.strictEqual(rendre(c, '#/outils/volHa').calcCourant.resultats[0].texte, '150 L/ha');
+});
+test('debitBuse({V: 150, v: 5, L: 7,7, n: 12}) → Q = 9,625 ; q = 0,80208', () => {
+  const r = CALC.debitBuse.compute({ V: 150, v: 5, L: 7.7, n: 12 });
+  assertClose(r.resultats[0].valeur, 9.625, 1e-9);
+  assertClose(r.resultats[1].valeur, 0.80208, 1e-5);
+});
+test('pression 3 bar, 150 → 180 L/ha, plage 3–4,5 : 4,32 bar, aucune alerte', () => {
+  const r = CALC.pressionPourVolume.compute({ P1: 3, V1: 150, V2: 180, b: 0.5, pMin: 3, pMax: 4.5 });
+  assertClose(r.resultats[0].valeur, 4.32, 1e-9);
+  assert.deepStrictEqual(r.alertes, []);
+});
+test('pression 3 bar, 100 → 150 L/ha : 6,75 bar, alerte « hors de la plage de la buse »', () => {
+  const r = CALC.pressionPourVolume.compute({ P1: 3, V1: 100, V2: 150, b: 0.5, pMin: 3, pMax: 4.5 });
+  assertClose(r.resultats[0].valeur, 6.75, 1e-9);
+  assert.strictEqual(r.alertes.length, 1);
+  assert.ok(r.alertes[0].gabarit.includes('hors de la plage de la buse'));
+  const c = new Component({});
+  c.onSaisie(evt('100', { 'data-calc': 'pressionPourVolume', 'data-entree': 'V1' }));
+  c.onSaisie(evt('150', { 'data-calc': 'pressionPourVolume', 'data-entree': 'V2' }));
+  const out = rendre(c, '#/outils/pressionPourVolume');
+  assert.ok(out.calcCourant.alertes[0].startsWith('Pression calculée hors de la plage de la buse (3 à 4,5\u00a0bar) :'),
+    out.calcCourant.alertes[0]);
+});
+test('plage pMin = 5, pMax = 4 : alerte « plage invalide », P2 reste calculé (4,32)', () => {
+  const r = CALC.pressionPourVolume.compute({ P1: 3, V1: 150, V2: 180, b: 0.5, pMin: 5, pMax: 4 });
+  assertClose(r.resultats[0].valeur, 4.32, 1e-9);
+  assert.strictEqual(r.alertes.length, 1);
+  assert.ok(r.alertes[0].startsWith('Plage de pression de la buse invalide'));
+});
+test('vitesseMesuree : 50 m / 30 s = 6 km/h ; 50 m / 35 s = 5,142857 (table F-VHA : 5,1)', () => {
+  assertClose(CALC.vitesseMesuree.compute({ d: 50, t: 30 }).resultats[0].valeur, 6, 1e-12);
+  assertClose(CALC.vitesseMesuree.compute({ d: 50, t: 35 }).resultats[0].valeur, 5.142857, 1e-6);
+});
+test('OAD.PLAGE_PRESSION_ALERTE_BAR n\'existe plus', () => {
+  assert.strictEqual(OAD.PLAGE_PRESSION_ALERTE_BAR, undefined);
+});
+// Pourquoi : champ portee remplacé par technologies, B4 (D-B4-1).
+test('pressionPourVolume : technologies affichées sous la description, pas pour volHa', () => {
+  const c = new Component({});
+  const out = rendre(c, '#/outils/pressionPourVolume');
+  assert.strictEqual(out.calcCourant.aTechnos, true);
+  assert.strictEqual(OAD.CALCULATEURS.pressionPourVolume.portee, undefined);
+  assert.strictEqual(rendre(c, '#/outils/volHa').calcCourant.aTechnos, false);
+});
+test('statique : aucun origineDefaut ne contient « O4 » ni « prompt » (D-B1-5)', () => {
+  Object.values(CALC).forEach(c => c.entrees.forEach(e => {
+    assert.ok(!/O4|prompt/i.test(e.origineDefaut), c.id + '.' + e.id + ' : ' + e.origineDefaut);
+  }));
+});
+
+// ----------------------------------------------------------------------
+section('§9 B2 — nouveaux calculateurs');
+
+test('largeurTraitee(7, 1,10) = 7,7 m ; largeurTraitee(2, 1,10) = 2,2 m', () => {
+  assertClose(OAD.largeurTraitee(7, 1.10), 7.7, 1e-9);
+  assertClose(OAD.largeurTraitee(2, 1.10), 2.2, 1e-9);
+});
+test('debitParNiveauCuve(48, 5) = 9,6 L/min ; (19,2, 2) = 9,6 L/min', () => {
+  assertClose(OAD.debitParNiveauCuve(48, 5), 9.6, 1e-9);
+  assertClose(OAD.debitParNiveauCuve(19.2, 2), 9.6, 1e-9);
+});
+test('volumeSelonHauteurs(180, 3, 2) = 120 L/ha ; (180, 3, 0) → NaN, calculateur null + alerte', () => {
+  assertClose(OAD.volumeSelonHauteurs(180, 3, 2), 120, 1e-9);
+  assert.ok(Number.isNaN(OAD.volumeSelonHauteurs(180, 3, 0)));
+  const r = OAD.CALCULATEURS.hauteursBuses.compute({ V1: 180, h1: 3, h2: 0 });
+  assert.strictEqual(r.resultats[0].valeur, null);
+  assert.strictEqual(r.alertes.length, 1);
+});
+test('volumeApresChangementVitesse(150, 6, 7) = 128,5714 L/ha', () => {
+  assertClose(OAD.volumeApresChangementVitesse(150, 6, 7), 128.5714, 1e-4);
+});
+test('cohérence : volumeHectare(debitParNiveauCuve(48, 5), 5, largeurTraitee(7, 1,10)) = 149,6104 (comme B1)', () => {
+  assertClose(OAD.volumeHectare(OAD.debitParNiveauCuve(48, 5), 5, OAD.largeurTraitee(7, 1.10)), 149.6104, 1e-4);
+});
+// Pourquoi : le catalogue de calculateurs évolue, B3 — la page liste tout le
+// registre (8 à la fin de B2, 9 après B3) : comparé au registre, pas en dur.
+test('registre : les nouvelles entrées ont un origineDefaut non vide ; la page liste tout le registre', () => {
+  ['largeurTraitee', 'debitCuve', 'hauteursBuses'].forEach(id => {
+    const c = OAD.CALCULATEURS[id];
+    assert.ok(c, id);
+    c.entrees.forEach(e => assert.ok(typeof e.origineDefaut === 'string' && e.origineDefaut.trim(), id + '.' + e.id));
+  });
+  const c = new Component({});
+  assert.strictEqual(rendre(c, '#/outils').outilsListe.length, Object.keys(OAD.CALCULATEURS).length);
+});
+test('rendu à blanc : #/outils/largeurTraitee, debitCuve, hauteursBuses', () => {
+  const c = new Component({});
+  assert.strictEqual(rendre(c, '#/outils/largeurTraitee').calcCourant.resultats[0].texte, '7,7 m');
+  assert.strictEqual(rendre(c, '#/outils/debitCuve').calcCourant.resultats[0].texte, '9,6 L/min');
+  assert.strictEqual(rendre(c, '#/outils/hauteursBuses').calcCourant.resultats[0].texte, '120 L/ha');
+});
+
+// ----------------------------------------------------------------------
+section('§10 B3 — écart entre diffuseurs');
+// Valeurs vérifiées sous Node le 23/09/2026.
+
+const centieme = x => Math.round(x * 10000) / 100;   // fraction → % au centième
+test('défaut : moyenne 1,392857 ; écarts +0,51 −0,92 +9,13 +1,23 −10,26 −0,21 +0,51 ; hors seuil [5]', () => {
+  const r = OAD.ecartsALaMoyenne(defauts(OAD.CALCULATEURS.ecartDiffuseurs).debits, OAD.ECART_DIFFUSEUR_MAX);
+  assertClose(r.moyenne, 1.392857, 1e-6);
+  assert.deepStrictEqual(r.ecarts.map(x => centieme(x.ecart)), [0.51, -0.92, 9.13, 1.23, -10.26, -0.21, 0.51]);
+  assert.deepStrictEqual(r.horsSeuil, [5]);
+});
+test('[1,1 ; 0,9] : moyenne 1, écarts ±10 %, aucun hors seuil (« supérieur à 10 % », D-B3-2)', () => {
+  const r = OAD.ecartsALaMoyenne([1.1, 0.9], 0.10);
+  assertClose(r.moyenne, 1, 1e-12);
+  assert.deepStrictEqual(r.ecarts.map(x => centieme(x.ecart)), [10, -10]);
+  assert.deepStrictEqual(r.horsSeuil, []);
+});
+test('[1,12 ; 0,88] : hors seuil [1, 2]', () => {
+  assert.deepStrictEqual(OAD.ecartsALaMoyenne([1.12, 0.88], 0.10).horsSeuil, [1, 2]);
+});
+test('[1,4] : résultat null et alerte de saisie', () => {
+  const r = OAD.CALCULATEURS.ecartDiffuseurs.compute({ debits: [1.4] });
+  assert.strictEqual(r.resultats[0].valeur, null);
+  assert.strictEqual(r.resultats[1].valeur, null);
+  assert.ok(r.alertes.some(a => typeof a === 'string' && a.startsWith('Calcul impossible')));
+});
+test('[1,4 ; NaN ; 1,3] : moyenne 1,35, alerte « Valeur n° 2 illisible »', () => {
+  const r = OAD.CALCULATEURS.ecartDiffuseurs.compute({ debits: [1.4, NaN, 1.3] });
+  assertClose(r.resultats[0].valeur, 1.35, 1e-12);
+  const a = r.alertes.find(x => typeof x === 'object');
+  assert.ok(OAD.substituer(a.gabarit, a.operandes.map(o => String(o.valeur))).startsWith('Valeur n° 2 illisible'));
+  assert.deepStrictEqual(r.detail.map(x => x.rang), [1, 3]);
+});
+test('registre : une entrée liste a un défaut tableau (garde de schéma)', () => {
+  assert.deepStrictEqual(OAD.erreursRegistre(OAD.CALCULATEURS), []);
+  const faux = { x: { id: 'x', entrees: [{ id: 'l', label: 'L', type: 'liste', defaut: 3, origineDefaut: 'o' }] } };
+  assert.ok(OAD.erreursRegistre(faux).some(e => e.includes('défaut tableau')));
+});
+const versListe = new Function(SCRIPT.slice(SCRIPT.indexOf('function versNombre'), SCRIPT.indexOf('function texteListe')) +
+  'return versListe;')();
+test('vue : versListe(\'1,40 ; 1,38;;1,52\') → [1.4, 1.38, 1.52]', () => {
+  assert.deepStrictEqual(versListe('1,40 ; 1,38;;1,52'), [1.4, 1.38, 1.52]);
+});
+test('rendu à blanc #/outils/ecartDiffuseurs : tableau de 7 lignes, une seule « hors-seuil »', () => {
+  const c = new Component({});
+  const out = rendre(c, '#/outils/ecartDiffuseurs');
+  assert.strictEqual(out.calcCourant.aTableau, true);
+  assert.strictEqual(out.calcCourant.entrees[0].valeur, '1,40 ; 1,38 ; 1,52 ; 1,41 ; 1,25 ; 1,39 ; 1,40');
+  assert.strictEqual(out.calcCourant.entrees[0].estListe, true);
+  const tbody = out.calcCourant.tableau.c.find(x => x && x.t === 'tbody');
+  const lignes = [].concat(...tbody.c);
+  assert.strictEqual(lignes.length, 7);
+  const hors = lignes.filter(l => l.p.className === 'hors-seuil');
+  assert.strictEqual(hors.length, 1);
+  assert.ok(hors[0].c[2].c[0].endsWith('— à contrôler'), hors[0].c[2].c[0]);
+  assert.strictEqual(hors[0].c[2].c[0], '−10,26 % — à contrôler');
+  assert.ok(out.calcCourant.alertes[0].startsWith('Diffuseur n° 5 : écart de −10,26 % à la moyenne'), out.calcCourant.alertes[0]);
+});
+test('saisie d\'une liste dans la vue : « 1,1 ; abc ; 0,9 » → alerte n° 2, 2 lignes', () => {
+  const c = new Component({});
+  c.onSaisie(evt('1,1 ; abc ; 0,9', { 'data-calc': 'ecartDiffuseurs', 'data-entree': 'debits' }));
+  const out = rendre(c, '#/outils/ecartDiffuseurs');
+  assert.ok(out.calcCourant.alertes.some(a => a.startsWith('Valeur n° 2 illisible')));
+  assert.strictEqual([].concat(...out.calcCourant.tableau.c.find(x => x && x.t === 'tbody').c).length, 2);
+});
+
+// ----------------------------------------------------------------------
+section('§11 B4 — schéma');
+
+// Module minimal conforme, à décliner dans les tests.
+function moduleFabrique(sections, extra) {
+  return Object.assign({
+    id: 'fabrique', titre: 'Fabriqué', resume: 'r', domaine: 'pulverisation', statut: 'brouillon',
+    valideur: null, sources: [{ code: 'F-VHA', reference: 'Fiche volume/hectare, CIVC', date: 'février 2014' }],
+    sections
+  }, extra || {});
+}
+const ficheChiffree = [{ id: 'mesure', type: 'fiche', titre: 'Mesure', blocs: [{ type: 'paragraphe', texte: 'Mesurer sur 50 m' }] }];
+
+test('module « valide » avec un bloc chiffré sans source → erreur citant la section ; en brouillon, 1 élément compté', () => {
+  const v = moduleFabrique(ficheChiffree, { statut: 'valide', valideur: 'Valideur' });
+  const e = OAD.validerModule(v);
+  assert.ok(e.some(x => x.includes('« mesure »') && x.includes('élément chiffré sans source')), e.join('\n'));
+  const b = moduleFabrique(ficheChiffree);
+  assert.deepStrictEqual(OAD.validerModule(b), []);
+  assert.strictEqual(OAD.elementsChiffresSansSource(b).length, 1);
+  // Sourcé : plus rien à compter, et le module valide est conforme.
+  const src = moduleFabrique([{ id: 'mesure', type: 'fiche', titre: 'Mesure',
+    blocs: [{ type: 'paragraphe', texte: 'Mesurer sur 50 m', source: 'F-VHA' }] }], { statut: 'valide', valideur: 'Valideur' });
+  assert.deepStrictEqual(OAD.validerModule(src), []);
+});
+test('source d\'élément F-XXX absente des sources du module → « source inconnue »', () => {
+  const m = moduleFabrique([{ id: 's', type: 'fiche', titre: 'S', blocs: [{ type: 'paragraphe', texte: 't', source: 'F-XXX' }] }]);
+  assert.ok(OAD.validerModule(m).some(x => x.includes('source inconnue « F-XXX »')));
+});
+test('code de source f-vha (minuscules) → erreur de format ; code en double → erreur', () => {
+  const m = moduleFabrique(ficheChiffree, { sources: [{ code: 'f-vha', reference: 'r', date: 'd' }] });
+  assert.ok(OAD.validerModule(m).some(x => x.includes('non conforme')));
+  const d = moduleFabrique(ficheChiffree, { sources: [{ code: 'A', reference: 'r', date: 'd' }, { code: 'A', reference: 'r2', date: 'd' }] });
+  assert.ok(OAD.validerModule(d).some(x => x.includes('source en double « A »')));
+});
+test('bloc tableau : une ligne de 2 cellules pour 3 en-têtes → erreur', () => {
+  const m = moduleFabrique([{ id: 't', type: 'fiche', titre: 'T', blocs: [{ type: 'tableau',
+    entetes: ['a', 'b', 'c'], lignes: [['1', '2', '3'], ['1', '2']] }] }]);
+  assert.ok(OAD.validerModule(m).some(x => x.includes('3 cellules attendues')));
+});
+test('tâche « semestrielle » acceptée ; « mensuelle » refusée ; détail vide refusé', () => {
+  const t = (periodicite, detail) => moduleFabrique([{ id: 'e', type: 'entretien', titre: 'E',
+    taches: [Object.assign({ id: 'x', texte: 'Changer le filtre', periodicite }, detail === undefined ? {} : { detail })] }]);
+  assert.deepStrictEqual(OAD.validerModule(t('semestrielle')), []);
+  assert.ok(OAD.validerModule(t('mensuelle')).some(x => x.includes('périodicité inconnue')));
+  assert.ok(OAD.validerModule(t('annuelle', ' ')).some(x => x.includes('détail vide')));
+  assert.strictEqual(OAD.PERIODICITES.indexOf('semestrielle'), OAD.PERIODICITES.indexOf('hebdomadaire') + 1);
+  assert.strictEqual(OAD.PERIODICITES_LIBELLES.semestrielle, 'Au moins deux fois par an');
+});
+test('technologie de section hors vocabulaire → erreur ; libellés présents', () => {
+  const m = moduleFabrique([{ id: 't', type: 'fiche', titre: 'T', technologie: 'canon', blocs: [{ type: 'paragraphe', texte: 'x' }] }]);
+  assert.ok(OAD.validerModule(m).some(x => x.includes('technologie inconnue')));
+  OAD.TECHNOLOGIES.forEach(k => assert.ok(OAD.TECHNOLOGIES_LIBELLES[k], k));
+});
+test('calculateurs : pressionPourVolume = jets portés + jets projetés ; toutes les technologies du vocabulaire', () => {
+  assert.deepStrictEqual(OAD.CALCULATEURS.pressionPourVolume.technologies, ['jets-portes', 'jets-projetes']);
+  Object.values(OAD.CALCULATEURS).forEach(c =>
+    assert.ok(c.technologies.length && c.technologies.every(t => OAD.TECHNOLOGIES.includes(t)), c.id));
+  assert.deepStrictEqual(OAD.erreursRegistre(OAD.CALCULATEURS), []);
+});
+test('les modules actuels restent conformes', () => {
+  assert.deepStrictEqual(OAD.erreursContenu(MODULES), []);
+});
+
+// Rendu d'un module fabriqué : le composant lit window.OAD.modules().
+function avecModules(liste, fn) {
+  const sauve = window.OAD;
+  window.OAD = Object.assign({}, OAD, { modules: () => liste });
+  try { return fn(); } finally { window.OAD = sauve; }
+}
+test('rendu à blanc : fiche avec un tableau 3 × 2, sources et lecture graphique', () => {
+  const m = moduleFabrique([{ id: 'tab', type: 'fiche', titre: 'Tableau', technologie: 'jets-portes', blocs: [
+    { type: 'tableau', entetes: ['A', 'B', 'C'], lignes: [['1', '2', '3'], ['4', '5', '6']], source: 'F-VHA' },
+    { type: 'liste', items: ['sans chiffre', { texte: 'lu : 40 %', source: 'F-VHA', lectureGraphique: true }] }
+  ] }]);
+  avecModules([m], () => {
+    const c = new Component({});
+    const out = rendre(c, '#/module/fabrique/tab');
+    const bl = out.blocs[0];
+    assert.strictEqual(bl.estTableau, true);
+    const tbody = bl.tableau.c.find(x => x && x.t === 'tbody');
+    assert.strictEqual([].concat(...tbody.c).filter(x => x.t === 'tr').length, 2);
+    const thead = bl.tableau.c.find(x => x && x.t === 'thead');
+    assert.ok([].concat(...thead.c[0].c).every(th => th.t === 'th' && th.p.scope === 'col'));
+    assert.strictEqual(bl.sourceTxt, 'Source : Fiche volume/hectare, CIVC (février 2014)');
+    assert.strictEqual(out.blocs[1].items[1].lectureGraphique, true);
+    assert.strictEqual(out.blocs[1].items[1].aSource, true);
+    assert.strictEqual(out.blocs[1].items[0].aSource, false);
+    assert.strictEqual(out.section.aTechno, true);
+    assert.strictEqual(out.section.technoLibelle, 'Jets portés');
+    assert.strictEqual(out.mod.aChiffresSansSource, false);
+  });
+});
+test('bandeau : nombre d\'éléments chiffrés sans source d\'un module non validé', () => {
+  avecModules([moduleFabrique(ficheChiffree)], () => {
+    const out = rendre(new Component({}), '#/module/fabrique/mesure');
+    assert.strictEqual(out.mod.aChiffresSansSource, true);
+    assert.strictEqual(out.mod.chiffresSansSourceTxt, '1 élément chiffré sans source.');
+  });
+});
+test('rendu à blanc #/outils/pressionPourVolume : « S\'applique à : Jets portés, Jets projetés »', () => {
+  const out = rendre(new Component({}), '#/outils/pressionPourVolume');
+  assert.strictEqual(out.calcCourant.technosTxt, 'S\'applique à : Jets portés, Jets projetés');
+});
+
+// ----------------------------------------------------------------------
+section('§12 B5 — exercices');
+
+const exoVitesse = { id: 'exo-test-vitesse', type: 'exercice', titre: 'Vitesse', enonce: '50 m en 35 s : quelle vitesse ?',
+  calculateur: 'vitesseMesuree', valeurs: { d: 50, t: 35 }, resultat: 0 };
+const exoVolume = { id: 'exo-test-volume', type: 'exercice', titre: 'Volume', enonce: '9,6 L/min, 5 km/h, 7,7 m : quel volume ?',
+  calculateur: 'volHa', valeurs: { Q: 9.6, v: 5, L: 7.7 }, resultat: 0 };
+
+test('exercice vitesseMesuree {d: 50, t: 35} : attendu 5,142857 à 1 décimale ; 5,1 juste, 5,2 faux, « » faux', () => {
+  const a = OAD.attenduExercice(exoVitesse);
+  assertClose(a.valeur, 5.142857, 1e-6);
+  assert.strictEqual(a.decimales, 1);
+  assert.strictEqual(OAD.corrigerExercice(exoVitesse, 5.1).juste, true);
+  assert.strictEqual(OAD.corrigerExercice(exoVitesse, 5.2).juste, false);
+  assert.doesNotThrow(() => OAD.corrigerExercice(exoVitesse, ''));
+  assert.strictEqual(OAD.corrigerExercice(exoVitesse, '').juste, false);
+  assert.strictEqual(OAD.corrigerExercice(exoVitesse, NaN).juste, false);
+  assert.doesNotThrow(() => OAD.corrigerExercice(null, 1));
+});
+test('exercice volHa {Q: 9,6, v: 5, L: 7,7} : attendu 149,61 à 0 décimale ; 150 juste, 149 faux', () => {
+  assertClose(OAD.attenduExercice(exoVolume).valeur, 149.61, 1e-2);
+  assert.strictEqual(OAD.corrigerExercice(exoVolume, 150).juste, true);
+  assert.strictEqual(OAD.corrigerExercice(exoVolume, 149).juste, false);
+});
+test('validerModule : calculateur inconnu, valeurs incomplètes, indice 3 sur 1 résultat → une erreur chacun', () => {
+  const e1 = OAD.validerModule(moduleFabrique([Object.assign({}, exoVitesse, { calculateur: 'inconnu' })]));
+  assert.strictEqual(e1.filter(x => x.includes('calculateur inconnu')).length, 1);
+  const e2 = OAD.validerModule(moduleFabrique([Object.assign({}, exoVitesse, { valeurs: { d: 50 } })]));
+  assert.strictEqual(e2.filter(x => x.includes('valeurs manquantes (t)')).length, 1);
+  const e3 = OAD.validerModule(moduleFabrique([Object.assign({}, exoVitesse, { resultat: 3 })]));
+  assert.strictEqual(e3.filter(x => x.includes('indice de résultat invalide')).length, 1);
+  assert.deepStrictEqual(OAD.validerModule(moduleFabrique([exoVitesse])), []);
+});
+test('catalogue : deux exercices de même id dans deux modules → erreur', () => {
+  const a = moduleFabrique([exoVitesse]), b = Object.assign(moduleFabrique([exoVitesse]), { id: 'autre' });
+  assert.ok(OAD.erreursContenu([a, b]).some(x => x.includes('en double sur le catalogue')));
+});
+
+/* Nombres écrits en dur dans les cas pratiques, recalculés par le moteur
+   (D-B5-5) : un changement de formule qui les contredit est détecté. */
+const CAS_CHIFFRES = [
+  // 150 L/ha à 6 km/h, passage à 7 km/h : 150 × 6 / 7 = 128,57 ≈ 129.
+  { sectionId: 'cas-vitesse', nombre: 129, calcul: () => Math.round(OAD.volumeApresChangementVitesse(150, 6, 7)) },
+  // Distracteur : l'erreur de sens (150 × 7 / 6 = 175).
+  { sectionId: 'cas-vitesse', nombre: 175, calcul: () => Math.round(OAD.volumeApresChangementVitesse(150, 7, 6)) },
+  // B9 : pas de formule ; les nombres doivent être ceux du tableau D-IDR du
+  // même module (passage tous les 3 rangs : feuilles, grappes).
+  { sectionId: 'cas-passage', nombre: 50, calcul: () => ecartTableauPassages('Tous les 3 rangs', 2) },
+  { sectionId: 'cas-passage', nombre: 60, calcul: () => ecartTableauPassages('Tous les 3 rangs', 3) }
+];
+function ecartTableauPassages(passage, colonne) {
+  const t = MODULES.find(m => m.id === 'pulve-couverture').sections.find(s => s.id === 'passages')
+    .blocs.find(b => b.type === 'tableau');
+  return Math.abs(parseInt(t.lignes.find(l => l[0] === passage)[colonne].replace('−', '-'), 10));
+}
+const sectionsCas = () => [].concat(...MODULES.map(m => m.sections.filter(s => s.type === 'cas')));
+test('CAS_CHIFFRES : chaque nombre figure dans les options de son cas et vaut le calcul du moteur', () => {
+  CAS_CHIFFRES.forEach(x => {
+    const s = sectionsCas().find(c => c.id === x.sectionId);
+    assert.ok(s, x.sectionId);
+    const texte = s.options.map(o => o.texte + ' ' + o.retour).join(' ');
+    assert.ok(new RegExp('\\b' + x.nombre + '\\b').test(texte), x.sectionId + ' : ' + x.nombre + ' absent');
+    assert.strictEqual(x.calcul(), x.nombre, x.sectionId + ' : ' + x.nombre);
+  });
+});
+test('statique : tout cas dont les options contiennent un nombre de plus d\'un chiffre a une entrée CAS_CHIFFRES', () => {
+  sectionsCas().forEach(s => {
+    const nombres = s.options.map(o => o.texte).join(' ').match(/\d{2,}/g) || [];
+    if (nombres.length) assert.ok(CAS_CHIFFRES.some(x => x.sectionId === s.id), s.id + ' : ' + nombres.join(', '));
+  });
+});
+test('rendu à blanc : exercice saisi puis vérifié → progression écrite avec taux 1 et une date', () => {
+  avecModules([moduleFabrique([exoVitesse])], () => {
+    const c = new Component({});
+    const h = '#/module/fabrique/exo-test-vitesse';
+    const o0 = rendre(c, h);
+    assert.strictEqual(o0.estExercice, true);
+    assert.strictEqual(o0.exo.uniteTxt, '(km/h)');
+    c.onReponseExo(evt('5,1', { 'data-exo': 'exo-test-vitesse' }));
+    c.verifierExo(evt('exo-test-vitesse'));
+    const out = rendre(c, h);
+    assert.strictEqual(out.exo.corrige, true);
+    assert.strictEqual(out.exo.verdict, 'Juste.');
+    assert.strictEqual(out.exo.attenduTxt, '5,1 km/h');
+    assert.strictEqual(out.exo.etapes[0].substitution, '3,6 × 50 / 35');
+    const q = OAD.progressionSection(c.state.prog, 'fabrique', 'exo-test-vitesse').quiz;
+    assert.strictEqual(q.taux, 1);
+    assert.ok(/^\d{4}-\d{2}-\d{2}T/.test(q.date));
+    c.recommencerExo(evt('exo-test-vitesse'));
+    const o2 = rendre(c, h);
+    assert.strictEqual(o2.exo.corrige, false);
+    assert.strictEqual(o2.exo.aDernier, true);
+    c.onReponseExo(evt('5,2', { 'data-exo': 'exo-test-vitesse' }));
+    c.verifierExo(evt('exo-test-vitesse'));
+    assert.strictEqual(rendre(c, h).exo.verdict, 'À revoir.');
+    assert.strictEqual(OAD.progressionSection(c.state.prog, 'fabrique', 'exo-test-vitesse').quiz.taux, 0);
+  });
+});
+
+// ----------------------------------------------------------------------
+section('§13 B6 — états et édition');
+
+const mod3 = { id: 'm3', sections: [{ id: 'a', type: 'fiche' }, { id: 'b', type: 'fiche' }, { id: 'q', type: 'quiz' }] };
+const voir = (p, m, ids) => ids.reduce((acc, id) => OAD.marquerVue(acc, m.id, id), p);
+test('module à 3 sections dont 1 quiz : non-commence, en-cours, consulte, maitrise, quiz à 0,5 → consulte', () => {
+  const p0 = OAD.progressionVide();
+  assert.strictEqual(OAD.etatModule(p0, mod3), 'non-commence');
+  assert.strictEqual(OAD.etatModule(voir(p0, mod3, ['a']), mod3), 'en-cours');
+  const tout = voir(p0, mod3, ['a', 'b', 'q']);
+  assert.strictEqual(OAD.etatModule(tout, mod3), 'consulte');
+  assert.strictEqual(OAD.etatModule(OAD.enregistrerQuiz(tout, 'm3', 'q', { taux: 1 }, 'd'), mod3), 'maitrise');
+  assert.strictEqual(OAD.etatModule(OAD.enregistrerQuiz(tout, 'm3', 'q', { taux: 0.5 }, 'd'), mod3), 'consulte');
+  // Quiz réussi mais une section non ouverte : pas maîtrisé.
+  assert.strictEqual(OAD.etatModule(OAD.enregistrerQuiz(voir(p0, mod3, ['a', 'q']), 'm3', 'q', { taux: 1 }, 'd'), mod3), 'en-cours');
+});
+test('module sans quiz, toutes sections vues → consulte ; bilanEvaluation → { 0, 0 }', () => {
+  const m = { id: 'sq', sections: [{ id: 'a', type: 'fiche' }, { id: 'b', type: 'procedure' }] };
+  const p = voir(OAD.progressionVide(), m, ['a', 'b']);
+  assert.strictEqual(OAD.etatModule(p, m), 'consulte');
+  assert.deepStrictEqual(OAD.bilanEvaluation(p, m), { reussies: 0, total: 0 });
+});
+test('exercice réussi + quiz réussi, toutes sections vues → maitrise', () => {
+  const m = { id: 'mx', sections: [{ id: 'f', type: 'fiche' }, { id: 'q', type: 'quiz' }, { id: 'x', type: 'exercice' }] };
+  let p = voir(OAD.progressionVide(), m, ['f', 'q', 'x']);
+  p = OAD.enregistrerQuiz(p, 'mx', 'q', { taux: 1 }, 'd');
+  assert.strictEqual(OAD.etatModule(p, m), 'consulte');
+  p = OAD.enregistrerQuiz(p, 'mx', 'x', { taux: 1, bonnes: 1, total: 1 }, 'd');
+  assert.strictEqual(OAD.etatModule(p, m), 'maitrise');
+  assert.deepStrictEqual(OAD.bilanEvaluation(p, m), { reussies: 2, total: 2 });
+  assert.deepStrictEqual(OAD.sectionsEvaluees(m).map(s => s.id), ['q', 'x']);
+});
+test('EDITION_CONTENU au format ISO ; README : même date en jj/mm/aaaa dans « Édition du contenu »', () => {
+  assert.ok(/^\d{4}-\d{2}-\d{2}$/.test(OAD.EDITION_CONTENU));
+  const [a, mo, j] = OAD.EDITION_CONTENU.split('-');
+  const readme = fs.readFileSync(path.join(RACINE, 'README.md'), 'utf8').replace(/\r\n/g, '\n');
+  const titre = readme.match(/^## [\d. ]*Édition du contenu$/m);
+  assert.ok(titre, 'section « Édition du contenu » absente du README');
+  const suite = readme.slice(titre.index + titre[0].length);
+  const sectionEd = suite.slice(0, suite.search(/^## /m) > 0 ? suite.search(/^## /m) : undefined);
+  assert.ok(sectionEd.includes(j + '/' + mo + '/' + a), 'date ' + j + '/' + mo + '/' + a + ' absente');
+});
+test('pied de page : « Édition du contenu : jj/mm/aaaa »', () => {
+  const out = rendre(new Component({}), '#/');
+  const [a, mo, j] = OAD.EDITION_CONTENU.split('-');
+  assert.strictEqual(out.editionTxt, 'Édition du contenu : ' + j + '/' + mo + '/' + a);
+});
+test('progression du format v1 écrite avant B6 : états recalculés sans exception, sans migration', () => {
+  const ancienne = { version: 1, modules: {
+    'pulve-entretien': { vues: ['pourquoi', 'plan-entretien', 'rincage-fin-traitement', 'quiz-entretien', 'cas-buse'],
+      etapes: {}, taches: { 'plan-entretien': ['rincage'] },
+      quiz: { 'quiz-entretien': { taux: 1, bonnes: 2, total: 2, date: '2026-09-20T08:00:00.000Z' } } },
+    'module-disparu': { vues: ['x'] }
+  } };
+  MAGASIN['formation-machines:progression:v1'] = JSON.stringify(ancienne);
+  try {
+    const c = new Component({});
+    const out = rendre(c, '#/progression');
+    assert.ok(out.tableauProgression);
+    const pe = MODULES.find(m => m.id === 'pulve-entretien');
+    assert.ok(['consulte', 'maitrise', 'en-cours'].includes(OAD.etatModule(c.state.prog, pe)));
+    const carte = rendre(c, '#/').domainesCatalogue[0].modules.find(x => x.titre === pe.titre);
+    assert.ok(carte.quizTxt.startsWith('Quiz réussis : ') || carte.quizTxt === 'Pas de quiz dans ce module');
+  } finally { delete MAGASIN['formation-machines:progression:v1']; }
+});
+test('tableau de progression : colonne « Quiz réussis »', () => {
+  const t = rendre(new Component({}), '#/progression').tableauProgression;
+  const thead = t.c.find(x => x && x.t === 'thead');
+  assert.deepStrictEqual([].concat(...thead.c[0].c).map(th => th.c[0]), ['Module', 'Sections consultées', 'Quiz', 'Quiz réussis', 'État']);
+});
+
+// ----------------------------------------------------------------------
+section('§14 B7 — contenu pulvérisation');
+
+const PULVE = ['pulve-reglage-volume', 'pulve-entretien'].map(id => MODULES.find(m => m.id === id));
+// Tout le texte visible d'un module (valeurs des champs texte, récursivement).
+function textesModule(m) {
+  const t = [];
+  (function parcourir(x) {
+    if (typeof x === 'string') t.push(x);
+    else if (Array.isArray(x)) x.forEach(parcourir);
+    else if (x && typeof x === 'object') Object.keys(x).forEach(k => { if (k !== 'source' && k !== 'id' && k !== 'code') parcourir(x[k]); });
+  })(m.sections);
+  return t.join('\n');
+}
+// Codes de source cités par les éléments d'un module.
+function codesCites(m) {
+  const c = new Set();
+  (function parcourir(x) {
+    if (Array.isArray(x)) x.forEach(parcourir);
+    else if (x && typeof x === 'object') { if (typeof x.source === 'string') c.add(x.source); Object.values(x).forEach(parcourir); }
+  })(m.sections);
+  return [...c];
+}
+test('les deux modules pulvérisation sont conformes, aucun élément chiffré sans source', () => {
+  PULVE.forEach(m => {
+    assert.deepStrictEqual(OAD.validerModule(m), [], m.id);
+    assert.deepStrictEqual(OAD.elementsChiffresSansSource(m).map(x => x.sectionId), [], m.id);
+    assert.strictEqual(m.statut, 'brouillon');
+  });
+});
+test('statique : ni « racine carrée », ni « 100 m », ni « chaque semaine »', () => {
+  PULVE.forEach(m => {
+    const t = textesModule(m);
+    ['racine carrée', '100 m', 'chaque semaine'].forEach(x => assert.ok(!t.toLowerCase().includes(x), m.id + ' : ' + x));
+  });
+});
+test('exo-vitesse → 5,1 km/h ; exo-volume → 150 L/ha (0 décimale)', () => {
+  const s = id => PULVE[0].sections.find(x => x.id === id);
+  const v = OAD.attenduExercice(s('exo-vitesse')), w = OAD.attenduExercice(s('exo-volume'));
+  assert.strictEqual(v.decimales, 1);
+  assert.strictEqual(Math.round(v.valeur * 10) / 10, 5.1);
+  assert.strictEqual(w.decimales, 0);
+  assert.strictEqual(Math.round(w.valeur), 150);
+});
+test('codes de source : sous-ensemble de F-VHA, F-FIL, A-LVC, A-WEB, B20-1, F-PRE', () => {
+  const permis = ['F-VHA', 'F-FIL', 'A-LVC', 'A-WEB', 'B20-1', 'F-PRE'];
+  PULVE.forEach(m => {
+    m.sources.forEach(s => assert.ok(permis.includes(s.code), m.id + ' : ' + s.code));
+    codesCites(m).forEach(c => assert.ok(permis.includes(c), m.id + ' : ' + c));
+  });
+});
+test('rendu à blanc des nouvelles sections', () => {
+  const c = new Component({});
+  const r = id => rendre(c, '#/module/pulve-reglage-volume/' + id);
+  assert.strictEqual(r('table-vitesse').blocs[1].estTableau, true);
+  assert.strictEqual(r('calc-largeur').calcCourant.id, 'largeurTraitee');
+  assert.strictEqual(r('calc-debit-cuve').calcCourant.id, 'debitCuve');
+  assert.strictEqual(r('calc-ecart').calcCourant.aTableau, true);
+  assert.strictEqual(r('exo-vitesse').estExercice, true);
+  assert.strictEqual(r('exo-volume').exo.uniteTxt, '(L/ha)');
+  assert.strictEqual(r('controle-diffuseurs').procedure.etapes.length, 4);
+  assert.strictEqual(r('mesure-debit').procedure.etapes[3].aSource, true);
+  const e = rendre(c, '#/module/pulve-entretien/plan-entretien');
+  const libelles = e.entretien.groupes.map(g => g.libelle);
+  assert.ok(libelles.includes('Au moins deux fois par an'));
+  const cabine = [].concat(...e.entretien.groupes.map(g => g.taches)).find(t => t.id === 'filtre-cabine');
+  assert.strictEqual(cabine.detail, 'ou toutes les 500 h');
+  assert.strictEqual(rendre(c, '#/module/pulve-reglage-volume').mod.aChiffresSansSource, false);
+});
+
+// ----------------------------------------------------------------------
+section('§15 B8 — contenu interceps');
+
+const INTERCEPS = MODULES.find(m => m.id === 'sol-outil-interceps');
+test('module interceps conforme, aucun élément chiffré sans source', () => {
+  assert.deepStrictEqual(OAD.validerModule(INTERCEPS), []);
+  assert.deepStrictEqual(OAD.elementsChiffresSansSource(INTERCEPS).map(x => x.sectionId), []);
+  assert.strictEqual(INTERCEPS.statut, 'brouillon');
+});
+test('tableau des outils d\'ouverture : 6 lignes, 4 colonnes', () => {
+  const t = INTERCEPS.sections.find(s => s.id === 'types-outils').blocs.find(b => b.type === 'tableau');
+  assert.strictEqual(t.lignes.length, 6);
+  assert.strictEqual(t.entetes.length, 4);
+  t.lignes.forEach(l => assert.strictEqual(l.length, 4));
+  assert.strictEqual(t.source, 'F-OUV');
+});
+test('statique : aucun texte du module ne contient « 50 m »', () => {
+  assert.ok(!/\b50\s?m\b/.test(textesModule(INTERCEPS)));
+});
+test('codes : F-BOI, F-BRA, F-DER, F-OUV, D-SOL ; quiz q-profondeur et q-ouverture sourcés', () => {
+  assert.deepStrictEqual(INTERCEPS.sources.map(s => s.code), ['F-BOI', 'F-BRA', 'F-DER', 'F-OUV', 'D-SOL']);
+  const q = INTERCEPS.sections.find(s => s.id === 'quiz-interceps').questions;
+  ['q-profondeur', 'q-ouverture'].forEach(id => assert.ok(q.find(x => x.id === id).source, id));
+});
+test('rendu à blanc des sections du module interceps', () => {
+  const c = new Component({});
+  INTERCEPS.sections.forEach(s => rendre(c, '#/module/sol-outil-interceps/' + s.id));
+  assert.strictEqual(rendre(c, '#/module/sol-outil-interceps/types-outils').blocs.filter(b => b.estTableau).length, 1);
+});
+
+// ----------------------------------------------------------------------
+section('§16 B9 — nouveaux modules');
+
+const NOUVEAUX_B9 = ['pulve-filtration', 'pulve-remise-en-route', 'pulve-couverture'].map(id => MODULES.find(m => m.id === id));
+// Pourquoi : le catalogue continue de s'étendre (glossaire, B10) : l'ordre
+// est vérifié, plus le nombre total (6 à la fin de B9).
+test('modules B9 chargés dans l\'ordre déclaré, juste après pulve-entretien', () => {
+  const ids = MODULES.map(m => m.id);
+  const i = ids.indexOf('pulve-entretien');
+  assert.deepStrictEqual(ids.slice(i + 1, i + 4), ['pulve-filtration', 'pulve-remise-en-route', 'pulve-couverture']);
+});
+test('les 3 nouveaux modules : conformes, brouillon, aucun élément chiffré sans source', () => {
+  NOUVEAUX_B9.forEach(m => {
+    assert.ok(m, 'module manquant');
+    assert.deepStrictEqual(OAD.validerModule(m), [], m.id);
+    assert.deepStrictEqual(OAD.elementsChiffresSansSource(m).map(x => x.sectionId), [], m.id);
+    assert.strictEqual(m.statut, 'brouillon');
+    assert.strictEqual(m.valideur, null);
+  });
+});
+test('tableau de filtration : 5 lignes, 5 colonnes ; « Gris » → 80 mesh', () => {
+  const t = NOUVEAUX_B9[0].sections.find(s => s.id === 'principe').blocs.find(b => b.type === 'tableau');
+  assert.strictEqual(t.lignes.length, 5);
+  assert.strictEqual(t.entetes.length, 5);
+  assert.strictEqual(t.lignes.find(l => l[0] === 'Gris')[t.entetes.indexOf('Mesh')], '80');
+});
+test('statique : ni « EN 907 », ni « EN 1553 », ni « TVI », ni « soufre »', () => {
+  NOUVEAUX_B9.forEach(m => {
+    const t = textesModule(m);
+    ['EN 907', 'EN 1553', 'TVI', 'soufre'].forEach(x => assert.ok(!t.includes(x), m.id + ' : ' + x));
+  });
+});
+test('rendu à blanc de chaque section des 3 nouveaux modules', () => {
+  const c = new Component({});
+  NOUVEAUX_B9.forEach(m => m.sections.forEach(s => rendre(c, '#/module/' + m.id + '/' + s.id)));
+  const rosee = rendre(c, '#/module/pulve-couverture/rosee');
+  assert.strictEqual(rosee.blocs[1].lectureGraphique, true);
+  const cat = rendre(c, '#/').domainesCatalogue.find(g => g.libelle === 'Pulvérisation');
+  // Pourquoi : module de réglages selon le stade ajouté, B12 (était 5).
+  assert.strictEqual(cat.modules.length, 6);
+});
+
+// ----------------------------------------------------------------------
+section('§17 B10 — glossaire');
+
+const GLOSSAIRE = MODULES.find(m => m.id === 'glossaire');
+test('glossaire conforme ; au plus 8 entrées, toutes sourcées ; module de référence', () => {
+  assert.deepStrictEqual(OAD.validerModule(GLOSSAIRE), []);
+  const e = GLOSSAIRE.sections.find(s => s.type === 'definitions').entrees;
+  assert.ok(e.length >= 1 && e.length <= 8, String(e.length));
+  e.forEach(d => assert.ok(GLOSSAIRE.sources.some(s => s.code === d.source), d.terme));
+  assert.strictEqual(OAD.estModuleReference(GLOSSAIRE), true);
+  assert.strictEqual(OAD.estModuleReference(MODULES[0]), false);
+  assert.strictEqual(GLOSSAIRE.domaine, 'transversal');
+});
+test('validation : définition sans source, terme en double → erreurs', () => {
+  const m = moduleFabrique([{ id: 'g', type: 'definitions', titre: 'G', entrees: [
+    { id: 'a', terme: 'Mesh', definition: 'x' },
+    { id: 'b', terme: 'mesh', definition: 'y', source: 'F-VHA' }] }]);
+  const e = OAD.validerModule(m);
+  assert.ok(e.some(x => x.includes('source obligatoire')));
+  assert.ok(e.some(x => x.includes('terme en double')));
+});
+test('statique : aucune entrée pour cellule, régime, prise de force, main, tronçon (D-B10-3)', () => {
+  const termes = GLOSSAIRE.sections[0].entrees.map(d => d.terme.toLowerCase());
+  ['cellule', 'régime', 'prise de force', 'main', 'tronçon'].forEach(t =>
+    assert.ok(!termes.some(x => x === t || x.startsWith(t + ' ') || x.includes(' ' + t)), t));
+});
+test('catalogue sans groupe « Glossaire » ; navigation avec le lien « Glossaire »', () => {
+  const c = new Component({});
+  const out = rendre(c, '#/');
+  assert.ok(!out.domainesCatalogue.some(g => g.libelle === 'Glossaire'));
+  assert.strictEqual(out.lienGlossaire, '#/module/glossaire');
+  assert.ok(/<a href="\{\{ lienGlossaire \}\}"[^>]*>Glossaire<\/a>/.test(GABARIT));
+  const g = rendre(c, '#/module/glossaire');
+  assert.strictEqual(g.estDefinitions, true);
+  assert.strictEqual(g.navGlossaire, 'page');
+  assert.strictEqual(g.navCatalogue, null);
+  assert.strictEqual(g.definitions.length, GLOSSAIRE.sections[0].entrees.length);
+  assert.ok(g.definitions.every(d => d.aSource));
+});
+test('progression : le glossaire n\'entre pas dans le tableau', () => {
+  const t = rendre(new Component({}), '#/progression').tableauProgression;
+  const lignes = [].concat(...t.c.find(x => x && x.t === 'tbody').c);
+  const titres = lignes.map(l => l.c[0].c[0].c[0]);
+  assert.ok(!titres.includes('Glossaire'), titres.join(', '));
+  assert.strictEqual(lignes.length, MODULES.filter(m => !OAD.estModuleReference(m)).length);
+});
+
+// ----------------------------------------------------------------------
+section('§18 B11 — effeuillage');
+
+const EFFEUILLAGE = MODULES.find(m => m.id === 'effeuillage-calage');
+test('module effeuillage conforme, brouillon, aucun élément chiffré sans source', () => {
+  assert.deepStrictEqual(OAD.validerModule(EFFEUILLAGE), []);
+  assert.deepStrictEqual(OAD.elementsChiffresSansSource(EFFEUILLAGE).map(x => x.sectionId), []);
+  assert.strictEqual(EFFEUILLAGE.statut, 'brouillon');
+  assert.deepStrictEqual(EFFEUILLAGE.sources.map(s => s.code), ['F-EPN', 'F-ERO', 'D-EF17']);
+});
+test('statique : ni « bar », ni « tr/min », ni « km/h », ni « h/ha » (aucune valeur de réglage, D-B11-2)', () => {
+  const t = textesModule(EFFEUILLAGE) + '\n' + EFFEUILLAGE.resume + '\n' + EFFEUILLAGE.titre;
+  [/\bbar\b/, /tr\/min/, /km\/h/, /h\/ha/].forEach(re => assert.ok(!re.test(t), String(re)));
+});
+test('catalogue : groupe « Effeuillage » avec 1 module, entre travail du sol et la fin', () => {
+  const out = rendre(new Component({}), '#/');
+  const g = out.domainesCatalogue.find(x => x.libelle === 'Effeuillage');
+  assert.ok(g);
+  assert.strictEqual(g.modules.length, 1);
+  assert.strictEqual(out.domainesCatalogue.map(x => x.libelle).indexOf('Effeuillage'), 2);
+});
+test('rendu à blanc de chaque section du module effeuillage', () => {
+  const c = new Component({});
+  EFFEUILLAGE.sections.forEach(s => rendre(c, '#/module/effeuillage-calage/' + s.id));
+  assert.strictEqual(rendre(c, '#/module/effeuillage-calage/principes').blocs[0].estTableau, true);
+});
+
+// ----------------------------------------------------------------------
+section('§19 B12 — réglages selon le stade');
+
+const STADE = MODULES.find(m => m.id === 'pulve-reglages-stade');
+test('module conforme, brouillon, aucun élément chiffré sans source', () => {
+  assert.deepStrictEqual(OAD.validerModule(STADE), []);
+  assert.deepStrictEqual(OAD.elementsChiffresSansSource(STADE).map(x => x.sectionId), []);
+  assert.strictEqual(STADE.statut, 'brouillon');
+  assert.deepStrictEqual(STADE.sources.map(s => s.code), ['F-CGE', 'F-CGA', 'F-JET', 'F-PRE', 'F-IDE', 'A-LVC']);
+});
+test('chaque section a une technologie autre que « toutes » (D-B12-1)', () => {
+  STADE.sections.forEach(s => assert.ok(s.technologie && s.technologie !== 'toutes', s.id));
+});
+test('4 à 6 cas ou questions, chacun citant « fiche <matériel> (<organisme>, <année>) »', () => {
+  const items = [].concat(...STADE.sections.map(s => s.type === 'quiz' ? s.questions.map(q => q.enonce) : [s.situation]));
+  assert.ok(items.length >= 4 && items.length <= 6, String(items.length));
+  items.forEach(t => assert.ok(/fiches? .+\((CIVC|Magister|GDV 51|Comité Champagne)[^)]*, 20(14|16)\)/.test(t), t));
+});
+test('statique : ni « TVI », ni « anti-dérive », ni « Grégoire »', () => {
+  const t = textesModule(STADE);
+  ['TVI', 'anti-dérive', 'Grégoire'].forEach(x => assert.ok(!t.includes(x), x));
+});
+test('aucun choix de quiz ni option de cas ne se réduit à un nombre (D-B12-3)', () => {
+  const re = /^[\d\s,.]+\s*(tr\/min|L|bar|km\/h|cm)?$/;
+  STADE.sections.forEach(s => {
+    const choix = s.type === 'quiz' ? [].concat(...s.questions.map(q => q.choix)) : s.options.map(o => o.texte);
+    choix.forEach(c => assert.ok(!re.test(c.trim()), s.id + ' : ' + c));
+  });
+});
+test('rendu à blanc : badge de technologie sur chaque section', () => {
+  const c = new Component({});
+  STADE.sections.forEach(s => {
+    const out = rendre(c, '#/module/pulve-reglages-stade/' + s.id);
+    assert.strictEqual(out.section.aTechno, true, s.id);
+  });
 });
 
 console.log(`\n${passed} ok, ${failed} FAIL, ${skipped} skip`);

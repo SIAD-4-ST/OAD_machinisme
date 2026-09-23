@@ -69,6 +69,8 @@ Lire ce document en entier avant toute modification ; le détail est dans
   calculateurs sont des exemples et l'écran le dit.
 - Toute consigne touchant la sécurité (EPI, bouillie, effluents) est relue par
   le valideur avant publication.
+- Toute modification de `contenu/` change `EDITION_CONTENU` (`moteur-oad.js`,
+  section 7) et la date de la section « Édition du contenu » du README.
 - Un expert rédige le contenu sans toucher au code ; un développeur ne modifie
   pas le sens d'un contenu sans l'accord de son rédacteur.
 

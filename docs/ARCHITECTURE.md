@@ -12,7 +12,7 @@ contenu/<id>.js  ──►  moteur-oad.js  ──►  index.html (<x-dc> + compo
 | Couche | Rôle | Interdits |
 |---|---|---|
 | `contenu/` | Un module par fichier, objet littéral dans une enveloppe qui l'expose à Node (`module.exports`) ou au navigateur (`window.OAD_CONTENU`). `contenu/index.js` fixe l'ordre du catalogue (Node). | Code, calcul. |
-| `moteur-oad.js` | Vocabulaires, 7 formules, registre de 5 calculateurs (sorties brutes), schéma (`validerModule`), quiz, réducteurs de progression, registre de contenu, routes. | DOM, état, réseau, horloge, mise en forme. |
+| `moteur-oad.js` | Vocabulaires, 12 formules, registre de 9 calculateurs (sorties brutes, entrées nombre ou liste), schéma (`validerModule`), quiz, réducteurs de progression, registre de contenu, routes. | DOM, état, réseau, horloge, mise en forme. |
 | `index.html` | Gabarit `<x-dc>`, feuille de style, composant `DCLogic` : état d'écran, persistance, conversion des saisies, mise en forme fr-FR. | Formule, seuil, règle de notation. |
 | `support.js`, `vendor/` | Runtime `<x-dc>` et React. | Toute modification. |
 
@@ -48,11 +48,22 @@ identifiants ; `OAD.lireRoute(hash)` et `OAD.lien(...segments)` sont purs.
 
 ## Types de section
 
-`fiche` (blocs `paragraphe`, `liste`, `alerte`, `formule`), `procedure`
+`fiche` (blocs `paragraphe`, `liste`, `alerte`, `formule`, `tableau`), `procedure`
 (étapes à cocher, imprimable), `entretien` (tâches à cocher groupées par
 périodicité, imprimable), `calculateur` (renvoie à un calculateur du moteur),
 `quiz` (choix simples ou multiples, notation exacte), `cas` (situation et
-options commentées).
+options commentées), `exercice` (calcul chiffré : réponse attendue calculée
+par `attenduExercice`, corrigée par `corrigerExercice`, enregistrée comme un
+quiz d'une question par `validerQuiz`, seul point de lecture de l'horloge).
+
+Champs transverses (B4) : `technologie` sur une section (vocabulaire
+`TECHNOLOGIES`), `technologies` sur un calculateur ; `code` sur chaque source
+du module et `source` sur chaque élément ; `lectureGraphique` sur un bloc ou
+une ligne de liste ; `detail` sur une tâche ; périodicité `semestrielle`.
+`elementsChiffresSansSource(m)` liste les éléments chiffrés non sourcés :
+erreur pour un module `valide`, compte affiché sinon. Les tableaux (bloc
+`tableau`, écart entre diffuseurs, progression) sont construits par
+`React.createElement` dans le composant.
 
 ## Calculateurs et formules ouvertes
 

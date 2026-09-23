@@ -129,6 +129,11 @@ button { font: inherit; cursor: pointer; }
 .formule { font-family: ui-monospace, "Cascadia Mono", Consolas, monospace; background: var(--surface-2);
   padding: 8px 12px; border-radius: 6px; margin: 4px 0; overflow-wrap: anywhere; }
 .alerte-bloc { background: var(--alerte-fond); border-left: 4px solid var(--alerte-bord); padding: 8px 12px; border-radius: 4px; }
+.source-element { display: block; font-size: .8rem; color: var(--texte-doux); margin: 2px 0 8px; }
+li > .source-element { margin: 0; }
+.badge-techno { text-transform: none; letter-spacing: 0; margin-left: 4px; }
+.glossaire dt { font-weight: 700; margin-top: 12px; }
+.glossaire dd { margin: 4px 0 0 0; padding-left: 12px; border-left: 3px solid var(--bord); }
 
 .compteur { color: var(--texte-doux); font-size: .92rem; }
 .coches { list-style: none; padding: 0; margin: 0; }
@@ -140,8 +145,11 @@ button { font: inherit; cursor: pointer; }
 .perio-titre { font-size: 1rem; margin: 16px 0 0; }
 
 .calc-desc { color: var(--texte-doux); }
+.calc-portee { font-size: .92rem; color: var(--texte-doux); margin-top: -4px; }
 .champs { display: grid; gap: 12px; grid-template-columns: repeat(auto-fill, minmax(min(100%, 220px), 1fr)); }
 .champ label { display: block; font-weight: 600; }
+.champ-large { grid-column: 1 / -1; }
+.champ-exo { max-width: 320px; margin: 12px 0; }
 .champ input { width: 100%; min-height: 44px; font: inherit; font-size: 1.1rem; padding: 6px 10px; margin-top: 4px;
   border: 1px solid var(--bord); border-radius: 6px; background: var(--fond); color: var(--texte); }
 .unite { font-weight: 400; color: var(--texte-doux); }
@@ -183,6 +191,7 @@ button { font: inherit; cursor: pointer; }
 .tableau caption { text-align: left; font-weight: 600; padding: 8px 0; }
 .tableau th, .tableau td { border: 1px solid var(--bord); padding: 8px; text-align: left; vertical-align: top; }
 .tableau thead th { background: var(--surface-2); }
+.tableau tr.hors-seuil th, .tableau tr.hors-seuil td { font-weight: 700; color: var(--erreur); background: var(--erreur-fond); }
 
 @media print {
   .entete, .pied, .sommaire, .suite, .actions, .nav, .bouton-discret, .bandeau-erreur { display: none !important; }
@@ -193,7 +202,13 @@ button { font: inherit; cursor: pointer; }
 </style>
 <script src="contenu/pulve-reglage-volume.js"></script>
 <script src="contenu/pulve-entretien.js"></script>
+<script src="contenu/pulve-filtration.js"></script>
+<script src="contenu/pulve-remise-en-route.js"></script>
+<script src="contenu/pulve-couverture.js"></script>
+<script src="contenu/pulve-reglages-stade.js"></script>
 <script src="contenu/sol-outil-interceps.js"></script>
+<script src="contenu/effeuillage-calage.js"></script>
+<script src="contenu/glossaire.js"></script>
 <script src="moteur-oad.js"></script>
 </helmet>
 <div class="app">
@@ -206,6 +221,7 @@ button { font: inherit; cursor: pointer; }
       <a href="{{ lienCatalogue }}" aria-current="{{ navCatalogue }}">Modules</a>
       <a href="{{ lienOutils }}" aria-current="{{ navOutils }}">Calculateurs</a>
       <a href="{{ lienProgression }}" aria-current="{{ navProgression }}">Progression</a>
+      <a href="{{ lienGlossaire }}" aria-current="{{ navGlossaire }}">Glossaire</a>
     </nav>
   </header>
 
@@ -246,6 +262,7 @@ button { font: inherit; cursor: pointer; }
                   <span class="{{ carte.statutClasse }}">{{ carte.statutLibelle }}</span>
                   <span>{{ carte.dureeTxt }}</span>
                   <span>{{ carte.etatLibelle }} · {{ carte.avancementTxt }}</span>
+                  <span>{{ carte.quizTxt }}</span>
                 </p>
                 <div class="jauge" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="{{ carte.pct }}" aria-label="{{ carte.jaugeLabel }}"><span style="width:{{ carte.pct }}%"></span></div>
               </li>
@@ -271,7 +288,7 @@ button { font: inherit; cursor: pointer; }
         <span>{{ mod.dureeTxt }}</span>
       </p>
       <sc-if value="{{ mod.nonValide }}" hint-placeholder-val="{{ true }}">
-        <p class="avertissement">Contenu en cours de rédaction, pas encore validé par un expert. {{ mod.sourcesTxt }}</p>
+        <p class="avertissement">Contenu en cours de rédaction, pas encore validé par un expert. {{ mod.sourcesTxt }}<sc-if value="{{ mod.aChiffresSansSource }}"> {{ mod.chiffresSansSourceTxt }}</sc-if></p>
       </sc-if>
     </sc-if>
 
@@ -315,9 +332,10 @@ button { font: inherit; cursor: pointer; }
 
         <article class="contenu" aria-labelledby="titre-contenu">
           <sc-if value="{{ estModule }}">
-            <p class="section-type">{{ section.typeLibelle }} · {{ section.position }}</p>
+            <p class="section-type">{{ section.typeLibelle }} · {{ section.position }}<sc-if value="{{ section.aTechno }}"> <span class="badge badge-techno">{{ section.technoLibelle }}</span></sc-if></p>
             <h2 id="titre-contenu">{{ section.titre }}</h2>
             <sc-if value="{{ section.aIntro }}"><p class="intro">{{ section.intro }}</p></sc-if>
+            <sc-if value="{{ section.aSourceEntete }}"><p class="source-element">{{ section.sourceTxt }}</p></sc-if>
           </sc-if>
           <sc-if value="{{ estOutils }}">
             <h2 id="titre-contenu">{{ outilsTitre }}</h2>
@@ -331,8 +349,11 @@ button { font: inherit; cursor: pointer; }
               <sc-if value="{{ bl.estFormule }}"><p class="formule">{{ bl.texte }}</p></sc-if>
               <sc-if value="{{ bl.estAlerte }}"><p class="alerte-bloc"><b>Attention :</b> {{ bl.texte }}</p></sc-if>
               <sc-if value="{{ bl.estListe }}">
-                <ul><sc-for list="{{ bl.items }}" as="item"><li>{{ item }}</li></sc-for></ul>
+                <ul><sc-for list="{{ bl.items }}" as="item"><li>{{ item.texte }}<sc-if value="{{ item.lectureGraphique }}"><span class="source-element">Valeur lue sur un graphique de la source.</span></sc-if><sc-if value="{{ item.aSource }}"><span class="source-element">{{ item.sourceTxt }}</span></sc-if></li></sc-for></ul>
               </sc-if>
+              <sc-if value="{{ bl.estTableau }}"><div class="tableau-conteneur">{{ bl.tableau }}</div></sc-if>
+              <sc-if value="{{ bl.lectureGraphique }}"><p class="source-element">Valeur lue sur un graphique de la source.</p></sc-if>
+              <sc-if value="{{ bl.aSource }}"><p class="source-element">{{ bl.sourceTxt }}</p></sc-if>
             </sc-for>
           </sc-if>
 
@@ -345,6 +366,7 @@ button { font: inherit; cursor: pointer; }
                   <input type="checkbox" id="{{ et.inputId }}" checked="{{ et.fait }}" onChange="{{ basculerEtape }}" data-etape="{{ et.id }}">
                   <label for="{{ et.inputId }}">{{ et.num }}. {{ et.texte }}</label>
                   <sc-if value="{{ et.aDetail }}"><p class="detail">{{ et.detail }}</p></sc-if>
+                  <sc-if value="{{ et.aSource }}"><p class="detail source-element">{{ et.sourceTxt }}</p></sc-if>
                 </li>
               </sc-for>
             </ol>
@@ -360,7 +382,8 @@ button { font: inherit; cursor: pointer; }
                 <sc-for list="{{ gr.taches }}" as="ta" hint-placeholder-count="2">
                   <li class="{{ ta.classe }}">
                     <input type="checkbox" id="{{ ta.inputId }}" checked="{{ ta.fait }}" onChange="{{ basculerTache }}" data-tache="{{ ta.id }}">
-                    <label for="{{ ta.inputId }}">{{ ta.texte }}</label>
+                    <label for="{{ ta.inputId }}">{{ ta.texte }}<sc-if value="{{ ta.aDetail }}"> ({{ ta.detail }})</sc-if></label>
+                    <sc-if value="{{ ta.aSource }}"><p class="detail source-element">{{ ta.sourceTxt }}</p></sc-if>
                   </li>
                 </sc-for>
               </ul>
@@ -371,11 +394,18 @@ button { font: inherit; cursor: pointer; }
           <!-- Calculateur : fragment unique, section de module ou page Calculateurs -->
           <sc-if value="{{ aCalc }}">
             <p class="calc-desc">{{ calcCourant.description }}</p>
+            <sc-if value="{{ calcCourant.aTechnos }}"><p class="calc-portee">{{ calcCourant.technosTxt }}</p></sc-if>
             <div class="champs">
               <sc-for list="{{ calcCourant.entrees }}" as="en" hint-placeholder-count="3">
-                <div class="champ">
+                <div class="{{ en.classe }}">
                   <label for="{{ en.inputId }}">{{ en.label }} <span class="unite">{{ en.uniteTxt }}</span></label>
-                  <input id="{{ en.inputId }}" type="text" inputmode="decimal" autocomplete="off" value="{{ en.valeur }}" onInput="{{ onSaisie }}" data-calc="{{ en.calc }}" data-entree="{{ en.id }}" aria-describedby="{{ en.origineId }}">
+                  <sc-if value="{{ en.estListe }}">
+                    <p class="consigne" id="{{ en.consigneId }}">Séparez les valeurs par un point-virgule.</p>
+                    <input id="{{ en.inputId }}" type="text" inputmode="text" autocomplete="off" value="{{ en.valeur }}" onInput="{{ onSaisie }}" data-calc="{{ en.calc }}" data-entree="{{ en.id }}" aria-describedby="{{ en.decritPar }}">
+                  </sc-if>
+                  <sc-if value="{{ !en.estListe }}">
+                    <input id="{{ en.inputId }}" type="text" inputmode="decimal" autocomplete="off" value="{{ en.valeur }}" onInput="{{ onSaisie }}" data-calc="{{ en.calc }}" data-entree="{{ en.id }}" aria-describedby="{{ en.origineId }}">
+                  </sc-if>
                   <p class="origine" id="{{ en.origineId }}">Par défaut : {{ en.defautTxt }}. {{ en.origine }}</p>
                 </div>
               </sc-for>
@@ -388,6 +418,9 @@ button { font: inherit; cursor: pointer; }
                 <ul class="alertes"><sc-for list="{{ calcCourant.alertes }}" as="al"><li>{{ al }}</li></sc-for></ul>
               </sc-if>
             </div>
+            <sc-if value="{{ calcCourant.aTableau }}">
+              <div class="tableau-conteneur">{{ calcCourant.tableau }}</div>
+            </sc-if>
             <h3>Détail du calcul</h3>
             <ol class="etapes-calc">
               <sc-for list="{{ calcCourant.etapes }}" as="fe" hint-placeholder-count="1">
@@ -413,6 +446,7 @@ button { font: inherit; cursor: pointer; }
                   </sc-for>
                 </div>
                 <sc-if value="{{ quiz.corrige }}"><p class="{{ qu.correctionClasse }}">{{ qu.correction }}</p></sc-if>
+                <sc-if value="{{ qu.aSource }}"><p class="source-element">{{ qu.sourceTxt }}</p></sc-if>
               </fieldset>
             </sc-for>
             <div aria-live="polite">
@@ -428,6 +462,7 @@ button { font: inherit; cursor: pointer; }
           <!-- Cas pratique -->
           <sc-if value="{{ estCas }}">
             <p class="situation">{{ cas.situation }}</p>
+            <sc-if value="{{ cas.aSource }}"><p class="source-element">{{ cas.sourceTxt }}</p></sc-if>
             <div class="choix">
               <sc-for list="{{ cas.options }}" as="op" hint-placeholder-count="3">
                 <button type="button" class="{{ op.classe }}" aria-pressed="{{ op.presse }}" value="{{ op.valeur }}" onClick="{{ choisirCas }}">{{ op.texte }}</button>
@@ -435,6 +470,46 @@ button { font: inherit; cursor: pointer; }
             </div>
             <div aria-live="polite">
               <sc-if value="{{ cas.aRetour }}"><p class="{{ cas.retourClasse }}"><b>{{ cas.verdict }}</b> {{ cas.retour }}</p></sc-if>
+              <sc-if value="{{ cas.aSourceRetour }}"><p class="source-element">{{ cas.sourceRetourTxt }}</p></sc-if>
+            </div>
+          </sc-if>
+
+          <!-- Glossaire : liste de définitions -->
+          <sc-if value="{{ estDefinitions }}">
+            <dl class="glossaire">
+              <sc-for list="{{ definitions }}" as="de" hint-placeholder-count="3">
+                <dt id="{{ de.ancre }}">{{ de.terme }}</dt>
+                <dd>{{ de.definition }}<sc-if value="{{ de.aSource }}"><span class="source-element">{{ de.sourceTxt }}</span></sc-if></dd>
+              </sc-for>
+            </dl>
+          </sc-if>
+
+          <!-- Exercice : réponse chiffrée corrigée par le moteur -->
+          <sc-if value="{{ estExercice }}">
+            <p class="situation">{{ exo.enonce }}</p>
+            <sc-if value="{{ exo.aSource }}"><p class="source-element">{{ exo.sourceTxt }}</p></sc-if>
+            <div class="champ champ-exo">
+              <label for="{{ exo.inputId }}">Votre réponse <span class="unite">{{ exo.uniteTxt }}</span></label>
+              <input id="{{ exo.inputId }}" type="text" inputmode="decimal" autocomplete="off" value="{{ exo.reponse }}" onInput="{{ onReponseExo }}" data-exo="{{ exo.sid }}" disabled="{{ exo.corrige }}">
+            </div>
+            <div aria-live="polite">
+              <sc-if value="{{ exo.corrige }}">
+                <p class="{{ exo.retourClasse }}"><b>{{ exo.verdict }}</b> Valeur attendue : {{ exo.attenduTxt }}.</p>
+                <ol class="etapes-calc">
+                  <sc-for list="{{ exo.etapes }}" as="xe" hint-placeholder-count="1">
+                    <li>
+                      <p class="formule-titre">{{ xe.titre }}</p>
+                      <p class="formule">{{ xe.formule }}</p>
+                      <p class="formule">= {{ xe.substitution }} = {{ xe.resultat }}</p>
+                    </li>
+                  </sc-for>
+                </ol>
+              </sc-if>
+              <sc-if value="{{ exo.aDernier }}"><p class="meta">{{ exo.dernierTxt }}</p></sc-if>
+            </div>
+            <div class="actions">
+              <sc-if value="{{ !exo.corrige }}"><button class="bouton-principal" value="{{ exo.sid }}" onClick="{{ verifierExo }}">Vérifier</button></sc-if>
+              <sc-if value="{{ exo.corrige }}"><button class="bouton-secondaire" value="{{ exo.sid }}" onClick="{{ recommencerExo }}">Recommencer</button></sc-if>
             </div>
           </sc-if>
 
@@ -460,6 +535,7 @@ button { font: inherit; cursor: pointer; }
 
   <footer class="pied">
     <p>Outil de formation. Les valeurs proposées dans les calculateurs sont des exemples : l'origine de chacune est indiquée sous son champ.</p>
+    <sc-if value="{{ aEdition }}"><p>{{ editionTxt }}</p></sc-if>
   </footer>
 </div>
 </x-dc>
@@ -551,6 +627,23 @@ function versNombre(txt) {
   const s = String(txt == null ? '' : txt).replace(/[\s  ]/g, '').replace(',', '.');
   return s === '' ? NaN : Number(s);
 }
+// Liste saisie « 1,40 ; 1,38 » → [1.4, 1.38] : seul point de conversion des
+// listes. Morceaux vides ignorés ; morceau illisible → NaN (le moteur le signale).
+function versListe(txt) {
+  return String(txt == null ? '' : txt).split(';')
+    .filter(m => m.trim() !== '')
+    .map(versNombre);
+}
+// Liste par défaut → texte de saisie, deux décimales : « 1,40 ; 1,38 ; … ».
+function texteListe(tab) {
+  return (Array.isArray(tab) ? tab : []).map(n => Number(n).toFixed(2).replace('.', ',')).join(' ; ');
+}
+// Écart (fraction) → « +9,13 % », « −10,26 % ».
+function pourcentSigne(fraction, decimales) {
+  const x = Number(fraction) * 100;
+  if (!Number.isFinite(x)) return '—';
+  return (x > 0 ? '+' : '') + fmtNombre(x, decimales) + ESPACE + '%';
+}
 function valeurDe(e) { const t = e && (e.currentTarget || e.target); return t ? String(t.value) : ''; }
 function attributDe(e, nom) { const t = e && (e.currentTarget || e.target); return t && t.getAttribute ? t.getAttribute(nom) : null; }
 
@@ -568,7 +661,9 @@ class Component extends DCLogic {
       saisies: {},    // { [calcId]: { [entreeId]: texte brut } }
       quizRep: {},    // { [sectionId]: { [qid]: number[] } }
       quizScore: {},  // { [sectionId]: score | null }
-      casChoix: {}    // { [sectionId]: number | null }
+      casChoix: {},   // { [sectionId]: number | null }
+      exoRep: {},     // { [sectionId]: texte brut saisi }
+      exoCorr: {}     // { [sectionId]: { juste, attendu } }
     };
     this.__essais = 0;
     this.__minuteur = null;
@@ -623,17 +718,24 @@ class Component extends DCLogic {
         return { quizRep: { ...s.quizRep, [sid]: rep } };
       });
     };
+    /* Évaluation d'un quiz ou d'un exercice (D-B5-3 : un exercice compte
+       comme un quiz d'une question, taux 1 ou 0). Seul point de correction
+       qui enregistre, donc seul point du projet qui lit l'horloge. */
     this.validerQuiz = (e) => {
       const sid = valeurDe(e);
       const ctx = this.contexte();
       if (!ctx || !ctx.module || !ctx.section || ctx.section.id !== sid) return;
-      const score = ctx.OAD.noterQuiz(ctx.section, this.state.quizRep[sid] || {});
+      const exo = ctx.section.type === 'exercice';
+      const corr = exo ? ctx.OAD.corrigerExercice(ctx.section, versNombre(this.state.exoRep[sid])) : null;
+      const score = exo
+        ? { taux: corr.juste ? 1 : 0, bonnes: corr.juste ? 1 : 0, total: 1 }
+        : ctx.OAD.noterQuiz(ctx.section, this.state.quizRep[sid] || {});
       // Seul point du projet qui lit l'horloge : la date est passée au moteur.
       const dateISO = new Date().toISOString();
-      this.setState(s => ({
-        quizScore: { ...s.quizScore, [sid]: score },
-        prog: ctx.OAD.enregistrerQuiz(this.progression(s), ctx.module.id, sid, score, dateISO)
-      }));
+      this.setState(s => Object.assign(exo
+        ? { exoCorr: { ...s.exoCorr, [sid]: corr } }
+        : { quizScore: { ...s.quizScore, [sid]: score } },
+        { prog: ctx.OAD.enregistrerQuiz(this.progression(s), ctx.module.id, sid, score, dateISO) }));
     };
     this.recommencerQuiz = (e) => {
       const sid = valeurDe(e);
@@ -641,6 +743,21 @@ class Component extends DCLogic {
         const rep = { ...s.quizRep }, sc = { ...s.quizScore };
         delete rep[sid]; delete sc[sid];
         return { quizRep: rep, quizScore: sc };
+      });
+    };
+    // Exercice : frappe stockée brute (convertie à la vérification), jamais persistée.
+    this.onReponseExo = (e) => {
+      const sid = attributDe(e, 'data-exo'), val = valeurDe(e);
+      if (!sid) return;
+      this.setState(s => (s.exoCorr[sid] ? {} : { exoRep: { ...s.exoRep, [sid]: val } }));
+    };
+    this.verifierExo = (e) => this.validerQuiz(e);
+    this.recommencerExo = (e) => {
+      const sid = valeurDe(e);
+      this.setState(s => {
+        const rep = { ...s.exoRep }, corr = { ...s.exoCorr };
+        delete rep[sid]; delete corr[sid];
+        return { exoRep: rep, exoCorr: corr };
       });
     };
     // Cas pratique : valeur du bouton "<sectionId>|<k>".
@@ -669,7 +786,7 @@ class Component extends DCLogic {
         !window.confirm('Effacer toute la progression enregistrée sur cet appareil ?')) return;
       effacerProgressionStockee();
       this.__dernierProg = null;
-      this.setState({ prog: window.OAD.progressionVide(), quizRep: {}, quizScore: {}, casChoix: {} });
+      this.setState({ prog: window.OAD.progressionVide(), quizRep: {}, quizScore: {}, casChoix: {}, exoRep: {}, exoCorr: {} });
     };
 
     this.basculerTheme = () => {
@@ -756,25 +873,32 @@ class Component extends DCLogic {
     const t = this.state.theme;
     return {
       enChargement: true, echecChargement: false,
-      lienCatalogue: '#/', lienOutils: '#/outils', lienProgression: '#/progression',
-      navCatalogue: null, navOutils: null, navProgression: null,
+      lienCatalogue: '#/', lienOutils: '#/outils', lienProgression: '#/progression', lienGlossaire: '#/module/glossaire',
+      navCatalogue: null, navOutils: null, navProgression: null, navGlossaire: null,
       themeLibelle: 'Thème : ' + THEMES_LIBELLES[t],
       themeAria: 'Changer de thème (actuel : ' + THEMES_LIBELLES[t] + ')',
       aErreurs: false, erreursListe: [],
       estCatalogue: false, estModule: false, estOutils: false, estProgression: false, estInconnu: false,
       aGrille: false,
       domainesCatalogue: [],
-      mod: {}, sommaire: [], section: {},
+      mod: { aChiffresSansSource: false, chiffresSansSourceTxt: '' }, sommaire: [],
+      section: { aTechno: false, technoLibelle: '', aSourceEntete: false, sourceTxt: '' },
       estFiche: false, estProcedure: false, estEntretien: false, estCalculateur: false, estQuiz: false, estCas: false,
+      estExercice: false, estDefinitions: false, definitions: [],
+      exo: { sid: '', enonce: '', aSource: false, sourceTxt: '', inputId: '', uniteTxt: '', reponse: '', corrige: false,
+        verdict: '', retourClasse: '', attenduTxt: '', etapes: [], aDernier: false, dernierTxt: '' },
       blocs: [], procedure: { etapes: [] }, entretien: { groupes: [] },
-      quiz: { questions: [] }, cas: { options: [] },
+      quiz: { questions: [] },
+      cas: { options: [], aSource: false, sourceTxt: '', aSourceRetour: false, sourceRetourTxt: '' },
       aPrec: false, aSuiv: false, prec: {}, suiv: {},
       outilsListe: [], outilsTitre: '', outilsMessage: '',
-      aCalc: false, calcCourant: { entrees: [], etapes: [], resultats: [], alertes: [] },
+      aCalc: false, calcCourant: { entrees: [], etapes: [], resultats: [], alertes: [], technosTxt: '', aTechnos: false, tableau: null, aTableau: false },
       progResume: '', tableauProgression: null,
+      aEdition: false, editionTxt: '',
       basculerTheme: this.basculerTheme, onSaisie: this.onSaisie, reinitialiserCalc: this.reinitialiserCalc,
       onChoix: this.onChoix, validerQuiz: this.validerQuiz, recommencerQuiz: this.recommencerQuiz,
       choisirCas: this.choisirCas, basculerEtape: this.basculerEtape, basculerTache: this.basculerTache,
+      onReponseExo: this.onReponseExo, verifierExo: this.verifierExo, recommencerExo: this.recommencerExo,
       effacerProgression: this.effacerProgression, imprimer: this.imprimer
     };
   }
@@ -792,10 +916,15 @@ class Component extends DCLogic {
     const vue = ctx.route.vue;
 
     out.enChargement = false;
+    out.editionTxt = OAD.EDITION_CONTENU ? 'Édition du contenu : ' + dateFr(OAD.EDITION_CONTENU) : '';
+    out.aEdition = !!out.editionTxt;
     out.lienCatalogue = OAD.lien();
     out.lienOutils = OAD.lien('outils');
     out.lienProgression = OAD.lien('progression');
-    out.navCatalogue = vue === 'catalogue' ? 'page' : (vue === 'module' ? 'true' : null);
+    const glossaire = vue === 'module' && OAD.estModuleReference(ctx.module);
+    out.lienGlossaire = OAD.lien('module', 'glossaire');
+    out.navGlossaire = glossaire ? 'page' : null;
+    out.navCatalogue = vue === 'catalogue' ? 'page' : (vue === 'module' && !glossaire ? 'true' : null);
     out.navOutils = vue === 'outils' ? 'page' : null;
     out.navProgression = vue === 'progression' ? 'page' : null;
 
@@ -811,10 +940,17 @@ class Component extends DCLogic {
     return out;
   }
 
+  // « Quiz réussis : x / y », quiz et exercices confondus (D-B6-3).
+  quizTxt(OAD, m, prog) {
+    const b = OAD.bilanEvaluation(prog, m);
+    return b.total ? 'Quiz réussis : ' + b.reussies + ' / ' + b.total : 'Pas de quiz dans ce module';
+  }
+
   carte(OAD, m, prog) {
     const a = OAD.avancement(prog, m);
     const pct = Math.round(a.taux * 100);
     return {
+      quizTxt: this.quizTxt(OAD, m, prog),
       titre: m.titre, resume: m.resume, lien: OAD.lien('module', m.id),
       statutLibelle: OAD.STATUTS_LIBELLES[m.statut] || m.statut,
       statutClasse: 'badge badge-' + m.statut,
@@ -829,7 +965,7 @@ class Component extends DCLogic {
     const OAD = ctx.OAD;
     return {
       estCatalogue: true,
-      domainesCatalogue: OAD.DOMAINES.map(d => ({
+      domainesCatalogue: OAD.DOMAINES.filter(d => d !== 'transversal').map(d => ({
         titreId: 'domaine-' + d,
         libelle: OAD.DOMAINES_LIBELLES[d],
         modules: OAD.listerModules(ctx.modules, { domaine: d }).map(m => this.carte(OAD, m, prog))
@@ -837,10 +973,32 @@ class Component extends DCLogic {
     };
   }
 
+  // « Source : <référence> (<date>) » d'un code de source du module ; '' si absent.
+  sourceTxt(m, code) {
+    const s = code && Array.isArray(m.sources) ? m.sources.find(x => x && x.code === code) : null;
+    return s ? 'Source : ' + s.reference + ' (' + s.date + (s.page ? ', p. ' + s.page : '') + ')' : '';
+  }
+  // Clés de source d'un élément pour le gabarit : { aSource, sourceTxt }.
+  sourceVals(m, el) {
+    const t = this.sourceTxt(m, el && el.source);
+    return { aSource: !!t, sourceTxt: t };
+  }
+
+  /* Bloc tableau d'une fiche (D-B4-4) : React.createElement, aucune directive
+     dans <table> (D-A3-3) ; en-têtes en <th scope="col">. */
+  tableauBloc(bloc) {
+    const e = React.createElement;
+    return e('table', { className: 'tableau' },
+      e('thead', null, e('tr', null, bloc.entetes.map((t, k) => e('th', { key: k, scope: 'col' }, t)))),
+      e('tbody', null, bloc.lignes.map((l, i) => e('tr', { key: i }, l.map((c, k) => e('td', { key: k }, c))))));
+  }
+
   valsModule(ctx, prog) {
     const OAD = ctx.OAD, m = ctx.module, sec = ctx.section;
     if (!m || !sec) return { estInconnu: true };
     const carte = this.carte(OAD, m, prog);
+    const sansSource = OAD.elementsChiffresSansSource(m).length;
+    const srcSection = this.sourceVals(m, sec);
     const ps = OAD.progressionSection(prog, m.id, sec.id);
     const i = m.sections.indexOf(sec), n = m.sections.length;
     const voisin = s => s ? { lien: OAD.lien('module', m.id, s.id), titre: s.titre } : {};
@@ -851,6 +1009,8 @@ class Component extends DCLogic {
         statutLibelle: carte.statutLibelle, statutClasse: carte.statutClasse,
         public: m.public || '', dureeTxt: carte.dureeTxt,
         nonValide: m.statut !== 'valide',
+        aChiffresSansSource: sansSource > 0,
+        chiffresSansSourceTxt: sansSource + ' élément' + (sansSource > 1 ? 's' : '') + ' chiffré' + (sansSource > 1 ? 's' : '') + ' sans source.',
         sourcesTxt: (m.sources && m.sources.length)
           ? 'Sources : ' + m.sources.map(s => s.reference + ' (' + s.date + ')').join(' ; ') + '.'
           : 'Aucune source renseignée.',
@@ -866,31 +1026,43 @@ class Component extends DCLogic {
       section: {
         titre: sec.titre, typeLibelle: OAD.TYPES_SECTION_LIBELLES[sec.type] || sec.type,
         position: 'section ' + (i + 1) + ' sur ' + n,
-        intro: sec.intro || '', aIntro: !!sec.intro
+        intro: sec.intro || '', aIntro: !!sec.intro,
+        aTechno: !!sec.technologie && sec.technologie !== 'toutes',
+        technoLibelle: OAD.TECHNOLOGIES_LIBELLES[sec.technologie] || '',
+        // Source de section : sous l'en-tête, sauf cas pratique (sous la situation).
+        aSourceEntete: srcSection.aSource && sec.type !== 'cas' && sec.type !== 'exercice',
+        sourceTxt: srcSection.sourceTxt
       },
       estFiche: sec.type === 'fiche', estProcedure: sec.type === 'procedure',
       estEntretien: sec.type === 'entretien', estCalculateur: sec.type === 'calculateur',
-      estQuiz: sec.type === 'quiz', estCas: sec.type === 'cas',
+      estQuiz: sec.type === 'quiz', estCas: sec.type === 'cas', estExercice: sec.type === 'exercice',
+      estDefinitions: sec.type === 'definitions',
       aPrec: i > 0, aSuiv: i < n - 1,
       prec: voisin(m.sections[i - 1]), suiv: voisin(m.sections[i + 1])
     };
 
     if (sec.type === 'fiche') {
-      out.blocs = sec.blocs.map(b => ({
-        texte: b.texte || '', items: b.items || [],
+      out.blocs = sec.blocs.map(b => Object.assign({
+        texte: b.texte || '',
+        items: (b.items || []).map(it => {
+          const o = (it && typeof it === 'object') ? it : { texte: it };
+          return Object.assign({ texte: o.texte, lectureGraphique: !!o.lectureGraphique }, this.sourceVals(m, o));
+        }),
         estParagraphe: b.type === 'paragraphe', estListe: b.type === 'liste',
-        estAlerte: b.type === 'alerte', estFormule: b.type === 'formule'
-      }));
+        estAlerte: b.type === 'alerte', estFormule: b.type === 'formule', estTableau: b.type === 'tableau',
+        tableau: b.type === 'tableau' ? this.tableauBloc(b) : null,
+        lectureGraphique: !!b.lectureGraphique
+      }, this.sourceVals(m, b)));
     } else if (sec.type === 'procedure') {
       const faits = ps.etapes;
       const nb = sec.etapes.filter(e => faits.includes(e.id)).length;
       out.procedure = {
         compteur: nb + ' / ' + sec.etapes.length + ' étapes cochées',
-        etapes: sec.etapes.map((e, k) => ({
+        etapes: sec.etapes.map((e, k) => Object.assign({
           id: e.id, num: k + 1, texte: e.texte, detail: e.detail || '', aDetail: !!e.detail,
           inputId: 'etape-' + sec.id + '-' + e.id,
           fait: faits.includes(e.id), classe: faits.includes(e.id) ? 'fait' : ''
-        }))
+        }, this.sourceVals(m, e)))
       };
     } else if (sec.type === 'entretien') {
       const faits = ps.taches;
@@ -899,10 +1071,11 @@ class Component extends DCLogic {
         compteur: nb + ' / ' + sec.taches.length + ' tâches cochées',
         groupes: OAD.PERIODICITES.map(p => ({
           libelle: OAD.PERIODICITES_LIBELLES[p],
-          taches: sec.taches.filter(t => t.periodicite === p).map(t => ({
-            id: t.id, texte: t.texte, inputId: 'tache-' + sec.id + '-' + t.id,
+          taches: sec.taches.filter(t => t.periodicite === p).map(t => Object.assign({
+            id: t.id, texte: t.texte, detail: t.detail || '', aDetail: !!t.detail,
+            inputId: 'tache-' + sec.id + '-' + t.id,
             fait: faits.includes(t.id), classe: faits.includes(t.id) ? 'fait' : ''
-          }))
+          }, this.sourceVals(m, t)))
         })).filter(g => g.taches.length > 0)
       };
     } else if (sec.type === 'calculateur') {
@@ -910,14 +1083,20 @@ class Component extends DCLogic {
       out.aCalc = !!c;
       if (c) out.calcCourant = c;
     } else if (sec.type === 'quiz') {
-      out.quiz = this.valsQuiz(sec, ps);
+      out.quiz = this.valsQuiz(sec, ps, m);
     } else if (sec.type === 'cas') {
-      out.cas = this.valsCas(sec);
+      out.cas = this.valsCas(sec, m);
+    } else if (sec.type === 'exercice') {
+      out.exo = this.valsExo(OAD, sec, ps, m);
+    } else if (sec.type === 'definitions') {
+      out.definitions = sec.entrees.map(d => Object.assign({
+        terme: d.terme, definition: d.definition, ancre: 'terme-' + d.id
+      }, this.sourceVals(m, d)));
     }
     return out;
   }
 
-  valsQuiz(sec, ps) {
+  valsQuiz(sec, ps, m) {
     const sid = sec.id;
     const rep = this.state.quizRep[sid] || {};
     const score = this.state.quizScore[sid] || null;
@@ -930,7 +1109,7 @@ class Component extends DCLogic {
         const choisis = rep[q.id] || [];
         const d = details.find(x => x.qid === q.id);
         const juste = !!(d && d.juste);
-        return {
+        return Object.assign({
           num: i + 1, enonce: q.enonce, multiple: q.bonnes.length > 1,
           choix: q.choix.map((c, k) => {
             const pris = choisis.includes(k), bonne = q.bonnes.includes(k);
@@ -941,7 +1120,7 @@ class Component extends DCLogic {
           }),
           correction: (juste ? 'Juste. ' : 'À revoir. ') + (q.explication || ''),
           correctionClasse: 'correction ' + (juste ? 'juste' : 'fausse')
-        };
+        }, this.sourceVals(m || {}, q));
       }),
       scoreTxt: corrige
         ? 'Score : ' + score.bonnes + ' / ' + score.total + ' (' + pourcent(score.taux) + ')'
@@ -954,11 +1133,14 @@ class Component extends DCLogic {
     };
   }
 
-  valsCas(sec) {
+  valsCas(sec, m) {
     const sid = sec.id;
     const choix = this.state.casChoix[sid];
     const opt = Number.isInteger(choix) ? sec.options[choix] : null;
+    const srcSituation = this.sourceVals(m || {}, sec), srcRetour = this.sourceVals(m || {}, opt);
     return {
+      aSource: srcSituation.aSource, sourceTxt: srcSituation.sourceTxt,
+      aSourceRetour: srcRetour.aSource, sourceRetourTxt: srcRetour.sourceTxt,
       situation: sec.situation,
       options: sec.options.map((o, k) => {
         const pris = k === choix;
@@ -974,6 +1156,43 @@ class Component extends DCLogic {
     };
   }
 
+  // Alerte du moteur : chaîne, ou { gabarit, operandes } dont les nombres sont mis en forme ici.
+  texteAlerte(OAD, a) {
+    if (typeof a === 'string') return a;
+    return OAD.substituer(a && a.gabarit, ((a && a.operandes) || []).map(o => fmtNombre(o.valeur, o.decimales)));
+  }
+
+  // Étapes de calcul du moteur → formule ouverte en fr-FR (calculateur, exercice).
+  etapesFormatees(OAD, etapes) {
+    return etapes.map(et => ({
+      titre: et.titre, formule: et.formule,
+      substitution: OAD.substituer(et.gabarit, et.operandes.map(o => fmtNombre(o.valeur, o.decimales))),
+      resultat: avecUnite(fmtNombre(et.resultat.valeur, et.resultat.decimales), et.resultat.unite)
+    }));
+  }
+
+  valsExo(OAD, sec, ps, m) {
+    const sid = sec.id;
+    const corr = this.state.exoCorr[sid] || null;
+    const att = OAD.attenduExercice(sec);
+    const dernier = ps.quiz;
+    return Object.assign({
+      sid, enonce: sec.enonce, inputId: 'exo-' + sid,
+      uniteTxt: att.unite ? '(' + att.unite + ')' : '',
+      reponse: this.state.exoRep[sid] || '',
+      corrige: !!corr,
+      verdict: corr ? (corr.juste ? 'Juste.' : 'À revoir.') : '',
+      retourClasse: 'retour ' + (corr && corr.juste ? 'juste' : 'fausse'),
+      attenduTxt: avecUnite(fmtNombre(att.valeur, att.decimales), att.unite),
+      etapes: corr ? this.etapesFormatees(OAD, att.etapes) : [],
+      aDernier: !!dernier && !corr,
+      dernierTxt: dernier
+        ? 'Dernier résultat enregistré : ' + (dernier.taux >= 1 ? 'juste' : 'à revoir') +
+          (dernier.date ? ', le ' + dateFr(dernier.date) : '') + '.'
+        : ''
+    }, this.sourceVals(m || {}, sec));
+  }
+
   // Fragment calculateur : entrées, résultats, formules ouvertes, tout formaté.
   valsCalc(OAD, calcId) {
     const C = OAD.CALCULATEURS[calcId];
@@ -981,29 +1200,52 @@ class Component extends DCLogic {
     const saisie = this.state.saisies[calcId] || {};
     const textes = {}, nombres = {};
     C.entrees.forEach(en => {
-      const t = saisie[en.id] !== undefined ? saisie[en.id] : texteSaisie(en.defaut);
+      const liste = en.type === 'liste';
+      const t = saisie[en.id] !== undefined ? saisie[en.id] : (liste ? texteListe(en.defaut) : texteSaisie(en.defaut));
       textes[en.id] = t;
-      nombres[en.id] = versNombre(t);
+      nombres[en.id] = liste ? versListe(t) : versNombre(t);
     });
     const r = C.compute(nombres);   // tout calcul vient du moteur
     return {
       id: C.id, titre: C.titre, description: C.description,
-      entrees: C.entrees.map(en => ({
-        id: en.id, calc: C.id, label: en.label,
-        inputId: 'calc-' + C.id + '-' + en.id, origineId: 'origine-' + C.id + '-' + en.id,
-        uniteTxt: en.unite ? '(' + en.unite + ')' : '',
-        valeur: textes[en.id],
-        defautTxt: avecUnite(fmtNombre(en.defaut, 3), en.unite),
-        origine: en.origineDefaut
-      })),
-      etapes: r.etapes.map(et => ({
-        titre: et.titre, formule: et.formule,
-        substitution: OAD.substituer(et.gabarit, et.operandes.map(o => fmtNombre(o.valeur, o.decimales))),
-        resultat: avecUnite(fmtNombre(et.resultat.valeur, et.resultat.decimales), et.resultat.unite)
-      })),
+      entrees: C.entrees.map(en => {
+        const liste = en.type === 'liste';
+        const origineId = 'origine-' + C.id + '-' + en.id, consigneId = 'consigne-' + C.id + '-' + en.id;
+        return {
+          id: en.id, calc: C.id, label: en.label,
+          estListe: liste, classe: liste ? 'champ champ-large' : 'champ',
+          inputId: 'calc-' + C.id + '-' + en.id, origineId, consigneId,
+          decritPar: consigneId + ' ' + origineId,
+          uniteTxt: en.unite ? '(' + en.unite + ')' : '',
+          valeur: textes[en.id],
+          defautTxt: avecUnite(liste ? texteListe(en.defaut) : fmtNombre(en.defaut, 3), en.unite),
+          origine: en.origineDefaut
+        };
+      }),
+      etapes: this.etapesFormatees(OAD, r.etapes),
       resultats: r.resultats.map(x => ({ label: x.label, texte: avecUnite(fmtNombre(x.valeur, x.decimales), x.unite) })),
-      alertes: r.alertes, aAlertes: r.alertes.length > 0
+      // « S'applique à » seulement si le calculateur ne vaut pas pour toutes les technologies.
+      aTechnos: Array.isArray(C.technologies) && !(C.technologies.length === 1 && C.technologies[0] === 'toutes'),
+      technosTxt: 'S\'applique à : ' + (C.technologies || []).map(t => OAD.TECHNOLOGIES_LIBELLES[t] || t).join(', '),
+      tableau: Array.isArray(r.detail) && r.detail.length ? this.tableauEcarts(r.detail) : null,
+      aTableau: Array.isArray(r.detail) && r.detail.length > 0,
+      alertes: r.alertes.map(a => this.texteAlerte(OAD, a)), aAlertes: r.alertes.length > 0
     };
+  }
+
+  /* Détail par diffuseur (calculateur d'écart) : tableau construit par
+     React.createElement, aucune directive dans <table> (D-A3-3, D-B3-4).
+     Ligne hors seuil : classe et texte « à contrôler » (pas la seule couleur). */
+  tableauEcarts(detail) {
+    const e = React.createElement;
+    return e('table', { className: 'tableau' },
+      e('caption', null, 'Écart de chaque diffuseur à la moyenne'),
+      e('thead', null, e('tr', null,
+        ['Diffuseur', 'Débit (L/min)', 'Écart à la moyenne'].map(t => e('th', { key: t, scope: 'col' }, t)))),
+      e('tbody', null, detail.map(x => e('tr', { key: x.rang, className: x.horsSeuil ? 'hors-seuil' : null },
+        e('th', { scope: 'row' }, 'n° ' + x.rang),
+        e('td', null, fmtNombre(x.debit, 2)),
+        e('td', null, pourcentSigne(x.ecart, 2) + (x.horsSeuil ? ' — à contrôler' : ''))))));
   }
 
   valsOutils(ctx) {
@@ -1023,11 +1265,13 @@ class Component extends DCLogic {
 
   valsProgression(ctx, prog) {
     const OAD = ctx.OAD;
-    const termines = ctx.modules.filter(m => OAD.etatModule(prog, m) === 'termine').length;
+    ctx = Object.assign({}, ctx, { modules: ctx.modules.filter(m => !OAD.estModuleReference(m)) });
+    const n = etat => ctx.modules.filter(m => OAD.etatModule(prog, m) === etat).length;
+    const pl = (k, mot) => k + ' ' + mot + (k > 1 ? 's' : '');
     return {
       estProgression: true,
-      progResume: termines + ' module' + (termines > 1 ? 's' : '') + ' terminé' + (termines > 1 ? 's' : '') +
-        ' sur ' + ctx.modules.length + '.',
+      progResume: pl(n('maitrise'), 'module maîtrisé') + ', ' + pl(n('consulte'), 'consulté') +
+        ' sans être maîtrisé, sur ' + ctx.modules.length + '.',
       tableauProgression: this.tableauProgression(ctx, prog)
     };
   }
@@ -1048,12 +1292,13 @@ class Component extends DCLogic {
         e('th', { scope: 'row' }, e('a', { href: OAD.lien('module', m.id) }, m.titre)),
         e('td', null, a.vues + ' / ' + a.total),
         e('td', null, quiz.length ? quiz.map((t, i) => e('div', { key: i }, t)) : '—'),
+        e('td', null, this.quizTxt(OAD, m, prog).replace(/^Quiz réussis : /, '')),
         e('td', null, OAD.ETATS_MODULE_LIBELLES[OAD.etatModule(prog, m)]));
     });
     return e('table', { className: 'tableau' },
       e('caption', null, 'Avancement par module'),
       e('thead', null, e('tr', null,
-        ['Module', 'Sections consultées', 'Quiz', 'État'].map(t => e('th', { key: t, scope: 'col' }, t)))),
+        ['Module', 'Sections consultées', 'Quiz', 'Quiz réussis', 'État'].map(t => e('th', { key: t, scope: 'col' }, t)))),
       e('tbody', null, lignes));
   }
 }

@@ -20,10 +20,15 @@ if (typeof window === "undefined" || !window.OAD) {
    Vocabulaires fermés du contenu (validés par validerModule) et leurs
    libellés d'écran. */
 
-const DOMAINES = ['pulverisation', 'travail-du-sol'];
+// `transversal` : modules de référence (glossaire), hors catalogue, hors
+// avancement et hors états (D-B10-1, D-B10-4).
+// `effeuillage` : méthode de calage, sans valeur de réglage (D-B11, arbitrage A3).
+const DOMAINES = ['pulverisation', 'travail-du-sol', 'effeuillage', 'transversal'];
 const DOMAINES_LIBELLES = {
   pulverisation: 'Pulvérisation',
-  'travail-du-sol': 'Travail du sol'
+  'travail-du-sol': 'Travail du sol',
+  effeuillage: 'Effeuillage',
+  transversal: 'Glossaire'
 };
 
 // Un module « valide » exige un valideur nommé et au moins une source (voir
@@ -35,34 +40,55 @@ const STATUTS_LIBELLES = {
   valide: 'Validé'
 };
 
-const TYPES_SECTION = ['fiche', 'procedure', 'entretien', 'calculateur', 'quiz', 'cas'];
+const TYPES_SECTION = ['fiche', 'procedure', 'entretien', 'calculateur', 'quiz', 'cas', 'exercice', 'definitions'];
 const TYPES_SECTION_LIBELLES = {
   fiche: 'Fiche',
   procedure: 'Procédure',
   entretien: 'Entretien',
   calculateur: 'Calculateur',
   quiz: 'Quiz',
-  cas: 'Cas pratique'
+  cas: 'Cas pratique',
+  exercice: 'Exercice',
+  definitions: 'Glossaire'
+};
+// Sections dont l'id est une clé d'état de l'écran : uniques sur tout le catalogue.
+const TYPES_SECTION_EVALUES = ['quiz', 'cas', 'exercice'];
+
+const TYPES_BLOC = ['paragraphe', 'liste', 'alerte', 'formule', 'tableau'];
+
+/* Technologie de pulvérisation à laquelle se rattache une section ou un
+   calculateur (D-B4-1, arbitrage A5) : des consignes s'opposent d'une
+   technologie à l'autre (synthèse §7.1). Le porteur (tracteur, chenillard)
+   n'est pas une technologie. */
+const TECHNOLOGIES = ['toutes', 'pneumatique', 'jets-portes', 'jets-projetes', 'confine'];
+const TECHNOLOGIES_LIBELLES = {
+  toutes: 'Toutes technologies',
+  pneumatique: 'Pneumatique',
+  'jets-portes': 'Jets portés',
+  'jets-projetes': 'Jets projetés',
+  confine: 'Confiné'
 };
 
-const TYPES_BLOC = ['paragraphe', 'liste', 'alerte', 'formule'];
-
 const PERIODICITES = ['chaque-utilisation', 'quotidienne', 'hebdomadaire',
-  'debut-campagne', 'fin-campagne', 'annuelle'];
+  'semestrielle', 'debut-campagne', 'fin-campagne', 'annuelle'];
 const PERIODICITES_LIBELLES = {
   'chaque-utilisation': 'Après chaque utilisation',
   quotidienne: 'Chaque jour',
   hebdomadaire: 'Chaque semaine',
+  semestrielle: 'Au moins deux fois par an',
   'debut-campagne': 'En début de campagne',
   'fin-campagne': 'En fin de campagne',
   annuelle: 'Chaque année'
 };
 
-const ETATS_MODULE = ['non-commence', 'en-cours', 'termine'];
+// État calculé, jamais stocké (D-B6-1) : « consulté » = toutes les sections
+// ouvertes ; « maîtrisé » = en plus, tous les quiz et exercices réussis.
+const ETATS_MODULE = ['non-commence', 'en-cours', 'consulte', 'maitrise'];
 const ETATS_MODULE_LIBELLES = {
   'non-commence': 'Non commencé',
   'en-cours': 'En cours',
-  termine: 'Terminé'
+  consulte: 'Consulté',
+  maitrise: 'Maîtrisé'
 };
 
 /* --- 2. Formules -----------------------------------------------------
@@ -128,24 +154,113 @@ function debitChantierTheorique(v, L) {
   return fini(positif(v) * positif(L) / 10);
 }
 
+/* Largeur traitée L (m) : n écartements de e (m). Enjambeur : n = rangs
+   traités par passage. Chenillard : n = 1, 2 ou 3 selon que l'on passe
+   toutes les routes, toutes les 2 ou toutes les 3 (D-B2-1). */
+function largeurTraitee(n, e) {
+  return fini(positif(n) * positif(e));
+}
+
+/* Débit total Q (L/min) mesuré au niveau de la cuve : volume refait (L)
+   après avoir pulvérisé pendant la durée (min). Q = volume / durée. */
+function debitParNiveauCuve(volume, duree) {
+  return fini(positif(volume) / positif(duree));
+}
+
+/* Volume V2 (L/ha) après changement du nombre de hauteurs de buses par
+   descente, à même débit par hauteur, vitesse et largeur inchangées : le
+   débit total est proportionnel au nombre de hauteurs ⇒ V2 = V1 × h2 / h1.
+   h1, h2 sont des effectifs : arrondis à l'entier, au moins 1 (D-B2-3). */
+function volumeSelonHauteurs(V1, h1, h2) {
+  const a = Math.round(Number(h1)), b = Math.round(Number(h2));
+  if (!(a >= 1) || !(b >= 1)) return NaN;
+  return fini(positif(V1) * b / a);
+}
+
+/* Volume V2 (L/ha) après passage de la vitesse v1 à v2 (km/h), débit et
+   largeur inchangés : V = 600 × Q / (v × L) ⇒ V2 = V1 × v1 / v2 (D-B2-4). */
+function volumeApresChangementVitesse(V1, v1, v2) {
+  return fini(positif(V1) * positif(v1) / positif(v2));
+}
+
+// Seuil d'écart d'un diffuseur à la moyenne : F-VHA, CIVC, février 2014
+// (« intervention si écart > 10 % à la moyenne », synthèse §2.1).
+const ECART_DIFFUSEUR_MAX = 0.10;
+// Tolérance de calcul flottant : 1,1 contre une moyenne de 1,0 donne
+// 0,10000000000000009, qui n'est pas « supérieur à 10 % » (D-B3-2).
+const TOLERANCE_FLOTTANTE = 1e-9;
+
+// Débit lisible : nombre fini, positif ou nul (0 = diffuseur bouché, à signaler).
+function debitLisible(x) { return typeof x === 'number' && Number.isFinite(x) && x >= 0; }
+
+/* Écart de chaque débit mesuré q à la moyenne m des débits lisibles :
+   m = Σ q / n ; e = (q − m) / m (fraction, pas pourcentage). rang = position
+   dans la liste saisie (à partir de 1) ; les valeurs illisibles sont
+   ignorées mais gardent leur rang. Signalé si |e| > seuil (strict).
+   Moins de 2 débits lisibles, ou moyenne nulle : moyenne NaN, aucun écart. */
+function ecartsALaMoyenne(debits, seuil) {
+  const s = Number(seuil);
+  const lus = (Array.isArray(debits) ? debits : [])
+    .map((d, i) => ({ rang: i + 1, debit: d }))
+    .filter(x => debitLisible(x.debit));
+  const somme = lus.reduce((a, x) => a + x.debit, 0);
+  const moyenne = lus.length >= 2 && somme > 0 ? somme / lus.length : NaN;
+  if (!Number.isFinite(moyenne)) return { moyenne: NaN, ecarts: [], horsSeuil: [] };
+  const ecarts = lus.map(x => {
+    const ecart = (x.debit - moyenne) / moyenne;
+    return { rang: x.rang, debit: x.debit, ecart, horsSeuil: Number.isFinite(s) && Math.abs(ecart) > s + TOLERANCE_FLOTTANTE };
+  });
+  return { moyenne, ecarts, horsSeuil: ecarts.filter(x => x.horsSeuil).map(x => x.rang) };
+}
+
 /* --- 3. Registre des calculateurs ------------------------------------
    Chaque calculateur : entrées (avec l'origine de leur valeur par défaut)
    et compute(valeurs numériques) → { etapes, resultats, alertes }.
    Sorties BRUTES : la vue formate une seule fois, en fr-FR.
+     alerte   = chaîne, ou { gabarit, operandes } si elle cite des nombres
      etape    = { titre, formule, gabarit, operandes, resultat }
      gabarit  = substitution à marqueurs positionnels {0}, {1}…
      operande = { valeur, decimales }
      resultat = { valeur, unite, decimales }
    Une valeur non calculable vaut null (jamais NaN en sortie). */
 
-// ASSUMÉ — plage non documentée ; semble reprendre l'étendue de la courbe
-// ATR du test IFV (1 à 25 bar), sans source. À trancher par le valideur
-// pulvérisation (O4).
-const PLAGE_PRESSION_ALERTE_BAR = [1, 25];
-
-const ORIGINE_ASSUME = 'ASSUMÉ — exemple pédagogique, à confirmer par le valideur (O4)';
-const ORIGINE_EXEMPLE = 'Exemple de calcul, sans valeur de réglage';
+// ASSUMÉ par défaut : valeur d'exemple sans source. Liste au README, section 5.
+const ORIGINE_ASSUME = 'Valeur d\'exemple, sans source : à confirmer par le référent';
 const ORIGINE_B_IFV = 'Valeur fixe de l\'outil IFV Mon réglage pulvé (code lu le 22/09/2026)';
+
+/* Origines reprises de la synthèse du corpus (source secondaire, D-B0-4) :
+   chaque valeur figure au README, section 13, jusqu'au contrôle au document
+   primaire. Porte G1 (droits) avant fusion dans main. */
+// F-VHA : Fiche volume/hectare, CIVC, février 2014 (synthèse §2.1).
+const ORIGINE_LARGEUR_FVHA = 'Enjambeur 7 rangs à 1,10 m (fiche Volume/hectare, CIVC, février 2014)';
+// F-CGE, F-CGA, F-JET, F-PRE, F-IDE, F-GRE : fiches de réglage 2014–2016, vitesse 5 km/h.
+const ORIGINE_VITESSE_FICHES = 'Vitesse des fiches de réglage du Comité Champagne (2014–2016)';
+// F-CGE, F-CGA, F-JET : 150 L/ha en pleine végétation.
+const ORIGINE_VOLUME_FICHES = 'Volume de pleine végétation des fiches de réglage (2014–2016)';
+// F-PRE, F-IDE : 150–180 L/ha en pleine végétation, jets portés.
+const ORIGINE_VOLUME_180 = 'Haut de la plage de pleine végétation, jets portés (fiches Precijet et Idéal, 2014–2016)';
+// F-VHA : table temps → vitesse, 50 m en 30 s = 6 km/h.
+const ORIGINE_MESURE_FVHA = 'Mesure sur 50 m (fiche Volume/hectare, CIVC, février 2014)';
+// F-PRE, F-IDE : TXA80 0050, pression de travail 3,0–4,5 bar.
+const ORIGINE_PLAGE_BUSE = 'Exemple : plage d\'une buse TXA80 0050 en jets portés (fiche Precijet, Comité Champagne, mai 2016). Reportez la plage de votre buse (notice du fabricant)';
+// F-PRE (mai 2016) : 3 bar à 150 L/ha, exemple placé à la borne basse de la
+// plage 3,0–4,5 bar de la TXA80 0050.
+const ORIGINE_PLAGE_EXEMPLE = 'Exemple dans la plage de travail de la buse de référence';
+// D-B1-1 : Q déduit de V = 150 L/ha, v = 5 km/h, L = 7,7 m (Q exact = 9,625),
+// arrondi pour une saisie lisible.
+const ORIGINE_Q_DEDUIT = 'Exemple déduit de 150 L/ha à 5 km/h sur 7,7 m';
+// D-B2-2 : 48 L = 9,6 L/min × 5 min, cohérent avec volHa.
+const ORIGINE_VOLUME_CUVE = 'Exemple déduit de 9,6 L/min pendant 5 min';
+// F-VHA (février 2014) : 2 min en jets projetés, 5 min en pneumatiques et jets portés.
+const ORIGINE_DUREE_CUVE = 'Durée pour pneumatiques et jets portés ; 2 min pour les jets projetés (fiche Volume/hectare, CIVC, février 2014)';
+// A-LVC : article Le Vigneron Champenois, M.-P. Vacavant, avril 2014 — 180 L/ha
+// avec 3 hauteurs de buses par descente → 120 L/ha avec 2 (synthèse §2.1).
+const ORIGINE_HAUTEURS_ALVC = 'Exemple de l\'article Le Vigneron Champenois, avril 2014';
+// D-B3-5 : liste inventée pour montrer un diffuseur signalé (−10,26 %) et un
+// autre juste sous le seuil (+9,13 %). Aucune mesure réelle.
+const ORIGINE_EXERCICE = 'Exemple fabriqué pour l\'exercice';
+
+const ALERTE_LISTE_COURTE = 'Calcul impossible : saisissez au moins deux débits lisibles, séparés par un point-virgule.';
 
 const ALERTE_SAISIE = 'Calcul impossible : chaque valeur doit être un nombre strictement positif.';
 
@@ -157,6 +272,10 @@ function etape(titre, formule, gabarit, operandes, valeur, unite, decimales) {
 function resultat(label, valeur, unite, decimales) {
   return { label, valeur: sortie(valeur), unite, decimales };
 }
+/* Alerte chiffrée : gabarit à marqueurs + opérandes bruts, mis en forme par
+   la vue comme une étape (le moteur ne formate pas). Une alerte sans nombre
+   reste une chaîne. */
+function alerteChiffree(gabarit, operandes) { return { gabarit, operandes }; }
 function alertesSaisie(resultats) {
   return resultats.some(r => r.valeur === null) ? [ALERTE_SAISIE] : [];
 }
@@ -164,12 +283,13 @@ function alertesSaisie(resultats) {
 const CALCULATEURS = {
   volHa: {
     id: 'volHa',
+    technologies: ['toutes'],
     titre: 'Volume par hectare',
     description: 'Volume de bouillie épandu à partir du débit mesuré, de la vitesse et de la largeur traitée.',
     entrees: [
-      { id: 'Q', label: 'Débit total de la rampe', unite: 'L/min', defaut: 6, origineDefaut: ORIGINE_ASSUME },
-      { id: 'v', label: 'Vitesse d\'avancement', unite: 'km/h', defaut: 6, origineDefaut: ORIGINE_ASSUME },
-      { id: 'L', label: 'Largeur traitée', unite: 'm', defaut: 2.5, origineDefaut: ORIGINE_ASSUME }
+      { id: 'Q', label: 'Débit total de la rampe', unite: 'L/min', defaut: 9.6, origineDefaut: ORIGINE_Q_DEDUIT },
+      { id: 'v', label: 'Vitesse d\'avancement', unite: 'km/h', defaut: 5, origineDefaut: ORIGINE_VITESSE_FICHES },
+      { id: 'L', label: 'Largeur traitée', unite: 'm', defaut: 7.7, origineDefaut: ORIGINE_LARGEUR_FVHA }
     ],
     compute(e) {
       const V = volumeHectare(e.Q, e.v, e.L);
@@ -185,12 +305,14 @@ const CALCULATEURS = {
 
   debitBuse: {
     id: 'debitBuse',
+    technologies: ['toutes'],
     titre: 'Débit par buse pour un volume visé',
     description: 'Débit que chaque buse doit fournir pour épandre le volume visé à la vitesse et la largeur données.',
     entrees: [
-      { id: 'V', label: 'Volume visé', unite: 'L/ha', defaut: 150, origineDefaut: ORIGINE_ASSUME },
-      { id: 'v', label: 'Vitesse d\'avancement', unite: 'km/h', defaut: 6, origineDefaut: ORIGINE_ASSUME },
-      { id: 'L', label: 'Largeur traitée', unite: 'm', defaut: 2.5, origineDefaut: ORIGINE_ASSUME },
+      { id: 'V', label: 'Volume visé', unite: 'L/ha', defaut: 150, origineDefaut: ORIGINE_VOLUME_FICHES },
+      { id: 'v', label: 'Vitesse d\'avancement', unite: 'km/h', defaut: 5, origineDefaut: ORIGINE_VITESSE_FICHES },
+      { id: 'L', label: 'Largeur traitée', unite: 'm', defaut: 7.7, origineDefaut: ORIGINE_LARGEUR_FVHA },
+      // ASSUMÉ (D-B1-3) : le corpus ne donne pas de nombre de buses par matériel.
       { id: 'n', label: 'Nombre de buses ouvertes', unite: 'buses', defaut: 12, origineDefaut: ORIGINE_ASSUME }
     ],
     compute(e) {
@@ -217,21 +339,29 @@ const CALCULATEURS = {
     id: 'pressionPourVolume',
     titre: 'Pression pour un nouveau volume',
     description: 'Pression à régler pour passer d\'un volume à un autre sans changer de buse ni de vitesse.',
+    // Buses hydrauliques : ne s'applique pas aux diffuseurs pneumatiques (D-B4-1).
+    technologies: ['jets-portes', 'jets-projetes'],
     entrees: [
-      { id: 'P1', label: 'Pression actuelle', unite: 'bar', defaut: 8, origineDefaut: ORIGINE_ASSUME },
-      { id: 'V1', label: 'Volume actuel', unite: 'L/ha', defaut: 150, origineDefaut: ORIGINE_ASSUME },
-      { id: 'V2', label: 'Volume visé', unite: 'L/ha', defaut: 180, origineDefaut: ORIGINE_ASSUME },
-      { id: 'b', label: 'Exposant débit–pression de la buse (b)', unite: '', defaut: 0.5, origineDefaut: ORIGINE_B_IFV }
+      { id: 'P1', label: 'Pression actuelle', unite: 'bar', defaut: 3, origineDefaut: ORIGINE_PLAGE_EXEMPLE },
+      { id: 'V1', label: 'Volume actuel', unite: 'L/ha', defaut: 150, origineDefaut: ORIGINE_PLAGE_EXEMPLE },
+      { id: 'V2', label: 'Volume visé', unite: 'L/ha', defaut: 180, origineDefaut: ORIGINE_VOLUME_180 },
+      { id: 'b', label: 'Exposant débit–pression de la buse (b)', unite: '', defaut: 0.5, origineDefaut: ORIGINE_B_IFV },
+      // D-B1-2 : la plage dépend de la buse ; elle est saisie, pas fixée.
+      { id: 'pMin', label: 'Pression minimale de la buse', unite: 'bar', defaut: 3, origineDefaut: ORIGINE_PLAGE_BUSE },
+      { id: 'pMax', label: 'Pression maximale de la buse', unite: 'bar', defaut: 4.5, origineDefaut: ORIGINE_PLAGE_BUSE }
     ],
     compute(e) {
       const r = positif(e.V2) / positif(e.V1);
       const P2 = pressionPourVolume(e.P1, e.V1, e.V2, e.b);
       const resultats = [resultat('Pression à régler', P2, 'bar', 1)];
       const alertes = alertesSaisie(resultats);
-      const [pMin, pMax] = PLAGE_PRESSION_ALERTE_BAR;
-      if (resultats[0].valeur !== null && (P2 < pMin || P2 > pMax)) {
-        alertes.push('Pression calculée hors de la plage ' + pMin + ' à ' + pMax +
-          ' bar : vérifier la plage d\'utilisation de la buse.');
+      const pMin = positif(e.pMin), pMax = positif(e.pMax);
+      if (!(pMin < pMax)) {
+        alertes.push('Plage de pression de la buse invalide : la pression minimale doit être inférieure à la maximale.');
+      } else if (resultats[0].valeur !== null && (P2 < pMin || P2 > pMax)) {
+        alertes.push(alerteChiffree('Pression calculée hors de la plage de la buse ({0} à {1} bar) : ' +
+          'changez de calibre de buse ou de vitesse plutôt que de forcer la pression.',
+          [operande(pMin, 2), operande(pMax, 2)]));
       }
       return {
         etapes: [
@@ -248,11 +378,12 @@ const CALCULATEURS = {
 
   vitesseMesuree: {
     id: 'vitesseMesuree',
+    technologies: ['toutes'],
     titre: 'Vitesse réelle mesurée',
     description: 'Vitesse d\'avancement mesurée sur une distance balisée, en conditions de travail.',
     entrees: [
-      { id: 'd', label: 'Distance parcourue', unite: 'm', defaut: 100, origineDefaut: ORIGINE_EXEMPLE },
-      { id: 't', label: 'Temps mesuré', unite: 's', defaut: 60, origineDefaut: ORIGINE_EXEMPLE }
+      { id: 'd', label: 'Distance parcourue', unite: 'm', defaut: 50, origineDefaut: ORIGINE_MESURE_FVHA },
+      { id: 't', label: 'Temps mesuré', unite: 's', defaut: 30, origineDefaut: ORIGINE_MESURE_FVHA }
     ],
     compute(e) {
       const v = vitesseMesuree(e.d, e.t);
@@ -268,9 +399,11 @@ const CALCULATEURS = {
 
   debitChantier: {
     id: 'debitChantier',
+    technologies: ['toutes'],
     titre: 'Débit de chantier théorique',
     description: 'Surface travaillée par heure, sans temps morts ni demi-tours : un plafond, jamais atteint au champ.',
     entrees: [
+      // ASSUMÉ (D-B1-4) : le corpus ne donne ni vitesse ni largeur d'interceps.
       { id: 'v', label: 'Vitesse d\'avancement', unite: 'km/h', defaut: 6, origineDefaut: ORIGINE_ASSUME },
       { id: 'L', label: 'Largeur travaillée', unite: 'm', defaut: 2.5, origineDefaut: ORIGINE_ASSUME }
     ],
@@ -284,8 +417,142 @@ const CALCULATEURS = {
         alertes: alertesSaisie(resultats)
       };
     }
+  },
+
+  largeurTraitee: {
+    id: 'largeurTraitee',
+    technologies: ['toutes'],
+    titre: 'Largeur traitée',
+    description: 'Enjambeur : nombre de rangs traités par passage × écartement. Chenillard : 1, 2 ou 3 écartements selon que l\'on passe toutes les routes, toutes les 2 ou toutes les 3 routes.',
+    entrees: [
+      { id: 'n', label: 'Nombre d\'écartements traités par passage', unite: 'rangs', defaut: 7, origineDefaut: ORIGINE_LARGEUR_FVHA },
+      { id: 'e', label: 'Écartement entre rangs', unite: 'm', defaut: 1.1, origineDefaut: ORIGINE_LARGEUR_FVHA }
+    ],
+    compute(e) {
+      const L = largeurTraitee(e.n, e.e);
+      const resultats = [resultat('Largeur traitée', L, 'm', 2)];
+      return {
+        etapes: [etape('Largeur traitée', 'L = n × e', '{0} × {1}',
+          [operande(e.n, 0), operande(e.e, 2)], L, 'm', 2)],
+        resultats,
+        alertes: alertesSaisie(resultats)
+      };
+    }
+  },
+
+  debitCuve: {
+    id: 'debitCuve',
+    technologies: ['toutes'],
+    titre: 'Débit total par le niveau de la cuve',
+    description: 'Remplir la ou les cuves à ras bord, pulvériser pendant la durée choisie, puis refaire le niveau en mesurant le volume ajouté : le débit total est ce volume divisé par la durée.',
+    entrees: [
+      { id: 'volume', label: 'Volume refait', unite: 'L', defaut: 48, origineDefaut: ORIGINE_VOLUME_CUVE },
+      { id: 'duree', label: 'Durée de pulvérisation', unite: 'min', defaut: 5, origineDefaut: ORIGINE_DUREE_CUVE }
+    ],
+    compute(e) {
+      const Q = debitParNiveauCuve(e.volume, e.duree);
+      const resultats = [resultat('Débit total', Q, 'L/min', 2)];
+      return {
+        etapes: [etape('Débit total', 'Q = volume refait / durée', '{0} / {1}',
+          [operande(e.volume, 2), operande(e.duree, 2)], Q, 'L/min', 2)],
+        resultats,
+        alertes: alertesSaisie(resultats)
+      };
+    }
+  },
+
+  hauteursBuses: {
+    id: 'hauteursBuses',
+    technologies: ['toutes'],
+    titre: 'Volume selon le nombre de hauteurs de buses',
+    description: 'Volume obtenu en changeant le nombre de hauteurs de buses par descente, à vitesse égale et avec le même débit à chaque hauteur de buse.',
+    entrees: [
+      { id: 'V1', label: 'Volume actuel', unite: 'L/ha', defaut: 180, origineDefaut: ORIGINE_HAUTEURS_ALVC },
+      { id: 'h1', label: 'Hauteurs de buses actuelles', unite: 'hauteurs', defaut: 3, origineDefaut: ORIGINE_HAUTEURS_ALVC },
+      { id: 'h2', label: 'Hauteurs de buses après changement', unite: 'hauteurs', defaut: 2, origineDefaut: ORIGINE_HAUTEURS_ALVC }
+    ],
+    compute(e) {
+      const V2 = volumeSelonHauteurs(e.V1, e.h1, e.h2);
+      const resultats = [resultat('Volume après changement', V2, 'L/ha', 0)];
+      return {
+        etapes: [etape('Volume après changement', 'V2 = V1 × h2 / h1', '{0} × {1} / {2}',
+          [operande(e.V1, 0), operande(Math.round(Number(e.h2)), 0), operande(Math.round(Number(e.h1)), 0)],
+          V2, 'L/ha', 0)],
+        resultats,
+        alertes: alertesSaisie(resultats)
+      };
+    }
+  },
+
+  ecartDiffuseurs: {
+    id: 'ecartDiffuseurs',
+    technologies: ['toutes'],
+    titre: 'Écart entre diffuseurs',
+    description: 'Débit mesuré diffuseur par diffuseur : écart de chacun à la moyenne. Au-delà de 10 %, intervenir : nettoyage, changement de buse ou de pastille, vérification des anti-gouttes.',
+    entrees: [
+      { id: 'debits', type: 'liste', label: 'Débits mesurés par diffuseur', unite: 'L/min',
+        defaut: [1.40, 1.38, 1.52, 1.41, 1.25, 1.39, 1.40], origineDefaut: ORIGINE_EXERCICE }
+    ],
+    compute(e) {
+      const liste = Array.isArray(e.debits) ? e.debits : [];
+      const r = ecartsALaMoyenne(liste, ECART_DIFFUSEUR_MAX);
+      const lisibles = r.ecarts.map(x => x.debit);
+      const ok = Number.isFinite(r.moyenne);
+      const resultats = [
+        resultat('Débit moyen', r.moyenne, 'L/min', 2),
+        resultat('Diffuseurs à contrôler', ok ? r.horsSeuil.length : NaN, '', 0)
+      ];
+      const alertes = [];
+      liste.forEach((d, i) => {
+        if (!debitLisible(d)) alertes.push(alerteChiffree('Valeur n° {0} illisible : elle est ignorée.', [operande(i + 1, 0)]));
+      });
+      if (!ok) alertes.push(ALERTE_LISTE_COURTE);
+      r.ecarts.filter(x => x.horsSeuil).forEach(x => alertes.push(alerteChiffree(
+        'Diffuseur n° {0} : écart de {1} % à la moyenne, au-delà de {2} % : à contrôler.',
+        [operande(x.rang, 0), operande(x.ecart * 100, 2), operande(ECART_DIFFUSEUR_MAX * 100, 0)])));
+      // Exemple d'écart : le diffuseur le plus éloigné de la moyenne.
+      const loin = r.ecarts.reduce((a, x) => (!a || Math.abs(x.ecart) > Math.abs(a.ecart)) ? x : a, null);
+      return {
+        etapes: [
+          etape('Moyenne', 'm = Σ q / n',
+            '(' + (lisibles.length ? lisibles.map((_, i) => '{' + i + '}').join(' + ') : '—') + ') / {' + lisibles.length + '}',
+            lisibles.map(q => operande(q, 2)).concat([operande(ok ? lisibles.length : NaN, 0)]),
+            r.moyenne, 'L/min', 2),
+          etape('Écart du diffuseur le plus éloigné de la moyenne', 'e = (q − m) / m × 100', '({0} − {1}) / {1} × 100',
+            [operande(loin ? loin.debit : NaN, 2), operande(r.moyenne, 2)],
+            loin ? loin.ecart * 100 : NaN, '%', 2)
+        ],
+        resultats,
+        alertes,
+        detail: r.ecarts
+      };
+    }
   }
 };
+
+/* Garde de schéma du registre : erreurs (chaînes), vide = conforme. Une
+   entrée de type liste a un défaut tableau ; toute autre, un défaut nombre. */
+function erreursRegistre(calculateurs) {
+  const err = [];
+  Object.keys(calculateurs || {}).forEach(k => {
+    const c = calculateurs[k];
+    if (!c || c.id !== k) { err.push(k + ' : id différent de la clé'); return; }
+    (c.entrees || []).forEach(en => {
+      const ou = k + '.' + (en && en.id);
+      if (!en || !estTexte(en.id) || !estTexte(en.label)) err.push(ou + ' : id et libellé attendus');
+      else if (en.type === 'liste') {
+        if (!Array.isArray(en.defaut) || !en.defaut.every(x => typeof x === 'number' && Number.isFinite(x)))
+          err.push(ou + ' : entrée liste sans défaut tableau de nombres');
+      } else if (en.type !== undefined) err.push(ou + ' : type d\'entrée inconnu « ' + en.type + ' »');
+      else if (typeof en.defaut !== 'number' || !Number.isFinite(en.defaut)) err.push(ou + ' : défaut numérique attendu');
+      if (en && !estTexte(en.origineDefaut)) err.push(ou + ' : origine du défaut manquante');
+    });
+    if (!Array.isArray(c.technologies) || c.technologies.length === 0 ||
+      !c.technologies.every(t => TECHNOLOGIES.includes(t)))
+      err.push(k + ' : technologies hors du vocabulaire');
+  });
+  return err;
+}
 
 /* Remplace chaque marqueur {i} du gabarit par textes[i]. Un marqueur sans
    texte correspondant reste tel quel (garde : ne lève pas). La vue passe
@@ -307,31 +574,65 @@ function doublons(ids) {
   return [...d];
 }
 
-function validerSection(s, i, err) {
+// Code de source : majuscules, chiffres, tirets (F-VHA, B20-1…) — D-B4-2.
+const FORMAT_CODE_SOURCE = /^[A-Z0-9]+(-[A-Z0-9]+)*$/;
+// Un élément dont le texte visible contient un chiffre doit citer sa source
+// pour qu'un module passe en « valide » (D-B4-3).
+const CHIFFRE = /[0-9]/;
+
+// Ligne de liste : chaîne, ou { texte, source?, lectureGraphique? } (D-B4-5).
+function texteItem(it) { return (it && typeof it === 'object') ? it.texte : it; }
+
+function validerSection(s, i, err, codes) {
   const ou = 'section ' + (s && s.id ? '« ' + s.id + ' »' : '#' + (i + 1));
   if (!s || typeof s !== 'object') { err.push(ou + ' : objet attendu'); return; }
+  const connus = codes instanceof Set ? codes : new Set();
+  // Toute référence `source` d'un élément doit exister dans les sources du module.
+  const verifSource = (el, ici) => {
+    if (el && typeof el === 'object' && el.source !== undefined && !(estTexte(el.source) && connus.has(el.source)))
+      err.push(ici + ' : source inconnue « ' + el.source + ' »');
+  };
   if (!estTexte(s.id)) err.push(ou + ' : id manquant');
   if (!estTexte(s.titre)) err.push(ou + ' : titre manquant');
   if (!TYPES_SECTION.includes(s.type)) { err.push(ou + ' : type inconnu « ' + s.type + ' »'); return; }
+  if (s.technologie !== undefined && !TECHNOLOGIES.includes(s.technologie))
+    err.push(ou + ' : technologie inconnue « ' + s.technologie + ' »');
+  verifSource(s, ou);
 
   if (s.type === 'fiche') {
     if (!Array.isArray(s.blocs) || s.blocs.length === 0) { err.push(ou + ' : blocs manquants'); return; }
     s.blocs.forEach((b, j) => {
-      if (!b || !TYPES_BLOC.includes(b.type)) err.push(ou + ' : bloc ' + (j + 1) + ' de type inconnu');
-      else if (b.type === 'liste' ? !(Array.isArray(b.items) && b.items.length && b.items.every(estTexte)) : !estTexte(b.texte))
-        err.push(ou + ' : bloc ' + (j + 1) + ' vide');
+      const bo = ou + ' : bloc ' + (j + 1);
+      if (!b || !TYPES_BLOC.includes(b.type)) { err.push(bo + ' de type inconnu'); return; }
+      verifSource(b, bo);
+      if (b.type === 'liste') {
+        if (!(Array.isArray(b.items) && b.items.length && b.items.every(it => estTexte(texteItem(it))))) err.push(bo + ' vide');
+        else b.items.forEach((it, k) => verifSource(it, bo + ', ligne ' + (k + 1)));
+      } else if (b.type === 'tableau') {
+        // D-B4-4 : en-têtes non vides, chaque ligne de la longueur des en-têtes.
+        if (!(Array.isArray(b.entetes) && b.entetes.length && b.entetes.every(estTexte))) err.push(bo + ' : en-têtes manquants');
+        else if (!(Array.isArray(b.lignes) && b.lignes.length)) err.push(bo + ' : lignes manquantes');
+        else b.lignes.forEach((l, k) => {
+          if (!Array.isArray(l) || l.length !== b.entetes.length)
+            err.push(bo + ', ligne ' + (k + 1) + ' : ' + b.entetes.length + ' cellules attendues');
+          else if (!l.every(c => typeof c === 'string')) err.push(bo + ', ligne ' + (k + 1) + ' : cellules texte attendues');
+        });
+      } else if (!estTexte(b.texte)) err.push(bo + ' vide');
     });
   } else if (s.type === 'procedure') {
     if (!Array.isArray(s.etapes) || s.etapes.length === 0) { err.push(ou + ' : étapes manquantes'); return; }
     s.etapes.forEach((e, j) => {
       if (!e || !estTexte(e.id) || !estTexte(e.texte)) err.push(ou + ' : étape ' + (j + 1) + ' incomplète');
+      else verifSource(e, ou + ' : étape « ' + e.id + ' »');
     });
     doublons(s.etapes.map(e => e && e.id)).forEach(d => err.push(ou + ' : étape en double « ' + d + ' »'));
   } else if (s.type === 'entretien') {
     if (!Array.isArray(s.taches) || s.taches.length === 0) { err.push(ou + ' : tâches manquantes'); return; }
     s.taches.forEach((t, j) => {
-      if (!t || !estTexte(t.id) || !estTexte(t.texte)) err.push(ou + ' : tâche ' + (j + 1) + ' incomplète');
-      else if (!PERIODICITES.includes(t.periodicite)) err.push(ou + ' : périodicité inconnue « ' + t.periodicite + ' »');
+      if (!t || !estTexte(t.id) || !estTexte(t.texte)) { err.push(ou + ' : tâche ' + (j + 1) + ' incomplète'); return; }
+      if (!PERIODICITES.includes(t.periodicite)) err.push(ou + ' : périodicité inconnue « ' + t.periodicite + ' »');
+      if (t.detail !== undefined && !estTexte(t.detail)) err.push(ou + ' : tâche « ' + t.id + ' » : détail vide');
+      verifSource(t, ou + ' : tâche « ' + t.id + ' »');
     });
     doublons(s.taches.map(t => t && t.id)).forEach(d => err.push(ou + ' : tâche en double « ' + d + ' »'));
   } else if (s.type === 'calculateur') {
@@ -346,6 +647,7 @@ function validerSection(s, i, err) {
       else if (!Array.isArray(q.bonnes) || q.bonnes.length === 0 ||
         !q.bonnes.every(k => Number.isInteger(k) && k >= 0 && k < q.choix.length))
         err.push(qu + ' : bonnes réponses invalides');
+      verifSource(q, qu);
     });
     doublons(s.questions.map(q => q && q.id)).forEach(d => err.push(ou + ' : question en double « ' + d + ' »'));
   } else if (s.type === 'cas') {
@@ -354,9 +656,72 @@ function validerSection(s, i, err) {
     s.options.forEach((o, j) => {
       if (!o || !estTexte(o.texte) || !estTexte(o.retour) || typeof o.correct !== 'boolean')
         err.push(ou + ' : option ' + (j + 1) + ' incomplète');
+      else verifSource(o, ou + ' : option ' + (j + 1));
     });
     if (!s.options.some(o => o && o.correct === true)) err.push(ou + ' : aucune option correcte');
+  } else if (s.type === 'definitions') {
+    // D-B10-1 : termes non vides et uniques, chaque définition sourcée.
+    if (!Array.isArray(s.entrees) || s.entrees.length === 0) { err.push(ou + ' : entrées manquantes'); return; }
+    s.entrees.forEach((d, j) => {
+      const du = ou + ' : entrée ' + (j + 1);
+      if (!d || !estTexte(d.id) || !estTexte(d.terme) || !estTexte(d.definition)) { err.push(du + ' incomplète'); return; }
+      if (!estTexte(d.source)) err.push(du + ' (« ' + d.terme + ' ») : source obligatoire');
+      else verifSource(d, du);
+    });
+    doublons(s.entrees.map(d => d && d.id)).forEach(d => err.push(ou + ' : entrée en double « ' + d + ' »'));
+    doublons(s.entrees.map(d => d && typeof d.terme === 'string' ? d.terme.trim().toLowerCase() : d))
+      .forEach(d => err.push(ou + ' : terme en double « ' + d + ' »'));
+  } else if (s.type === 'exercice') {
+    // D-B5-1 : la réponse attendue est calculée par un calculateur du moteur.
+    if (!estTexte(s.enonce)) err.push(ou + ' : énoncé manquant');
+    const C = Object.prototype.hasOwnProperty.call(CALCULATEURS, s.calculateur) ? CALCULATEURS[s.calculateur] : null;
+    if (!C) { err.push(ou + ' : calculateur inconnu « ' + s.calculateur + ' »'); return; }
+    const v = (s.valeurs && typeof s.valeurs === 'object') ? s.valeurs : {};
+    const manquantes = C.entrees.filter(en => !Object.prototype.hasOwnProperty.call(v, en.id)).map(en => en.id);
+    if (manquantes.length) err.push(ou + ' : valeurs manquantes (' + manquantes.join(', ') + ')');
+    else {
+      const n = C.compute(v).resultats.length;
+      if (!Number.isInteger(s.resultat) || s.resultat < 0 || s.resultat >= n)
+        err.push(ou + ' : indice de résultat invalide « ' + s.resultat + ' » (' + n + ' résultat' + (n > 1 ? 's' : '') + ')');
+    }
   }
+}
+
+/* Éléments dont le texte visible contient un chiffre sans `source` (D-B4-3) :
+   → [{ sectionId, element }]. Éléments : bloc (une liste sourcée couvre ses
+   lignes, sinon chaque ligne compte), étape, tâche, question, option de cas,
+   section (situation d'un cas, énoncé d'un exercice, introduction). Ne lève
+   jamais. Erreur seulement pour un module « valide » ; sinon compté à
+   l'écran. */
+function elementsChiffresSansSource(m) {
+  const res = [];
+  if (!m || typeof m !== 'object' || !Array.isArray(m.sections)) return res;
+  const chiffre = t => typeof t === 'string' && CHIFFRE.test(t);
+  const noter = (sid, el, textes) => {
+    const src = el && typeof el === 'object' ? el.source : undefined;
+    if (!estTexte(src) && textes.some(chiffre)) res.push({ sectionId: sid, element: el });
+  };
+  m.sections.forEach(s => {
+    if (!s || typeof s !== 'object') return;
+    const sid = s.id;
+    noter(sid, s, [s.intro, s.situation, s.enonce]);
+    const liste = (x) => Array.isArray(x) ? x : [];
+    if (s.type === 'fiche') liste(s.blocs).forEach(b => {
+      if (!b || typeof b !== 'object') return;
+      if (b.type === 'liste') {
+        if (estTexte(b.source)) return;
+        liste(b.items).forEach(it => noter(sid, it, [texteItem(it)]));
+      } else if (b.type === 'tableau') {
+        noter(sid, b, liste(b.entetes).concat(...liste(b.lignes).map(liste)));
+      } else noter(sid, b, [b.texte]);
+    });
+    else if (s.type === 'procedure') liste(s.etapes).forEach(e => e && noter(sid, e, [e.texte, e.detail]));
+    else if (s.type === 'entretien') liste(s.taches).forEach(t => t && noter(sid, t, [t.texte, t.detail]));
+    else if (s.type === 'quiz') liste(s.questions).forEach(q => q && noter(sid, q, [q.enonce, q.explication].concat(liste(q.choix))));
+    else if (s.type === 'cas') liste(s.options).forEach(o => o && noter(sid, o, [o.texte, o.retour]));
+    else if (s.type === 'definitions') liste(s.entrees).forEach(d => d && noter(sid, d, [d.terme, d.definition]));
+  });
+  return res;
 }
 
 function validerModule(m) {
@@ -367,21 +732,32 @@ function validerModule(m) {
   if (!estTexte(m.resume)) err.push('résumé manquant');
   if (!DOMAINES.includes(m.domaine)) err.push('domaine inconnu « ' + m.domaine + ' »');
   if (!STATUTS.includes(m.statut)) err.push('statut inconnu « ' + m.statut + ' »');
+  const codes = new Set();
   if (!Array.isArray(m.sources)) err.push('sources : tableau attendu (vide autorisé hors statut validé)');
-  else m.sources.forEach((s, j) => {
-    if (!s || !estTexte(s.reference) || !estTexte(s.date)) err.push('source ' + (j + 1) + ' : référence et date attendues');
-  });
+  else {
+    m.sources.forEach((s, j) => {
+      if (!s || !estTexte(s.reference) || !estTexte(s.date)) err.push('source ' + (j + 1) + ' : référence et date attendues');
+      if (!s || !estTexte(s.code)) err.push('source ' + (j + 1) + ' : code manquant');
+      else if (!FORMAT_CODE_SOURCE.test(s.code)) err.push('source ' + (j + 1) + ' : code « ' + s.code + ' » non conforme (majuscules, chiffres, tirets)');
+      else codes.add(s.code);
+    });
+    doublons(m.sources.map(s => s && s.code).filter(estTexte)).forEach(d => err.push('source en double « ' + d + ' »'));
+  }
   if (m.statut === 'valide') {
     if (!estTexte(m.valideur)) err.push('statut validé sans valideur nommé');
     if (!Array.isArray(m.sources) || m.sources.length === 0) err.push('statut validé sans source');
   }
   if (!Array.isArray(m.sections) || m.sections.length === 0) { err.push('sections manquantes'); return err; }
-  m.sections.forEach((s, i) => validerSection(s, i, err));
+  m.sections.forEach((s, i) => validerSection(s, i, err, codes));
   doublons(m.sections.map(s => s && s.id)).forEach(d => err.push('section en double « ' + d + ' »'));
+  if (m.statut === 'valide') {
+    elementsChiffresSansSource(m).forEach(x => err.push('section « ' + x.sectionId + ' » : élément chiffré sans source (« ' +
+      String(texteItem(x.element) || x.element.texte || x.element.enonce || x.element.situation || x.element.intro || '').slice(0, 40) + ' »)'));
+  }
   return err;
 }
 
-/* --- 5. Quiz ------------------------------------------------------------
+/* --- 5. Quiz et exercices --------------------------------------------
    Une question est juste si l'ensemble des choix cochés égale exactement
    l'ensemble des bonnes réponses (ni oubli, ni choix en trop). */
 
@@ -400,6 +776,30 @@ function noterQuiz(section, reponses) {
   const details = qs.map(q => ({ qid: q.id, juste: noterQuestion(q, rep[q.id]) }));
   const bonnes = details.filter(d => d.juste).length;
   return { bonnes, total: qs.length, taux: qs.length ? bonnes / qs.length : 0, details };
+}
+
+/* Réponse attendue d'un exercice : résultat n° `resultat` du calculateur
+   appliqué aux `valeurs` de la section → { valeur, unite, decimales, etapes }
+   (valeur null si non calculable). Ne lève jamais. */
+function attenduExercice(section) {
+  const vide = { valeur: null, unite: '', decimales: 0, etapes: [] };
+  const C = section && Object.prototype.hasOwnProperty.call(CALCULATEURS, section.calculateur)
+    ? CALCULATEURS[section.calculateur] : null;
+  if (!C) return vide;
+  const r = C.compute((section.valeurs && typeof section.valeurs === 'object') ? section.valeurs : {});
+  const x = r.resultats[section.resultat];
+  if (!x) return vide;
+  return { valeur: x.valeur, unite: x.unite, decimales: x.decimales, etapes: r.etapes };
+}
+
+/* Correction (D-B5-2) : juste si la réponse, arrondie au nombre de
+   décimales du résultat, égale l'attendu arrondi de même. Aucune tolérance
+   arbitraire. Réponse non numérique ou non finie → faux. Ne lève jamais. */
+function arrondi(x, d) { const f = Math.pow(10, d); return Math.round(x * f); }
+function corrigerExercice(section, reponse) {
+  const attendu = attenduExercice(section);
+  const ok = typeof reponse === 'number' && Number.isFinite(reponse) && attendu.valeur !== null;
+  return { juste: ok && arrondi(reponse, attendu.decimales) === arrondi(attendu.valeur, attendu.decimales), attendu };
 }
 
 /* --- 6. Progression -------------------------------------------------
@@ -482,15 +882,50 @@ function avancement(p, module) {
   return { vues: n, total: sections.length, taux: sections.length ? n / sections.length : 0 };
 }
 
+// Module de référence (glossaire) : ni avancement, ni état, ni catalogue.
+function estModuleReference(m) { return !!m && m.domaine === 'transversal'; }
+
+/* ASSUMÉ — formation, pas certification : tentatives illimitées, toutes les
+   réponses justes (dernier taux ≥ 1). À trancher par le référent
+   pédagogique si un usage certifiant apparaît (D-B6-2, arbitrage A4). */
+const SEUIL_MAITRISE = 1;
+
+// Sections qui se réussissent : quiz et exercices.
+function sectionsEvaluees(module) {
+  const sections = (module && Array.isArray(module.sections)) ? module.sections : [];
+  return sections.filter(s => s && (s.type === 'quiz' || s.type === 'exercice'));
+}
+
+// { reussies, total } : sections évaluées dont le dernier taux atteint SEUIL_MAITRISE.
+function bilanEvaluation(p, module) {
+  const ev = sectionsEvaluees(module);
+  const quiz = lireModuleProg(p, module && module.id).quiz;
+  const reussies = ev.filter(s => {
+    const q = quiz[s.id];
+    return !!q && Number.isFinite(q.taux) && q.taux >= SEUIL_MAITRISE;
+  }).length;
+  return { reussies, total: ev.length };
+}
+
+/* non-commence → en-cours → consulte (toutes les sections ouvertes) →
+   maitrise (en plus, toutes les sections évaluées réussies). Un module sans
+   quiz ni exercice plafonne à « consulte » (D-B6-3). */
 function etatModule(p, module) {
   const a = avancement(p, module);
   if (a.vues === 0) return 'non-commence';
-  return a.vues >= a.total ? 'termine' : 'en-cours';
+  if (a.vues < a.total) return 'en-cours';
+  const b = bilanEvaluation(p, module);
+  return b.total > 0 && b.reussies >= b.total ? 'maitrise' : 'consulte';
 }
 
 /* --- 7. Registre de contenu ------------------------------------------
    Le contenu vit hors du moteur (contenu/<id>.js), pour que des experts le
    rédigent sans toucher au code. */
+
+/* Date d'édition du contenu (ISO), affichée en pied de page (D-B6-4) : à
+   changer à CHAQUE modification de contenu/, et à reporter dans la section
+   « Édition du contenu » du README (test statique). */
+const EDITION_CONTENU = '2026-09-23';
 
 /* SEUL ACCÈS GLOBAL DU MOTEUR. Lu au moment de l'appel, jamais à la
    définition : l'ordre de chargement des scripts de <helmet> n'est pas
@@ -537,6 +972,12 @@ function erreursContenu(liste) {
     validerModule(m).forEach(e => err.push(nom + ' : ' + e));
   });
   doublons(mods.map(m => m && m.id)).forEach(d => err.push('module en double « ' + d + ' »'));
+  // Quiz, cas, exercices : l'id de section est une clé d'état de l'écran.
+  const evalues = [];
+  mods.forEach(m => (m && Array.isArray(m.sections) ? m.sections : []).forEach(s => {
+    if (s && TYPES_SECTION_EVALUES.includes(s.type)) evalues.push(s.id);
+  }));
+  doublons(evalues).forEach(d => err.push('section « ' + d + ' » en double sur le catalogue (quiz, cas ou exercice)'));
   return err;
 }
 
@@ -585,17 +1026,21 @@ function lien(...segments) {
 const OAD = {
   // vocabulaires
   DOMAINES, DOMAINES_LIBELLES, STATUTS, STATUTS_LIBELLES,
-  TYPES_SECTION, TYPES_SECTION_LIBELLES, TYPES_BLOC,
+  TYPES_SECTION, TYPES_SECTION_LIBELLES, TYPES_BLOC, TECHNOLOGIES, TECHNOLOGIES_LIBELLES,
   PERIODICITES, PERIODICITES_LIBELLES, ETATS_MODULE, ETATS_MODULE_LIBELLES,
   // formules
   volumeHectare, debitTotalPourVolume, debitParBuse, ajustementPuissance,
   pressionPourVolume, vitesseMesuree, debitChantierTheorique,
+  largeurTraitee, debitParNiveauCuve, volumeSelonHauteurs, volumeApresChangementVitesse,
+  ECART_DIFFUSEUR_MAX, ecartsALaMoyenne,
   // calculateurs
-  PLAGE_PRESSION_ALERTE_BAR, CALCULATEURS, substituer,
+  CALCULATEURS, erreursRegistre, substituer,
   // schéma, quiz, progression
-  validerModule, noterQuestion, noterQuiz,
+  TYPES_SECTION_EVALUES,
+  validerModule, elementsChiffresSansSource, noterQuestion, noterQuiz, attenduExercice, corrigerExercice,
   VERSION_PROGRESSION, progressionVide, marquerVue, basculerEtape, basculerTache,
   enregistrerQuiz, progressionSection, avancement, etatModule,
+  SEUIL_MAITRISE, sectionsEvaluees, bilanEvaluation, estModuleReference, EDITION_CONTENU,
   // registre de contenu, routes
   modules, ordonnerModules, erreursContenu, listerModules, trouverModule, trouverSection,
   lireRoute, lien
