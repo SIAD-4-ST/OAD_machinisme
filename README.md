@@ -28,6 +28,7 @@ l'origine est affichée ; aucune donnée ne quitte l'appareil.
 14. Consignes retirées, à reproposer au valideur
 15. Édition du contenu
 16. Journal d'arbitrages — lot B
+17. Journal d'arbitrages — C2, unification des calculateurs (23/09/2026)
 
 ## 1. Démarrage rapide
 
@@ -72,7 +73,7 @@ refusé.
 
 **Parcours.** Catalogue (modules groupés par domaine, statut, durée,
 état, quiz réussis) → module (sommaire, section courante, sections voisines) ; page
-Calculateurs (les calculateurs hors module) ; page Progression (tableau par
+Calculateurs (les calculateurs hors module, groupés en quatre familles) ; page Progression (tableau par
 module : sections consultées, quiz, quiz réussis, état ; effacement).
 
 **Catalogue.** Pulvérisation : régler le volume par hectare ; entretenir le
@@ -89,9 +90,12 @@ Un module sans quiz ni exercice plafonne à *Consulté* (« Pas de quiz dans ce
 module »). Clé et format de stockage inchangés : une progression enregistrée
 avant B6 se relit sans migration. Pied de page : date d'édition du contenu. Navigation par hash : liens profonds et bouton retour.
 
-**Restitution.** Calculateurs : résultats en tête, puis « Détail du calcul »
-(formule symbolique, formule avec les valeurs, résultat), et sous chaque champ
-la valeur par défaut et son origine. Module non validé : bandeau « Contenu en
+**Restitution.** Calculateurs : pastilles des autres calculs de la même
+famille, résultats en tête, champs, puis « Détail du calcul » (formule
+symbolique, formule avec les valeurs, résultat), et sous chaque champ la
+valeur par défaut et son origine. Une entrée mesurable (débit, vitesse,
+largeur) propose « Calculer à partir d'une mesure » : les champs de la mesure
+s'ouvrent sous elle et ses étapes précèdent celles du calcul. Module non validé : bandeau « Contenu en
 cours de rédaction ».
 
 **Sorties.** Impression des procédures et plans d'entretien (bouton dédié ;
@@ -118,9 +122,17 @@ questions ; `aria-pressed` sur les choix ; focus visible.
 | Largeur traitée (`largeurTraitee`) | L = n × e | 7 rangs, 1,10 m → 7,7 m |
 | Débit total par le niveau de la cuve (`debitCuve`) | Q = volume refait / durée | 48 L, 5 min → 9,6 L/min |
 | Volume selon le nombre de hauteurs de buses (`hauteursBuses`) | V2 = V1 × h2 / h1 | 180 L/ha, 3 → 2 hauteurs → 120 L/ha |
+| Vitesse à tenir pour un volume visé (`vitesseVisee`) | v = 600 × Q / (V × L) | 150 L/ha, 9,6 L/min, 7,7 m → 5 km/h (4,987) |
+| Volume après un changement de vitesse (`changementVitesse`) | V2 = V1 × v1 / v2 | 150 L/ha, 5 → 6 km/h → 125 L/ha |
 | Écart entre diffuseurs (`ecartDiffuseurs`) | m = Σ q / n ; e = (q − m) / m | 1,40 ; 1,38 ; 1,52 ; 1,41 ; 1,25 ; 1,39 ; 1,40 L/min → moyenne 1,39 L/min ; diffuseur n° 5 à −10,26 %, à contrôler |
 
-Neuf calculateurs. `ecartDiffuseurs` reçoit une **liste** (valeurs séparées
+Onze calculateurs, en quatre familles (C2) : *Volume, débit et vitesse*
+(`volHa`, `debitBuse`, `vitesseVisee` : la même relation résolue pour V, Q
+ou v) ; *Changer le volume : un levier à la fois* (`pressionPourVolume`,
+`hauteursBuses`, `changementVitesse`) ; *Mesures au champ*
+(`vitesseMesuree`, `largeurTraitee`, `debitCuve`, `ecartDiffuseurs`) ;
+*Travail du sol* (`debitChantier`). Dans les deux premières familles, les
+saisies sont communes à tous les calculs de la famille. `ecartDiffuseurs` reçoit une **liste** (valeurs séparées
 par un point-virgule, la virgule restant décimale) et affiche le détail par
 diffuseur dans un tableau ; un diffuseur est signalé si son écart dépasse
 strictement 10 % (`ECART_DIFFUSEUR_MAX`, F-VHA). Un débit nul désigne un
@@ -128,8 +140,19 @@ diffuseur bouché : il n'entre pas dans la moyenne, qui porte sur les seuls
 débits non nuls (au moins deux), et il est toujours signalé, même quand la
 moyenne n'est pas calculable (D-C1-1, D-C1-2).
 
-Formule sans calculateur, utilisée par les tests du cas pratique :
-`volumeApresChangementVitesse(V1, v1, v2) = V1 × v1 / v2`.
+`volumeApresChangementVitesse(V1, v1, v2) = V1 × v1 / v2`, jusqu'ici sans
+écran (tests du cas pratique), a désormais son calculateur
+(`changementVitesse`).
+
+**Mesures.** Une entrée déclarée `mesure: '<calculateur>'` peut être
+calculée à partir de ce calculateur de mesure : `Q` ← `debitCuve`, `v` ←
+`vitesseMesuree`, `L` ← `largeurTraitee`, dans `volHa`, `debitBuse`,
+`vitesseVisee` et `changementVitesse` (`v1`). Les saisies de la mesure sont
+celles de sa propre page : mesurer une fois sert partout.
+`OAD.calculer(id, valeurs, mesures)` enchaîne les calculs ; les gardes
+`erreursRegistre` et `erreursFamilles` vérifient qu'une mesure fournit la
+grandeur de l'entrée dans son unité et que, dans une famille partagée, une
+même clé d'entrée a partout la même unité.
 
 Les facteurs 600, 3,6 et 10 sont des conversions d'unités, démontrées en
 commentaire dans `moteur-oad.js`. Alerte de pression : le résultat est
@@ -340,11 +363,11 @@ contrôler une à une sur le document primaire.
 
 | Valeur | Où dans l'outil | Code source | Page | Contrôlé le | Par |
 |---|---|---|---|---|---|
-| Largeur traitée 7 × 1,10 m = 7,7 m | `volHa.L`, `debitBuse.L` | F-VHA | | | |
-| Vitesse 5 km/h | `volHa.v`, `debitBuse.v` | F-CGE, F-CGA, F-JET, F-PRE, F-IDE, F-GRE | | | |
-| 150 L/ha en pleine végétation | `debitBuse.V`, `pressionPourVolume.V1` | F-CGE, F-CGA, F-JET | | | |
+| Largeur traitée 7 × 1,10 m = 7,7 m | `volHa.L`, `debitBuse.L`, `vitesseVisee.L` | F-VHA | | | |
+| Vitesse 5 km/h | `volHa.v`, `debitBuse.v`, `changementVitesse.v1` | F-CGE, F-CGA, F-JET, F-PRE, F-IDE, F-GRE | | | |
+| 150 L/ha en pleine végétation | `debitBuse.V`, `vitesseVisee.V`, `changementVitesse.V1`, `pressionPourVolume.V1` | F-CGE, F-CGA, F-JET | | | |
 | 150–180 L/ha en pleine végétation (jets portés) | `pressionPourVolume.V2` (180) | F-PRE, F-IDE | | | |
-| 50 m en 30 s → 6 km/h | `vitesseMesuree.d`, `vitesseMesuree.t` | F-VHA | | | |
+| 50 m en 30 s → 6 km/h | `vitesseMesuree.d`, `vitesseMesuree.t`, `changementVitesse.v2` | F-VHA | | | |
 | Pression de travail 3,0–4,5 bar, TeeJet Conejet TXA80 0050 | `pressionPourVolume.pMin`, `.pMax`, `.P1` (3) | F-PRE, F-IDE | | | |
 | 7 rangs × 1,10 m | `largeurTraitee.n`, `.e` | F-VHA | | | |
 | Durée de mesure au niveau de cuve : 5 min (pneumatiques, jets portés), 2 min (jets projetés) | `debitCuve.duree` | F-VHA | | | |
@@ -744,4 +767,49 @@ Sans débit nul et avec P1 dans la plage, résultats et alertes inchangés.
 Le libellé « Calcul impossible : saisissez au moins deux débits lisibles »
 est conservé ; il reste exact sauf quand les débits lisibles sont surtout
 nuls (ex. `[0 ; 0 ; 1,4]`), cas où « non nuls » serait plus juste. Point
-laissé au rédacteur.
+laissé au rédacteur. *Tranché en C2 : « deux débits non nuls ».*
+
+## 17. Journal d'arbitrages — C2, unification des calculateurs (23/09/2026)
+
+Aucune fonctionnalité retirée : les neuf calculateurs gardent leur id, leurs
+entrées, leurs défauts, leurs sorties et leurs alertes (test de parité
+`calculer` = `compute` sur les neuf). Les contenus qui citent un calculateur
+par son id sont inchangés ; `EDITION_CONTENU` aussi.
+
+- **D-C2-1 — fabrique déclarative.** Dix calculateurs sur onze sont décrits
+  par `calculateurSimple({ entrees, etapes, resultats, alertes? })` : chaque
+  étape lit la portée (entrées et étapes précédentes, par clé). Une seule
+  implémentation de l'alerte de saisie et du contrat de sortie.
+  `ecartDiffuseurs` (liste, tableau) reste programmé. Parité vérifiée sur
+  les défauts et sur des saisies négatives, vides et quelconques : sorties
+  identiques octet pour octet.
+- **D-C2-2 — familles.** `FAMILLES_CALCULATEURS` groupe la page et, pour
+  *Volume, débit et vitesse* et *Changer le volume*, partage les saisies
+  (`cleSaisie`) : une vitesse saisie dans « Volume par hectare » se retrouve
+  dans « Débit par buse ». Pas de partage dans *Mesures au champ* (`n` y
+  désigne des rangs, dans `debitBuse` des buses). « Revenir aux valeurs par
+  défaut » vaut pour toute la famille partagée, et le dit. Écarté : partage
+  global par nom de grandeur (la vitesse d'un interceps n'est pas celle d'un
+  pulvérisateur).
+- **D-C2-3 — mesures imbriquées.** Une entrée mesurable s'ouvre sur les
+  champs de sa mesure, dont les saisies sont celles de sa page ; les étapes
+  de la mesure précèdent celles du calcul ; ses alertes sont préfixées du
+  libellé de l'entrée, sans doubler l'alerte de saisie. Pas de mesure pour
+  `debitChantier.v` : `vitesseMesuree` porte des saisies de pulvérisation
+  (défaut F-VHA) ; à ouvrir si le référent travail du sol le souhaite.
+  `ecartDiffuseurs` → `Q` (somme des débits) écarté : exact seulement si
+  tous les diffuseurs ouverts sont saisis.
+- **D-C2-4 — deux calculateurs ajoutés** pour compléter les familles, sans
+  valeur nouvelle : `vitesseVisee` (troisième résolution de V = 600 Q / (v L))
+  et `changementVitesse` (formule D-B2-4 déjà testée). Défauts repris
+  d'origines existantes (section 13 mise à jour).
+- **D-C2-5 — écran.** Résultats au-dessus des champs (le README l'annonçait,
+  le gabarit ne le faisait pas) ; tableau d'écart après le détail du calcul ;
+  pastilles de famille aussi dans les sections de module (elles mènent à la
+  page Calculateurs). Libellé « deux débits non nuls » (point C1).
+
+Rendu vérifié dans Chromium sans interface, `file://`, à 400 px et
+1 100 px : famille, mesure de vitesse imbriquée (50 m / 35 s → 145 L/ha,
+reprise par « Débit par buse » : 9,9 L/min), aucune largeur excédentaire.
+Non vérifié : tablette réelle, gants, plein soleil, thème sombre à l'œil.
+

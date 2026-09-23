@@ -307,13 +307,15 @@ test('enregistrerQuiz : la date vient de l\'appelant ; absente → null', () => 
 // Pourquoi : défauts recalés sur le corpus, B1 — +pMin, +pMax (était 15) ;
 // puis 3 calculateurs ajoutés, B2 — +7 entrées (était 17) ; puis écart entre
 // diffuseurs, B3 — +1 entrée liste (était 24).
-test('chaque entrée de chaque calculateur a un origineDefaut non vide (25 entrées)', () => {
+// Pourquoi : unification C2 — +2 calculateurs (vitesseVisee, changementVitesse),
+// +6 entrées (était 25).
+test('chaque entrée de chaque calculateur a un origineDefaut non vide (31 entrées)', () => {
   let n = 0;
   Object.values(OAD.CALCULATEURS).forEach(c => c.entrees.forEach(e => {
     n++;
     assert.ok(typeof e.origineDefaut === 'string' && e.origineDefaut.trim(), c.id + '.' + e.id);
   }));
-  assert.strictEqual(n, 25);   // 3 + 4 + 6 + 2 + 2 + 2 + 2 + 3 + 1
+  assert.strictEqual(n, 31);   // 3 + 4 + 3 + 6 + 3 + 3 + 2 + 2 + 2 + 1 + 2
 });
 // Pourquoi : défauts recalés sur le corpus, B1 — seuls n et debitChantier
 // restent sans source (D-B1-3, D-B1-4).
@@ -380,7 +382,9 @@ test('scripts contenu/ de <helmet> = liste de contenu/index.js, dans l\'ordre, p
 test('calcul délégué au moteur : ni 600 *, ni Math.pow, ni 3.6 *, ni / 10 dans le composant', () => {
   ['600 *', 'Math.pow', '3.6 *', '/ 10'].forEach(motif =>
     assert.ok(!SCRIPT_SANS_COMMENTAIRES.includes(motif), 'motif interdit : ' + motif));
-  assert.ok(/\.compute\(nombres\)/.test(SCRIPT_SANS_COMMENTAIRES));
+  // Pourquoi : C2 — le composant passe par OAD.calculer (mesures imbriquées),
+  // qui appelle compute dans le moteur (était .compute(nombres)).
+  assert.ok(/OAD\.calculer\(C\.id, nombres, mesures\)/.test(SCRIPT_SANS_COMMENTAIRES));
   assert.ok(/OAD\.substituer\(/.test(SCRIPT_SANS_COMMENTAIRES));
 });
 test('horloge : lue une seule fois dans le composant, dans validerQuiz', () => {
@@ -724,7 +728,9 @@ test('registre : les nouvelles entrées ont un origineDefaut non vide ; la page 
     c.entrees.forEach(e => assert.ok(typeof e.origineDefaut === 'string' && e.origineDefaut.trim(), id + '.' + e.id));
   });
   const c = new Component({});
-  assert.strictEqual(rendre(c, '#/outils').outilsListe.length, Object.keys(OAD.CALCULATEURS).length);
+  // Pourquoi : C2 — la page liste le registre groupé par famille (était outilsListe à plat).
+  const groupes = rendre(c, '#/outils').outilsGroupes;
+  assert.strictEqual(groupes.reduce((n, g) => n + g.calcs.length, 0), Object.keys(OAD.CALCULATEURS).length);
 });
 test('rendu à blanc : #/outils/largeurTraitee, debitCuve, hauteursBuses', () => {
   const c = new Component({});
@@ -1391,83 +1397,112 @@ test('pression P1 = pMin = 3 (bornes incluses), 150 → 180 L/ha : aucune alerte
   assert.deepStrictEqual(CALC.pressionPourVolume.compute({ P1: 3, V1: 150, V2: 180, b: 0.5, pMin: 3, pMax: 4.5 }).alertes, []);
 });
 
-section('§21 v3 — reprise du parcours');
+// ----------------------------------------------------------------------
+section('§21 C2 — unification des calculateurs');
+// Valeurs calculées à la main (D-C2-1 à D-C2-5).
 
-const repGlossaire = { id: 'rg', domaine: 'transversal', sections: [{ id: 'g1', type: 'fiche' }] };
-const repA = { id: 'ra', domaine: 'pulverisation', sections: [{ id: 'a1', type: 'fiche' }, { id: 'a2', type: 'fiche' }, { id: 'aq', type: 'quiz' }] };
-const repB = { id: 'rb', domaine: 'pulverisation', sections: [{ id: 'b1', type: 'fiche' }, { id: 'bq', type: 'quiz' }] };
-const repListe = [repGlossaire, repA, repB];
-const repMaitrise = (p, m, quizId) => OAD.enregistrerQuiz(voir(p, m, m.sections.map(s => s.id)), m.id, quizId, { taux: 1 }, 'd');
-test('reprise, progression vide : premier module hors référence, première section, non entamé', () => {
-  assert.deepStrictEqual(OAD.prochaineReprise(OAD.progressionVide(), repListe), { moduleId: 'ra', sectionId: 'a1', entame: false });
-  assert.deepStrictEqual(OAD.prochaineReprise(undefined, repListe), { moduleId: 'ra', sectionId: 'a1', entame: false });
+test('registre et familles conformes ; chaque calculateur dans une seule famille', () => {
+  assert.deepStrictEqual(OAD.erreursRegistre(OAD.CALCULATEURS), []);
+  assert.deepStrictEqual(OAD.erreursFamilles(OAD.FAMILLES_CALCULATEURS, OAD.CALCULATEURS), []);
 });
-test('reprise, module entamé : il passe avant le premier module non commencé', () => {
-  const p = voir(OAD.progressionVide(), repB, ['b1']);
-  assert.deepStrictEqual(OAD.prochaineReprise(p, repListe), { moduleId: 'rb', sectionId: 'bq', entame: true });
+test('garde des familles : deux unités pour une clé partagée → erreur ; calculateur orphelin → erreur', () => {
+  const faux = { a: { entrees: [{ id: 'v', unite: 'km/h' }] }, b: { entrees: [{ id: 'v', unite: 'm/s' }] }, c: { entrees: [] } };
+  const err = OAD.erreursFamilles([{ id: 'f', titre: 'F', partage: true, calculateurs: ['a', 'b'] }], faux);
+  assert.ok(err.some(e => e.includes('unités différentes')), err.join(' | '));
+  assert.ok(err.some(e => e.startsWith('c : dans aucune famille')), err.join(' | '));
 });
-test('reprise, section courante déjà vue : première section non vue ; toutes vues → première section', () => {
-  const p = voir(OAD.progressionVide(), repA, ['a1', 'aq']);
-  assert.deepStrictEqual(OAD.prochaineReprise(p, repListe), { moduleId: 'ra', sectionId: 'a2', entame: true });
-  const tout = voir(OAD.progressionVide(), repA, ['a1', 'a2', 'aq']);   // consulté, quiz non réussi
-  assert.deepStrictEqual(OAD.prochaineReprise(tout, repListe), { moduleId: 'ra', sectionId: 'a1', entame: true });
+test('garde du registre : mesure inconnue ou d\'unité différente → erreur', () => {
+  const base = OAD.CALCULATEURS.vitesseMesuree;
+  const reg = { vitesseMesuree: base, x: { id: 'x', titreCourt: 'X', technologies: ['toutes'],
+    entrees: [{ id: 'L', label: 'L', unite: 'm', defaut: 1, origineDefaut: 'o', mesure: 'vitesseMesuree' },
+      { id: 'y', label: 'y', unite: 'm', defaut: 1, origineDefaut: 'o', mesure: 'absent' }] } };
+  const err = OAD.erreursRegistre(reg);
+  assert.ok(err.some(e => e.includes('x.L') && e.includes('unité')), err.join(' | '));
+  assert.ok(err.some(e => e.includes('x.y') && e.includes('inconnue')), err.join(' | '));
 });
-test('reprise, module maîtrisé sauté ; tout maîtrisé → null (glossaire ignoré)', () => {
-  const pA = repMaitrise(OAD.progressionVide(), repA, 'aq');
-  assert.deepStrictEqual(OAD.prochaineReprise(pA, repListe), { moduleId: 'rb', sectionId: 'b1', entame: false });
-  assert.strictEqual(OAD.prochaineReprise(repMaitrise(pA, repB, 'bq'), repListe), null);
-  assert.strictEqual(OAD.prochaineReprise(OAD.progressionVide(), [repGlossaire]), null);
-  assert.strictEqual(OAD.prochaineReprise(OAD.progressionVide(), []), null);
+test('vitesseVisee : 600 × 9,6 / (150 × 7,7) = 4,987 km/h, affiché 5 km/h ; inverse de volumeHectare', () => {
+  const r = CALC.vitesseVisee.compute(defauts(CALC.vitesseVisee));
+  assertClose(r.resultats[0].valeur, 4.987013, 1e-6);
+  assertClose(OAD.volumeHectare(9.6, OAD.vitessePourVolume(150, 9.6, 7.7), 7.7), 150, 1e-9);
+  assert.strictEqual(rendre(new Component({}), '#/outils/vitesseVisee').calcCourant.resultats[0].texte, '5 km/h');
 });
-test('rendu à blanc du catalogue, progression vide : bloc « Commencer » vers la première section du moteur', () => {
-  delete MAGASIN['formation-machines:progression:v1'];
-  const out = rendre(new Component({}), '#/');
-  const r = OAD.prochaineReprise(OAD.progressionVide(), MODULES);
-  const suivis = MODULES.filter(m => !OAD.estModuleReference(m));
-  assert.strictEqual(out.reprise.action, 'Commencer');
-  assert.strictEqual(out.reprise.surtitre, 'Pour commencer');
-  assert.strictEqual(out.reprise.lien, OAD.lien('module', r.moduleId, r.sectionId));
-  assert.strictEqual(out.reprise.titre, OAD.trouverModule(MODULES, r.moduleId).titre);
-  assert.strictEqual(out.reprise.bilanTxt, '0 sur ' + suivis.length + ' modules maîtrisés');
-  assert.ok(out.domainesCatalogue.every(d => /^\d+ modules?$/.test(d.nbTxt)));
+test('changementVitesse : 150 × 5 / 6 = 125 L/ha ; 150 × 6 / 7 = 128,57 (même formule que le cas pratique)', () => {
+  assertClose(CALC.changementVitesse.compute(defauts(CALC.changementVitesse)).resultats[0].valeur, 125, 1e-12);
+  assertClose(CALC.changementVitesse.compute({ V1: 150, v1: 6, v2: 7 }).resultats[0].valeur, 128.5714, 1e-4);
 });
-
-section('§22 v3 — pages module');
-
-const modQuiz = MODULES.find(m => !OAD.estModuleReference(m) &&
-  m.sections.some(s => s.type === 'quiz' && s.questions.some(q => q.bonnes.length === 1)));
-const secQuiz = modQuiz.sections.find(s => s.type === 'quiz' && s.questions.some(q => q.bonnes.length === 1));
-test('sommaire : pastilles numérotées, ✓ pour une section vue', () => {
-  delete MAGASIN['formation-machines:progression:v1'];
-  const vu = OAD.marquerVue(OAD.progressionVide(), modQuiz.id, modQuiz.sections[0].id);
-  MAGASIN['formation-machines:progression:v1'] = JSON.stringify(vu);
-  const out = rendre(new Component({}), '#/module/' + modQuiz.id + '/' + secQuiz.id);
-  delete MAGASIN['formation-machines:progression:v1'];
-  assert.strictEqual(out.sommaire[0].pastille, '✓');
-  assert.ok(out.sommaire[0].pastilleClasse.includes('pastille-vue'));
-  out.sommaire.slice(1).forEach((it, k) => { if (!it.vu) assert.strictEqual(it.pastille, String(k + 2)); });
-});
-test('quiz : marques A, B, C… ; ronde pour une réponse, carrée pour plusieurs ; ✓ et ✕ à la correction', () => {
-  const c = new Component({});
-  const avant = rendre(c, '#/module/' + modQuiz.id + '/' + secQuiz.id);
-  avant.quiz.questions.forEach((qu, i) => {
-    assert.deepStrictEqual(qu.choix.map(ch => ch.marque), qu.choix.map((_, k) => 'ABCDEFGHIJ'[k]));
-    assert.strictEqual(qu.marqueClasse, secQuiz.questions[i].bonnes.length > 1 ? 'marque marque-carree' : 'marque');
+test('calculer sans mesure = compute (parité des 9 calculateurs d\'avant C2)', () => {
+  ['volHa', 'debitBuse', 'pressionPourVolume', 'vitesseMesuree', 'debitChantier', 'largeurTraitee', 'debitCuve',
+    'hauteursBuses', 'ecartDiffuseurs'].forEach(id => {
+    const d = defauts(CALC[id]);
+    const a = CALC[id].compute(d), b = OAD.calculer(id, d, {});
+    assert.deepStrictEqual(b.resultats, a.resultats, id);
+    assert.deepStrictEqual(b.etapes, a.etapes, id);
+    assert.deepStrictEqual(b.alertes, a.alertes, id);
   });
-  const q = secQuiz.questions.find(x => x.bonnes.length === 1);
-  const fausse = q.choix.findIndex((_, k) => !q.bonnes.includes(k));
-  c.onChoix(evt(secQuiz.id + '|' + q.id + '|' + fausse));
-  c.validerQuiz(evt(secQuiz.id));
-  const apres = rendre(c, '#/module/' + modQuiz.id + '/' + secQuiz.id);
-  const qu = apres.quiz.questions[secQuiz.questions.indexOf(q)];
-  assert.strictEqual(qu.choix[fausse].marque, '✕');
-  assert.strictEqual(qu.choix[q.bonnes[0]].marque, '✓');
-  delete MAGASIN['formation-machines:progression:v1'];
 });
-test('détail du calcul : étapes numérotées à partir de 1', () => {
-  const out = rendre(new Component({}), '#/outils/' + Object.keys(OAD.CALCULATEURS)[0]);
-  assert.ok(out.calcCourant.etapes.length > 0);
-  assert.deepStrictEqual(out.calcCourant.etapes.map(e => e.num), out.calcCourant.etapes.map((_, k) => k + 1));
+test('volHa mesuré : 48 L / 5 min, 50 m / 35 s, 7 × 1,10 m → 600 × 9,6 / (5,142857 × 7,7) = 145,45 L/ha', () => {
+  const r = OAD.calculer('volHa', defauts(CALC.volHa),
+    { Q: { volume: 48, duree: 5 }, v: { d: 50, t: 35 }, L: { n: 7, e: 1.1 } });
+  assertClose(r.resultats[0].valeur, 145.4545, 1e-4);
+  assert.deepStrictEqual(r.etapes.map(e => e.titre), ['Débit total', 'Vitesse', 'Largeur traitée', 'Volume épandu']);
+  assertClose(r.mesurees.v.valeur, 5.142857, 1e-6);
+});
+test('mesure impossible (t = 0) : alerte préfixée du libellé, sans doublon de l\'alerte de saisie', () => {
+  const r = OAD.calculer('volHa', defauts(CALC.volHa), { v: { d: 50, t: 0 } });
+  assert.strictEqual(r.resultats[0].valeur, null);
+  assert.strictEqual(r.alertes.length, 1);
+  assert.ok(r.alertes[0].startsWith('Vitesse d\'avancement — Calcul impossible'), r.alertes[0]);
+});
+test('écran : saisies partagées dans la famille « volume » (v = 6 saisi dans volHa → debitBuse Q = 11,55)', () => {
+  const c = new Component({});
+  c.onSaisie(evt('6', { 'data-calc': 'volHa', 'data-entree': 'v' }));
+  const out = rendre(c, '#/outils/debitBuse');
+  assert.strictEqual(out.calcCourant.entrees[1].valeur, '6');
+  assert.strictEqual(out.calcCourant.resultats[0].texte, '11,55 L/min');   // 150 × 6 × 7,7 / 600
+  assert.strictEqual(out.calcCourant.aModes, true);
+  assert.deepStrictEqual(out.calcCourant.modes.map(m => m.courant), [null, 'page', null]);
+  c.reinitialiserCalc(evt('debitBuse'));
+  assert.strictEqual(rendre(c, '#/outils/volHa').calcCourant.entrees[1].valeur, '5');
+});
+test('écran : pas de partage dans « mesures » (n de largeurTraitee ≠ n de debitBuse)', () => {
+  const c = new Component({});
+  c.onSaisie(evt('9', { 'data-calc': 'largeurTraitee', 'data-entree': 'n' }));
+  assert.strictEqual(rendre(c, '#/outils/debitBuse').calcCourant.entrees[3].valeur, '12');
+  assert.strictEqual(rendre(c, '#/outils/largeurTraitee').calcCourant.aModes, true);
+  assert.strictEqual(rendre(c, '#/outils/largeurTraitee').calcCourant.aPartage, false);
+});
+test('écran : mesure de la vitesse dans volHa, mêmes saisies que la page « Vitesse réelle mesurée »', () => {
+  const c = new Component({});
+  let out = rendre(c, '#/outils/volHa');
+  const ev = out.calcCourant.entrees[1];
+  assert.strictEqual(ev.estMesurable, true);
+  assert.strictEqual(ev.mesureActive, false);
+  c.basculerMesure(evt(ev.basculeValeur));
+  c.onSaisie(evt('35', { 'data-calc': 'vitesseMesuree', 'data-entree': 't' }));
+  out = rendre(c, '#/outils/volHa');
+  assert.strictEqual(out.calcCourant.entrees[1].mesureActive, true);
+  assert.strictEqual(out.calcCourant.entrees[1].valeurMesureeTxt, '5,1 km/h');
+  assert.strictEqual(out.calcCourant.entrees[1].sousEntrees.length, 2);
+  assert.strictEqual(out.calcCourant.resultats[0].texte, '145 L/ha');   // 600 × 9,6 / (5,142857 × 7,7) = 145,45
+  assert.strictEqual(out.calcCourant.etapes[0].titre, 'Vitesse');
+  assert.strictEqual(rendre(c, '#/outils/vitesseMesuree').calcCourant.entrees[1].valeur, '35');
+  // La mesure suit la famille : debitBuse la reprend.
+  assert.strictEqual(rendre(c, '#/outils/debitBuse').calcCourant.entrees[1].mesureActive, true);
+  c.basculerMesure(evt(ev.basculeValeur));
+  assert.strictEqual(rendre(c, '#/outils/volHa').calcCourant.resultats[0].texte, '150 L/ha');
+});
+test('gabarit : résultats avant les champs ; libellé « deux débits non nuls »', () => {
+  const i = GABARIT.indexOf('calcCourant.resultats'), j = GABARIT.indexOf('calcCourant.entrees');
+  assert.ok(i > 0 && j > i);
+  const r = CALC.ecartDiffuseurs.compute({ debits: [0, 0, 1.4] });
+  assert.ok(r.alertes.includes('Calcul impossible : saisissez au moins deux débits non nuls, séparés par un point-virgule.'));
+});
+test('section de module : un calculateur d\'une famille affiche ses voisins', () => {
+  const m = OAD.modules().find(x => x.sections.some(s => s.calculateur === 'volHa'));
+  const sec = m.sections.find(s => s.calculateur === 'volHa');
+  const out = rendre(new Component({}), '#/module/' + m.id + '/' + sec.id);
+  assert.strictEqual(out.aCalc, true);
+  assert.strictEqual(out.calcCourant.modes.length, 3);
 });
 
 console.log(`\n${passed} ok, ${failed} FAIL, ${skipped} skip`);

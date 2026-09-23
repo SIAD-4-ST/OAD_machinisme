@@ -267,7 +267,8 @@ const ORIGINE_HAUTEURS_ALVC = 'Exemple de l\'article Le Vigneron Champenois, avr
 // autre juste sous le seuil (+9,13 %). Aucune mesure réelle.
 const ORIGINE_EXERCICE = 'Exemple fabriqué pour l\'exercice';
 
-const ALERTE_LISTE_COURTE = 'Calcul impossible : saisissez au moins deux débits lisibles, séparés par un point-virgule.';
+// C2 (point laissé au rédacteur en C1) : « non nuls », exact aussi pour [0 ; 0 ; 1,4].
+const ALERTE_LISTE_COURTE = 'Calcul impossible : saisissez au moins deux débits non nuls, séparés par un point-virgule.';
 
 const ALERTE_SAISIE = 'Calcul impossible : chaque valeur doit être un nombre strictement positif.';
 
@@ -287,64 +288,101 @@ function alertesSaisie(resultats) {
   return resultats.some(r => r.valeur === null) ? [ALERTE_SAISIE] : [];
 }
 
+/* Fabrique commune (D-C2-1) : un calculateur scalaire se DÉCRIT, il ne se
+   programme plus. Chaque étape lit la portée (entrées + valeurs des étapes
+   précédentes, par leur clé) ; chaque résultat pointe une clé de la portée.
+   Opérande : [clé, décimales] ou [fonction(portée), décimales].
+   Contrat de sortie inchangé : { etapes, resultats, alertes }. L'alerte de
+   saisie est commune ; `alertes(portee, resultats)` ajoute les alertes
+   propres, après elle. */
+function lireOperande(portee, o) {
+  return operande(typeof o[0] === 'function' ? o[0](portee) : portee[o[0]], o[1]);
+}
+function calculateurSimple(def) {
+  const c = Object.assign({}, def);
+  delete c.etapes; delete c.resultats; delete c.alertes;
+  c.compute = function (e) {
+    const s = Object.assign({}, e);
+    const etapes = def.etapes.map(et => {
+      const valeur = et.f(s);
+      s[et.cle] = valeur;
+      return etape(et.titre, et.formule, et.gabarit, et.operandes.map(o => lireOperande(s, o)),
+        valeur, et.unite, et.decimales);
+    });
+    const resultats = def.resultats.map(r => resultat(r[0], s[r[1]], r[2], r[3]));
+    const alertes = alertesSaisie(resultats).concat(def.alertes ? def.alertes(s, resultats) : []);
+    return { etapes, resultats, alertes };
+  };
+  return c;
+}
+const effectif = x => Math.round(Number(x));
+
+/* Vitesse v (km/h) à tenir pour épandre V (L/ha) avec un débit total Q
+   (L/min) sur L (m) : V = 600 × Q / (v × L) résolu en v (D-C2-4). */
+function vitessePourVolume(V, Q, L) {
+  return fini(600 * positif(Q) / (positif(V) * positif(L)));
+}
+
 const CALCULATEURS = {
-  volHa: {
+  volHa: calculateurSimple({
     id: 'volHa',
     technologies: ['toutes'],
     titre: 'Volume par hectare',
+    titreCourt: 'Volume par hectare',
     description: 'Volume de bouillie épandu à partir du débit mesuré, de la vitesse et de la largeur traitée.',
     entrees: [
-      { id: 'Q', label: 'Débit total de la rampe', unite: 'L/min', defaut: 9.6, origineDefaut: ORIGINE_Q_DEDUIT },
-      { id: 'v', label: 'Vitesse d\'avancement', unite: 'km/h', defaut: 5, origineDefaut: ORIGINE_VITESSE_FICHES },
-      { id: 'L', label: 'Largeur traitée', unite: 'm', defaut: 7.7, origineDefaut: ORIGINE_LARGEUR_FVHA }
+      { id: 'Q', label: 'Débit total de la rampe', unite: 'L/min', defaut: 9.6, origineDefaut: ORIGINE_Q_DEDUIT, mesure: 'debitCuve' },
+      { id: 'v', label: 'Vitesse d\'avancement', unite: 'km/h', defaut: 5, origineDefaut: ORIGINE_VITESSE_FICHES, mesure: 'vitesseMesuree' },
+      { id: 'L', label: 'Largeur traitée', unite: 'm', defaut: 7.7, origineDefaut: ORIGINE_LARGEUR_FVHA, mesure: 'largeurTraitee' }
     ],
-    compute(e) {
-      const V = volumeHectare(e.Q, e.v, e.L);
-      const resultats = [resultat('Volume par hectare', V, 'L/ha', 0)];
-      return {
-        etapes: [etape('Volume épandu', 'V = 600 × Q / (v × L)', '600 × {0} / ({1} × {2})',
-          [operande(e.Q, 2), operande(e.v, 1), operande(e.L, 2)], V, 'L/ha', 0)],
-        resultats,
-        alertes: alertesSaisie(resultats)
-      };
-    }
-  },
+    etapes: [{ cle: 'V', titre: 'Volume épandu', formule: 'V = 600 × Q / (v × L)', gabarit: '600 × {0} / ({1} × {2})',
+      operandes: [['Q', 2], ['v', 1], ['L', 2]], f: s => volumeHectare(s.Q, s.v, s.L), unite: 'L/ha', decimales: 0 }],
+    resultats: [['Volume par hectare', 'V', 'L/ha', 0]]
+  }),
 
-  debitBuse: {
+  debitBuse: calculateurSimple({
     id: 'debitBuse',
     technologies: ['toutes'],
     titre: 'Débit par buse pour un volume visé',
+    titreCourt: 'Débit par buse',
     description: 'Débit que chaque buse doit fournir pour épandre le volume visé à la vitesse et la largeur données.',
     entrees: [
       { id: 'V', label: 'Volume visé', unite: 'L/ha', defaut: 150, origineDefaut: ORIGINE_VOLUME_FICHES },
-      { id: 'v', label: 'Vitesse d\'avancement', unite: 'km/h', defaut: 5, origineDefaut: ORIGINE_VITESSE_FICHES },
-      { id: 'L', label: 'Largeur traitée', unite: 'm', defaut: 7.7, origineDefaut: ORIGINE_LARGEUR_FVHA },
+      { id: 'v', label: 'Vitesse d\'avancement', unite: 'km/h', defaut: 5, origineDefaut: ORIGINE_VITESSE_FICHES, mesure: 'vitesseMesuree' },
+      { id: 'L', label: 'Largeur traitée', unite: 'm', defaut: 7.7, origineDefaut: ORIGINE_LARGEUR_FVHA, mesure: 'largeurTraitee' },
       // ASSUMÉ (D-B1-3) : le corpus ne donne pas de nombre de buses par matériel.
       { id: 'n', label: 'Nombre de buses ouvertes', unite: 'buses', defaut: 12, origineDefaut: ORIGINE_ASSUME }
     ],
-    compute(e) {
-      const Q = debitTotalPourVolume(e.V, e.v, e.L);
-      const q = debitParBuse(e.V, e.v, e.L, e.n);
-      const resultats = [
-        resultat('Débit total de la rampe', Q, 'L/min', 2),
-        resultat('Débit par buse', q, 'L/min', 2)
-      ];
-      return {
-        etapes: [
-          etape('Débit total', 'Q = V × v × L / 600', '{0} × {1} × {2} / 600',
-            [operande(e.V, 0), operande(e.v, 1), operande(e.L, 2)], Q, 'L/min', 2),
-          etape('Débit par buse', 'q = Q / n', '{0} / {1}',
-            [operande(Q, 2), operande(Math.round(Number(e.n)), 0)], q, 'L/min', 2)
-        ],
-        resultats,
-        alertes: alertesSaisie(resultats)
-      };
-    }
-  },
+    etapes: [
+      { cle: 'Q', titre: 'Débit total', formule: 'Q = V × v × L / 600', gabarit: '{0} × {1} × {2} / 600',
+        operandes: [['V', 0], ['v', 1], ['L', 2]], f: s => debitTotalPourVolume(s.V, s.v, s.L), unite: 'L/min', decimales: 2 },
+      { cle: 'q', titre: 'Débit par buse', formule: 'q = Q / n', gabarit: '{0} / {1}',
+        operandes: [['Q', 2], [s => effectif(s.n), 0]], f: s => debitParBuse(s.V, s.v, s.L, s.n), unite: 'L/min', decimales: 2 }
+    ],
+    resultats: [['Débit total de la rampe', 'Q', 'L/min', 2], ['Débit par buse', 'q', 'L/min', 2]]
+  }),
 
-  pressionPourVolume: {
+  // D-C2-4 : troisième résolution de la même relation, pour la famille « volume ».
+  vitesseVisee: calculateurSimple({
+    id: 'vitesseVisee',
+    technologies: ['toutes'],
+    titre: 'Vitesse à tenir pour un volume visé',
+    titreCourt: 'Vitesse à tenir',
+    description: 'Vitesse d\'avancement qui donne le volume visé avec le débit total et la largeur traitée actuels, sans changer de buse ni de pression.',
+    entrees: [
+      { id: 'V', label: 'Volume visé', unite: 'L/ha', defaut: 150, origineDefaut: ORIGINE_VOLUME_FICHES },
+      { id: 'Q', label: 'Débit total de la rampe', unite: 'L/min', defaut: 9.6, origineDefaut: ORIGINE_Q_DEDUIT, mesure: 'debitCuve' },
+      { id: 'L', label: 'Largeur traitée', unite: 'm', defaut: 7.7, origineDefaut: ORIGINE_LARGEUR_FVHA, mesure: 'largeurTraitee' }
+    ],
+    etapes: [{ cle: 'v', titre: 'Vitesse à tenir', formule: 'v = 600 × Q / (V × L)', gabarit: '600 × {0} / ({1} × {2})',
+      operandes: [['Q', 2], ['V', 0], ['L', 2]], f: s => vitessePourVolume(s.V, s.Q, s.L), unite: 'km/h', decimales: 1 }],
+    resultats: [['Vitesse à tenir', 'v', 'km/h', 1]]
+  }),
+
+  pressionPourVolume: calculateurSimple({
     id: 'pressionPourVolume',
     titre: 'Pression pour un nouveau volume',
+    titreCourt: 'Par la pression',
     description: 'Pression à régler pour passer d\'un volume à un autre sans changer de buse ni de vitesse.',
     // Buses hydrauliques : ne s'applique pas aux diffuseurs pneumatiques (D-B4-1).
     technologies: ['jets-portes', 'jets-projetes'],
@@ -357,155 +395,123 @@ const CALCULATEURS = {
       { id: 'pMin', label: 'Pression minimale de la buse', unite: 'bar', defaut: 3, origineDefaut: ORIGINE_PLAGE_BUSE },
       { id: 'pMax', label: 'Pression maximale de la buse', unite: 'bar', defaut: 4.5, origineDefaut: ORIGINE_PLAGE_BUSE }
     ],
-    compute(e) {
-      const r = positif(e.V2) / positif(e.V1);
-      const P2 = pressionPourVolume(e.P1, e.V1, e.V2, e.b);
-      const resultats = [resultat('Pression à régler', P2, 'bar', 1)];
-      const alertes = alertesSaisie(resultats);
-      const pMin = positif(e.pMin), pMax = positif(e.pMax);
+    etapes: [
+      { cle: 'r', titre: 'Rapport des volumes', formule: 'r = V2 / V1', gabarit: '{0} / {1}',
+        operandes: [['V2', 0], ['V1', 0]], f: s => positif(s.V2) / positif(s.V1), unite: '', decimales: 3 },
+      { cle: 'P2', titre: 'Pression à régler', formule: 'P2 = P1 × r^(1 / b)', gabarit: '{0} × {1}^(1 / {2})',
+        operandes: [['P1', 2], ['r', 3], ['b', 2]], f: s => pressionPourVolume(s.P1, s.V1, s.V2, s.b), unite: 'bar', decimales: 1 }
+    ],
+    resultats: [['Pression à régler', 'P2', 'bar', 1]],
+    alertes(s, resultats) {
+      const alertes = [];
+      const pMin = positif(s.pMin), pMax = positif(s.pMax);
       if (!(pMin < pMax)) {
         alertes.push('Plage de pression de la buse invalide : la pression minimale doit être inférieure à la maximale.');
-      } else if (resultats[0].valeur !== null && (P2 < pMin || P2 > pMax)) {
+      } else if (resultats[0].valeur !== null && (s.P2 < pMin || s.P2 > pMax)) {
         alertes.push(alerteChiffree('Pression calculée hors de la plage de la buse ({0} à {1} bar) : ' +
           'changez de calibre de buse ou de vitesse plutôt que de forcer la pression.',
           [operande(pMin, 2), operande(pMax, 2)]));
       }
       // D-C1-3 : alerte P1 après l'alerte P2, pour ne pas décaler les indices.
-      const P1 = positif(e.P1);
+      const P1 = positif(s.P1);
       if (pMin < pMax && (P1 < pMin || P1 > pMax)) {
         alertes.push(alerteChiffree('Pression actuelle hors de la plage de la buse ({0} à {1} bar) : ' +
           'vérifiez la saisie ou la buse montée.', [operande(pMin, 2), operande(pMax, 2)]));
       }
-      return {
-        etapes: [
-          etape('Rapport des volumes', 'r = V2 / V1', '{0} / {1}',
-            [operande(e.V2, 0), operande(e.V1, 0)], r, '', 3),
-          etape('Pression à régler', 'P2 = P1 × r^(1 / b)', '{0} × {1}^(1 / {2})',
-            [operande(e.P1, 2), operande(r, 3), operande(e.b, 2)], P2, 'bar', 1)
-        ],
-        resultats,
-        alertes
-      };
+      return alertes;
     }
-  },
+  }),
 
-  vitesseMesuree: {
-    id: 'vitesseMesuree',
-    technologies: ['toutes'],
-    titre: 'Vitesse réelle mesurée',
-    description: 'Vitesse d\'avancement mesurée sur une distance balisée, en conditions de travail.',
-    entrees: [
-      { id: 'd', label: 'Distance parcourue', unite: 'm', defaut: 50, origineDefaut: ORIGINE_MESURE_FVHA },
-      { id: 't', label: 'Temps mesuré', unite: 's', defaut: 30, origineDefaut: ORIGINE_MESURE_FVHA }
-    ],
-    compute(e) {
-      const v = vitesseMesuree(e.d, e.t);
-      const resultats = [resultat('Vitesse réelle', v, 'km/h', 1)];
-      return {
-        etapes: [etape('Vitesse', 'v = 3,6 × d / t', '3,6 × {0} / {1}',
-          [operande(e.d, 1), operande(e.t, 1)], v, 'km/h', 1)],
-        resultats,
-        alertes: alertesSaisie(resultats)
-      };
-    }
-  },
-
-  debitChantier: {
-    id: 'debitChantier',
-    technologies: ['toutes'],
-    titre: 'Débit de chantier théorique',
-    description: 'Surface travaillée par heure, sans temps morts ni demi-tours : un plafond, jamais atteint au champ.',
-    entrees: [
-      // ASSUMÉ (D-B1-4) : le corpus ne donne ni vitesse ni largeur d'interceps.
-      { id: 'v', label: 'Vitesse d\'avancement', unite: 'km/h', defaut: 6, origineDefaut: ORIGINE_ASSUME },
-      { id: 'L', label: 'Largeur travaillée', unite: 'm', defaut: 2.5, origineDefaut: ORIGINE_ASSUME }
-    ],
-    compute(e) {
-      const S = debitChantierTheorique(e.v, e.L);
-      const resultats = [resultat('Débit de chantier théorique', S, 'ha/h', 2)];
-      return {
-        etapes: [etape('Débit de chantier', 'S = v × L / 10', '{0} × {1} / 10',
-          [operande(e.v, 1), operande(e.L, 2)], S, 'ha/h', 2)],
-        resultats,
-        alertes: alertesSaisie(resultats)
-      };
-    }
-  },
-
-  largeurTraitee: {
-    id: 'largeurTraitee',
-    technologies: ['toutes'],
-    titre: 'Largeur traitée',
-    description: 'Enjambeur : nombre de rangs traités par passage × écartement. Chenillard : 1, 2 ou 3 écartements selon que l\'on passe toutes les routes, toutes les 2 ou toutes les 3 routes.',
-    entrees: [
-      { id: 'n', label: 'Nombre d\'écartements traités par passage', unite: 'rangs', defaut: 7, origineDefaut: ORIGINE_LARGEUR_FVHA },
-      { id: 'e', label: 'Écartement entre rangs', unite: 'm', defaut: 1.1, origineDefaut: ORIGINE_LARGEUR_FVHA }
-    ],
-    compute(e) {
-      const L = largeurTraitee(e.n, e.e);
-      const resultats = [resultat('Largeur traitée', L, 'm', 2)];
-      return {
-        etapes: [etape('Largeur traitée', 'L = n × e', '{0} × {1}',
-          [operande(e.n, 0), operande(e.e, 2)], L, 'm', 2)],
-        resultats,
-        alertes: alertesSaisie(resultats)
-      };
-    }
-  },
-
-  debitCuve: {
-    id: 'debitCuve',
-    technologies: ['toutes'],
-    titre: 'Débit total par le niveau de la cuve',
-    description: 'Remplir la ou les cuves à ras bord, pulvériser pendant la durée choisie, puis refaire le niveau en mesurant le volume ajouté : le débit total est ce volume divisé par la durée.',
-    entrees: [
-      { id: 'volume', label: 'Volume refait', unite: 'L', defaut: 48, origineDefaut: ORIGINE_VOLUME_CUVE },
-      { id: 'duree', label: 'Durée de pulvérisation', unite: 'min', defaut: 5, origineDefaut: ORIGINE_DUREE_CUVE }
-    ],
-    compute(e) {
-      const Q = debitParNiveauCuve(e.volume, e.duree);
-      const resultats = [resultat('Débit total', Q, 'L/min', 2)];
-      return {
-        etapes: [etape('Débit total', 'Q = volume refait / durée', '{0} / {1}',
-          [operande(e.volume, 2), operande(e.duree, 2)], Q, 'L/min', 2)],
-        resultats,
-        alertes: alertesSaisie(resultats)
-      };
-    }
-  },
-
-  hauteursBuses: {
+  hauteursBuses: calculateurSimple({
     id: 'hauteursBuses',
     technologies: ['toutes'],
     titre: 'Volume selon le nombre de hauteurs de buses',
+    titreCourt: 'Par les hauteurs de buses',
     description: 'Volume obtenu en changeant le nombre de hauteurs de buses par descente, à vitesse égale et avec le même débit à chaque hauteur de buse.',
     entrees: [
       { id: 'V1', label: 'Volume actuel', unite: 'L/ha', defaut: 180, origineDefaut: ORIGINE_HAUTEURS_ALVC },
       { id: 'h1', label: 'Hauteurs de buses actuelles', unite: 'hauteurs', defaut: 3, origineDefaut: ORIGINE_HAUTEURS_ALVC },
       { id: 'h2', label: 'Hauteurs de buses après changement', unite: 'hauteurs', defaut: 2, origineDefaut: ORIGINE_HAUTEURS_ALVC }
     ],
-    compute(e) {
-      const V2 = volumeSelonHauteurs(e.V1, e.h1, e.h2);
-      const resultats = [resultat('Volume après changement', V2, 'L/ha', 0)];
-      return {
-        etapes: [etape('Volume après changement', 'V2 = V1 × h2 / h1', '{0} × {1} / {2}',
-          [operande(e.V1, 0), operande(Math.round(Number(e.h2)), 0), operande(Math.round(Number(e.h1)), 0)],
-          V2, 'L/ha', 0)],
-        resultats,
-        alertes: alertesSaisie(resultats)
-      };
-    }
-  },
+    etapes: [{ cle: 'V2', titre: 'Volume après changement', formule: 'V2 = V1 × h2 / h1', gabarit: '{0} × {1} / {2}',
+      operandes: [['V1', 0], [s => effectif(s.h2), 0], [s => effectif(s.h1), 0]],
+      f: s => volumeSelonHauteurs(s.V1, s.h1, s.h2), unite: 'L/ha', decimales: 0 }],
+    resultats: [['Volume après changement', 'V2', 'L/ha', 0]]
+  }),
+
+  // D-C2-4 : expose volumeApresChangementVitesse (D-B2-4), jusqu'ici sans écran.
+  changementVitesse: calculateurSimple({
+    id: 'changementVitesse',
+    technologies: ['toutes'],
+    titre: 'Volume après un changement de vitesse',
+    titreCourt: 'Par la vitesse',
+    description: 'Volume obtenu en changeant de vitesse sans toucher au débit ni à la largeur : aller plus vite diminue le volume par hectare.',
+    entrees: [
+      { id: 'V1', label: 'Volume actuel', unite: 'L/ha', defaut: 150, origineDefaut: ORIGINE_VOLUME_FICHES },
+      { id: 'v1', label: 'Vitesse actuelle', unite: 'km/h', defaut: 5, origineDefaut: ORIGINE_VITESSE_FICHES, mesure: 'vitesseMesuree' },
+      { id: 'v2', label: 'Nouvelle vitesse', unite: 'km/h', defaut: 6, origineDefaut: ORIGINE_MESURE_FVHA }
+    ],
+    etapes: [{ cle: 'V2', titre: 'Volume après changement', formule: 'V2 = V1 × v1 / v2', gabarit: '{0} × {1} / {2}',
+      operandes: [['V1', 0], ['v1', 1], ['v2', 1]], f: s => volumeApresChangementVitesse(s.V1, s.v1, s.v2), unite: 'L/ha', decimales: 0 }],
+    resultats: [['Volume après changement', 'V2', 'L/ha', 0]]
+  }),
+
+  vitesseMesuree: calculateurSimple({
+    id: 'vitesseMesuree',
+    technologies: ['toutes'],
+    titre: 'Vitesse réelle mesurée',
+    titreCourt: 'Vitesse réelle',
+    description: 'Vitesse d\'avancement mesurée sur une distance balisée, en conditions de travail.',
+    entrees: [
+      { id: 'd', label: 'Distance parcourue', unite: 'm', defaut: 50, origineDefaut: ORIGINE_MESURE_FVHA },
+      { id: 't', label: 'Temps mesuré', unite: 's', defaut: 30, origineDefaut: ORIGINE_MESURE_FVHA }
+    ],
+    etapes: [{ cle: 'v', titre: 'Vitesse', formule: 'v = 3,6 × d / t', gabarit: '3,6 × {0} / {1}',
+      operandes: [['d', 1], ['t', 1]], f: s => vitesseMesuree(s.d, s.t), unite: 'km/h', decimales: 1 }],
+    resultats: [['Vitesse réelle', 'v', 'km/h', 1]]
+  }),
+
+  largeurTraitee: calculateurSimple({
+    id: 'largeurTraitee',
+    technologies: ['toutes'],
+    titre: 'Largeur traitée',
+    titreCourt: 'Largeur traitée',
+    description: 'Enjambeur : nombre de rangs traités par passage × écartement. Chenillard : 1, 2 ou 3 écartements selon que l\'on passe toutes les routes, toutes les 2 ou toutes les 3 routes.',
+    entrees: [
+      { id: 'n', label: 'Nombre d\'écartements traités par passage', unite: 'rangs', defaut: 7, origineDefaut: ORIGINE_LARGEUR_FVHA },
+      { id: 'e', label: 'Écartement entre rangs', unite: 'm', defaut: 1.1, origineDefaut: ORIGINE_LARGEUR_FVHA }
+    ],
+    etapes: [{ cle: 'L', titre: 'Largeur traitée', formule: 'L = n × e', gabarit: '{0} × {1}',
+      operandes: [['n', 0], ['e', 2]], f: s => largeurTraitee(s.n, s.e), unite: 'm', decimales: 2 }],
+    resultats: [['Largeur traitée', 'L', 'm', 2]]
+  }),
+
+  debitCuve: calculateurSimple({
+    id: 'debitCuve',
+    technologies: ['toutes'],
+    titre: 'Débit total par le niveau de la cuve',
+    titreCourt: 'Débit à la cuve',
+    description: 'Remplir la ou les cuves à ras bord, pulvériser pendant la durée choisie, puis refaire le niveau en mesurant le volume ajouté : le débit total est ce volume divisé par la durée.',
+    entrees: [
+      { id: 'volume', label: 'Volume refait', unite: 'L', defaut: 48, origineDefaut: ORIGINE_VOLUME_CUVE },
+      { id: 'duree', label: 'Durée de pulvérisation', unite: 'min', defaut: 5, origineDefaut: ORIGINE_DUREE_CUVE }
+    ],
+    etapes: [{ cle: 'Q', titre: 'Débit total', formule: 'Q = volume refait / durée', gabarit: '{0} / {1}',
+      operandes: [['volume', 2], ['duree', 2]], f: s => debitParNiveauCuve(s.volume, s.duree), unite: 'L/min', decimales: 2 }],
+    resultats: [['Débit total', 'Q', 'L/min', 2]]
+  }),
 
   ecartDiffuseurs: {
     id: 'ecartDiffuseurs',
     technologies: ['toutes'],
     titre: 'Écart entre diffuseurs',
+    titreCourt: 'Écart entre diffuseurs',
     description: 'Débit mesuré diffuseur par diffuseur : écart de chacun à la moyenne. Au-delà de 10 %, intervenir : nettoyage, changement de buse ou de pastille, vérification des anti-gouttes.',
     entrees: [
       { id: 'debits', type: 'liste', label: 'Débits mesurés par diffuseur', unite: 'L/min',
         defaut: [1.40, 1.38, 1.52, 1.41, 1.25, 1.39, 1.40], origineDefaut: ORIGINE_EXERCICE }
     ],
+    // Seul calculateur à entrée liste et à détail tabulé : programmé, pas décrit.
     compute(e) {
       const liste = Array.isArray(e.debits) ? e.debits : [];
       const r = ecartsALaMoyenne(liste, ECART_DIFFUSEUR_MAX);
@@ -545,8 +551,86 @@ const CALCULATEURS = {
         detail: r.ecarts
       };
     }
-  }
+  },
+
+  debitChantier: calculateurSimple({
+    id: 'debitChantier',
+    technologies: ['toutes'],
+    titre: 'Débit de chantier théorique',
+    titreCourt: 'Débit de chantier',
+    description: 'Surface travaillée par heure, sans temps morts ni demi-tours : un plafond, jamais atteint au champ.',
+    entrees: [
+      // ASSUMÉ (D-B1-4) : le corpus ne donne ni vitesse ni largeur d'interceps.
+      { id: 'v', label: 'Vitesse d\'avancement', unite: 'km/h', defaut: 6, origineDefaut: ORIGINE_ASSUME },
+      { id: 'L', label: 'Largeur travaillée', unite: 'm', defaut: 2.5, origineDefaut: ORIGINE_ASSUME }
+    ],
+    etapes: [{ cle: 'S', titre: 'Débit de chantier', formule: 'S = v × L / 10', gabarit: '{0} × {1} / 10',
+      operandes: [['v', 1], ['L', 2]], f: s => debitChantierTheorique(s.v, s.L), unite: 'ha/h', decimales: 2 }],
+    resultats: [['Débit de chantier théorique', 'S', 'ha/h', 2]]
+  })
 };
+
+/* Familles (D-C2-2) : regroupement de l'écran et, si `partage`, saisies
+   communes. Dans une famille partagée, une même clé d'entrée désigne la même
+   grandeur, dans la même unité (vérifié par erreursRegistre) : un volume
+   actuel saisi pour la pression se retrouve dans « par la vitesse ». Les
+   mesures ne partagent pas : `n` y désigne des rangs, pas des buses. */
+const FAMILLES_CALCULATEURS = [
+  { id: 'volume', titre: 'Volume, débit et vitesse', partage: true,
+    calculateurs: ['volHa', 'debitBuse', 'vitesseVisee'] },
+  { id: 'changement', titre: 'Changer le volume : un levier à la fois', partage: true,
+    calculateurs: ['pressionPourVolume', 'hauteursBuses', 'changementVitesse'] },
+  { id: 'mesures', titre: 'Mesures au champ', partage: false,
+    calculateurs: ['vitesseMesuree', 'largeurTraitee', 'debitCuve', 'ecartDiffuseurs'] },
+  { id: 'chantier', titre: 'Travail du sol', partage: false,
+    calculateurs: ['debitChantier'] }
+];
+
+function familleDe(calcId) {
+  return FAMILLES_CALCULATEURS.find(f => f.calculateurs.includes(calcId)) || null;
+}
+/* Clé sous laquelle l'écran range les saisies d'un calculateur : la famille
+   si elle partage, sinon le calculateur. Une mesure garde sa propre clé :
+   la saisir dans « Volume par hectare » ou sur sa page, c'est la même. */
+function cleSaisie(calcId) {
+  const f = familleDe(calcId);
+  return f && f.partage ? 'famille-' + f.id : calcId;
+}
+
+/* Calcul avec mesures (D-C2-3). `mesures` = { idEntree: valeurs du
+   calculateur de mesure } pour les seules entrées que l'utilisateur mesure.
+   Le premier résultat de la mesure devient la valeur de l'entrée ; ses
+   étapes précèdent celles du calcul, ses alertes sont préfixées du libellé
+   de l'entrée. Sans mesure, identique à compute. */
+function prefixerAlerte(prefixe, a) {
+  return typeof a === 'string' ? prefixe + a : alerteChiffree(prefixe + a.gabarit, a.operandes);
+}
+function calculer(calcId, valeurs, mesures) {
+  const C = CALCULATEURS[calcId];
+  if (!C) return null;
+  const e = Object.assign({}, valeurs), m = mesures || {};
+  const avant = [], alertesMesure = [], mesurees = {};
+  C.entrees.forEach(en => {
+    if (!en.mesure || !(en.id in m) || !CALCULATEURS[en.mesure]) return;
+    const r = CALCULATEURS[en.mesure].compute(m[en.id] || {});
+    const v = r.resultats[0].valeur;
+    e[en.id] = v === null ? NaN : v;
+    mesurees[en.id] = r.resultats[0];
+    avant.push(...r.etapes);
+    r.alertes.forEach(a => alertesMesure.push(prefixerAlerte(en.label + ' — ', a)));
+  });
+  const r = C.compute(e);
+  // Mesure impossible et saisies directes correctes : l'alerte de saisie du
+  // calcul principal redirait la même chose, moins précisément.
+  const mesureEchouee = Object.keys(mesurees).some(id => mesurees[id].valeur === null);
+  const directesOk = C.entrees.every(en => en.id in mesurees || en.type === 'liste' || positif(e[en.id]) > 0);
+  const alertes = mesureEchouee && directesOk ? r.alertes.filter(a => a !== ALERTE_SAISIE) : r.alertes;
+  return Object.assign({}, r, {
+    etapes: avant.concat(r.etapes),
+    alertes: alertesMesure.concat(alertes),
+    mesurees
+  });
+}
 
 /* Garde de schéma du registre : erreurs (chaînes), vide = conforme. Une
    entrée de type liste a un défaut tableau ; toute autre, un défaut nombre. */
@@ -564,11 +648,49 @@ function erreursRegistre(calculateurs) {
       } else if (en.type !== undefined) err.push(ou + ' : type d\'entrée inconnu « ' + en.type + ' »');
       else if (typeof en.defaut !== 'number' || !Number.isFinite(en.defaut)) err.push(ou + ' : défaut numérique attendu');
       if (en && !estTexte(en.origineDefaut)) err.push(ou + ' : origine du défaut manquante');
+      // D-C2-3 : une mesure existe, ne se mesure pas elle-même (pas de chaîne)
+      // et fournit la grandeur de l'entrée, dans son unité.
+      if (en && en.mesure !== undefined) {
+        const M = calculateurs[en.mesure];
+        if (!M) err.push(ou + ' : mesure inconnue « ' + en.mesure + ' »');
+        else if ((M.entrees || []).some(x => x.mesure)) err.push(ou + ' : une mesure ne peut pas elle-même se mesurer');
+        else if (en.type === 'liste') err.push(ou + ' : une entrée liste ne se mesure pas');
+        else {
+          const d = {}; M.entrees.forEach(x => { d[x.id] = x.defaut; });
+          const r0 = M.compute(d).resultats[0];
+          if (!r0 || r0.unite !== en.unite) err.push(ou + ' : unité de la mesure différente de celle de l\'entrée');
+        }
+      }
     });
+    if (!estTexte(c.titreCourt)) err.push(k + ' : titre court manquant');
     if (!Array.isArray(c.technologies) || c.technologies.length === 0 ||
       !c.technologies.every(t => TECHNOLOGIES.includes(t)))
       err.push(k + ' : technologies hors du vocabulaire');
   });
+  return err;
+}
+
+/* Garde des familles (D-C2-2) : chaque calculateur dans une et une seule
+   famille ; dans une famille partagée, une même clé d'entrée a la même
+   unité partout (sinon le partage mélangerait deux grandeurs). */
+function erreursFamilles(familles, calculateurs) {
+  const err = [], vus = {};
+  (familles || []).forEach(f => {
+    if (!f || !estTexte(f.id) || !estTexte(f.titre)) { err.push('famille sans id ni titre'); return; }
+    const unites = {};
+    (f.calculateurs || []).forEach(id => {
+      const c = calculateurs[id];
+      if (!c) { err.push(f.id + ' : calculateur inconnu « ' + id + ' »'); return; }
+      if (vus[id]) err.push(id + ' : dans deux familles (' + vus[id] + ', ' + f.id + ')');
+      vus[id] = f.id;
+      if (f.partage) c.entrees.forEach(en => {
+        if (en.id in unites && unites[en.id] !== en.unite)
+          err.push(f.id + '.' + en.id + ' : unités différentes dans une famille partagée');
+        unites[en.id] = en.unite;
+      });
+    });
+  });
+  Object.keys(calculateurs || {}).forEach(id => { if (!vus[id]) err.push(id + ' : dans aucune famille'); });
   return err;
 }
 
@@ -1067,9 +1189,10 @@ const OAD = {
   volumeHectare, debitTotalPourVolume, debitParBuse, ajustementPuissance,
   pressionPourVolume, vitesseMesuree, debitChantierTheorique,
   largeurTraitee, debitParNiveauCuve, volumeSelonHauteurs, volumeApresChangementVitesse,
-  ECART_DIFFUSEUR_MAX, ecartsALaMoyenne,
+  vitessePourVolume, ECART_DIFFUSEUR_MAX, ecartsALaMoyenne,
   // calculateurs
-  CALCULATEURS, erreursRegistre, substituer,
+  CALCULATEURS, FAMILLES_CALCULATEURS, familleDe, cleSaisie, calculer,
+  erreursRegistre, erreursFamilles, substituer,
   // schéma, quiz, progression
   TYPES_SECTION_EVALUES,
   validerModule, elementsChiffresSansSource, noterQuestion, noterQuiz, attenduExercice, corrigerExercice,

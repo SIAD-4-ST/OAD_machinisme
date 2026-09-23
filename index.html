@@ -5,12 +5,6 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="color-scheme" content="light dark">
 <title>Formation machines</title>
-<!-- Charte Champagne.fr : jetons locaux, aucune ressource réseau. -->
-<link rel="stylesheet" href="./vendor/charte/fonts.css">
-<link rel="stylesheet" href="./vendor/charte/colors.css">
-<link rel="stylesheet" href="./vendor/charte/typography.css">
-<link rel="stylesheet" href="./vendor/charte/spacing.css">
-<link rel="stylesheet" href="./vendor/charte/motion.css">
 <!-- React embarqué pour le hors-ligne : support.js ne télécharge pas React s'il est déjà présent (D-A3-4). Octets identiques aux SRI de support.js. -->
 <script src="./vendor/react.production.min.js"></script>
 <script src="./vendor/react-dom.production.min.js"></script>
@@ -20,261 +14,192 @@
 <x-dc>
 <helmet>
 <style>
-/* Charte Champagne.fr : jetons dans vendor/charte/ (liens du <head>).
-   Ici, seulement les couleurs fonctionnelles propres à l'outil et la mise en page.
-   Le texte en --gold-deep (≈ 3,9:1 sur blanc) est réservé aux surtitres de 13 px et plus, en graisse 700. */
+/* Jetons de couleur : toute couleur de l'écran passe par eux. */
 :root {
-  --accent-soft: color-mix(in srgb, var(--gold) 16%, var(--surface));
-  --succes: #2e6b3f; --succes-fond: #e8f1ea;
-  --erreur: #a4262c; --erreur-fond: #f9e9e9;
-  --alerte-bord: #917a42; --alerte-fond: #f7f0df;
-  --focus: var(--ink);
+  --fond: #f6f5f0; --surface: #ffffff; --surface-2: #eef0ea;
+  --texte: #1d2521; --texte-doux: #4f5a54; --bord: #cfd4cc;
+  --accent: #2f6b3a; --accent-texte: #ffffff; --accent-doux: #e1eee3;
+  --alerte-fond: #fff4d6; --alerte-bord: #a86b12;
+  --erreur: #b3261e; --erreur-fond: #fdecea;
+  --succes: #1e6b35; --succes-fond: #e3f3e6;
+  --focus: #1a5fb4;
+  --rayon: 10px;
   color-scheme: light;
 }
-[data-theme="sombre"] {
-  --succes: #8fcf9f; --succes-fond: #1a2e20;
-  --erreur: #ff8f86; --erreur-fond: #3a1d1c;
-  --alerte-bord: #c5af7e; --alerte-fond: #2c2718;
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --fond: #121614; --surface: #1b211e; --surface-2: #232b27;
+    --texte: #e8ece9; --texte-doux: #a9b3ad; --bord: #3a4640;
+    --accent: #7cc38a; --accent-texte: #0d1a10; --accent-doux: #203a26;
+    --alerte-fond: #3a2f12; --alerte-bord: #e0b050;
+    --erreur: #ff8a80; --erreur-fond: #3d1b19;
+    --succes: #86d49a; --succes-fond: #19331f;
+    --focus: #8ab4f8;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --fond: #121614; --surface: #1b211e; --surface-2: #232b27;
+  --texte: #e8ece9; --texte-doux: #a9b3ad; --bord: #3a4640;
+  --accent: #7cc38a; --accent-texte: #0d1a10; --accent-doux: #203a26;
+  --alerte-fond: #3a2f12; --alerte-bord: #e0b050;
+  --erreur: #ff8a80; --erreur-fond: #3d1b19;
+  --succes: #86d49a; --succes-fond: #19331f;
+  --focus: #8ab4f8;
   color-scheme: dark;
 }
 
 *, *::before, *::after { box-sizing: border-box; }
-html, body { background: var(--surface); color: var(--ink); }
-body { margin: 0; font-family: var(--font-body); font-size: 16px; line-height: 1.7; font-weight: 300;
-  -webkit-font-smoothing: antialiased; }
-b, strong { font-weight: 500; }
-a { color: var(--ink); text-underline-offset: 3px; }
-a:hover { color: var(--gold-deep); }
-:focus-visible { outline: 2px solid var(--focus); outline-offset: 3px; }
-h1, h2 { font-family: var(--font-display); font-weight: 300; }
-h1 { font-size: clamp(1.9rem, 4vw, 2.6rem); line-height: 1.15; margin: 12px 0 10px; }
-h2 { font-size: 1.6rem; line-height: 1.25; margin: 4px 0 12px; }
-h3 { font-size: 1.05rem; font-weight: 500; margin: 20px 0 8px; }
+html, body { background: var(--fond); color: var(--texte); }
+body { margin: 0; font: 17px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+a { color: var(--accent); }
+:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
+h1 { font-size: 1.6rem; line-height: 1.25; margin: 8px 0 8px; }
+h2 { font-size: 1.3rem; line-height: 1.3; margin: 4px 0 12px; }
+h3 { font-size: 1.05rem; margin: 20px 0 8px; }
 .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 
-/* Surtitres, étiquettes, menus, boutons : police de signalétique en capitales. */
-.nav a, .section-type, .sommaire-titre, .perio-titre, .sommaire-type, .badge, .surtitre,
-.bouton-principal, .bouton-secondaire, .bouton-danger, .bouton-discret {
-  font-family: var(--font-signal); font-weight: 700; text-transform: uppercase; letter-spacing: .08em; }
-
 /* Gouttière 16 px : aucune largeur fixe au-delà de l'écran (400 px utilisable). */
-.app { min-height: 100%; display: flex; flex-direction: column; }
-.page { flex: 1; width: 100%; max-width: 1200px; margin: 0 auto; padding: 0 var(--gutter); display: flex; flex-direction: column; }
+.app { max-width: 1080px; margin: 0 auto; padding: 0 16px; min-height: 100%; display: flex; flex-direction: column; }
 .principal { flex: 1; padding: 8px 0 32px; min-width: 0; }
 
-/* En-tête collant. Une ligne dès 900 px ; en dessous, le menu passe sous le
-   titre et défile horizontalement au lieu de revenir à la ligne. */
-.entete { position: sticky; top: 0; z-index: 10; background: var(--surface); border-bottom: 1px solid var(--hairline); }
-.entete-int { max-width: 1200px; margin: 0 auto; padding: 0 var(--gutter); display: flex; align-items: center; gap: 0 24px; flex-wrap: wrap; }
-.marque { display: flex; align-items: center; min-height: 64px; margin-right: auto; font-family: var(--font-display);
-  font-weight: 300; font-size: 24px; line-height: 1.1; color: var(--ink); text-decoration: none; }
-.nav { display: flex; gap: 0 22px; flex-wrap: nowrap; overflow-x: auto; order: 3; flex: 1 0 100%; max-width: 100%; }
-.nav a { min-height: 64px; display: inline-flex; align-items: center; flex: none; font-size: 13px; letter-spacing: .1em;
-  border-radius: var(--radius-none); color: var(--ink-muted); text-decoration: none; }
-.nav a:hover { color: var(--ink); }
-.nav a[aria-current] { color: var(--ink); box-shadow: inset 0 -2px 0 var(--accent); }
-.bouton-theme { flex: none; }
-/* Sous 900 px, le menu défile : un contour décalé vers l'extérieur serait rogné. */
-.nav a:focus-visible { outline-offset: -4px; }
-@media (min-width: 900px) {
-  .entete-int { flex-wrap: nowrap; padding: 0 24px; }
-  .nav { order: 0; flex: 0 1 auto; overflow: visible; }
-  .nav a:focus-visible { outline-offset: 3px; }
-}
-/* Ancres (glossaire) : ne pas passer sous l'en-tête collant. */
-[id] { scroll-margin-top: 88px; }
+.entete { border-bottom: 1px solid var(--bord); padding: 12px 0 0; }
+.entete-haut { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.marque { font-weight: 700; font-size: 1.15rem; color: var(--texte); text-decoration: none; }
+.nav { display: flex; gap: 4px; flex-wrap: wrap; margin-top: 8px; }
+.nav a { padding: 10px 14px; min-height: 44px; display: inline-flex; align-items: center;
+  border-radius: var(--rayon) var(--rayon) 0 0; color: var(--texte); text-decoration: none; font-weight: 600; }
+.nav a[aria-current] { background: var(--accent-doux); box-shadow: inset 0 -3px 0 var(--accent); }
 
-.pied { border-top: 1px solid var(--hairline); padding: 12px 0 20px; color: var(--ink-muted); font-size: .9rem; }
+.pied { border-top: 1px solid var(--bord); padding: 12px 0 20px; color: var(--texte-doux); font-size: .9rem; }
 
 button { font: inherit; cursor: pointer; }
-/* Action principale et secondaire : pilules de 56 px ; petits boutons : 48 px. */
 .bouton-principal, .bouton-secondaire, .bouton-danger, .bouton-discret {
-  display: inline-flex; align-items: center; justify-content: center; min-height: var(--control-h); padding: 8px 32px;
-  border-radius: var(--radius-pill); border: 1px solid transparent; font-size: 14px; text-decoration: none; }
-.bouton-principal { background: var(--accent); color: var(--on-accent); }
-.bouton-principal:hover { background: var(--accent-hover); color: var(--on-accent); }
-.bouton-secondaire { background: transparent; color: var(--ink); border-color: var(--ink); }
-.bouton-secondaire:hover { color: var(--ink); background: var(--surface-alt); }
-.bouton-danger { background: transparent; color: var(--erreur); border-color: var(--erreur); }
-.bouton-petit, .bouton-danger { min-height: var(--control-h-sm); padding: 8px 24px; font-size: 13px; }
-.bouton-discret { background: transparent; color: var(--ink-muted); border-color: var(--control-border); font-size: 12px; min-height: 40px; padding: 6px 16px; }
-.bouton-discret:hover { color: var(--ink); border-color: var(--ink); }
+  min-height: 44px; padding: 8px 16px; border-radius: var(--rayon); border: 1px solid transparent; }
+.bouton-principal { background: var(--accent); color: var(--accent-texte); font-weight: 600; }
+.bouton-secondaire { background: var(--surface); color: var(--texte); border-color: var(--bord); }
+.bouton-danger { background: var(--surface); color: var(--erreur); border-color: var(--erreur); }
+.bouton-discret { background: transparent; color: var(--texte-doux); border-color: var(--bord); font-size: .9rem; }
 .actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 16px; }
 
-.bandeau-erreur { background: var(--erreur-fond); border: 1px solid var(--erreur); border-radius: var(--radius-none);
+.bandeau-erreur { background: var(--erreur-fond); border: 1px solid var(--erreur); border-radius: var(--rayon);
   padding: 8px 16px; margin: 12px 0; }
 .bandeau-erreur ul { margin: 4px 0 8px; padding-left: 20px; }
-.chargement { color: var(--ink-muted); padding: 24px 0; }
+.chargement { color: var(--texte-doux); padding: 24px 0; }
 
-.chapo { color: var(--ink-muted); margin-top: 0; }
-.meta { color: var(--ink-muted); font-size: .92rem; display: flex; flex-wrap: wrap; gap: 4px 12px; align-items: center; margin: 4px 0; }
-.badge { display: inline-block; padding: 5px 10px; border-radius: var(--radius-pill); font-size: 11px; line-height: 1.2;
-  border: 1px solid var(--control-border); background: var(--surface-alt); color: var(--ink); }
+.chapo { color: var(--texte-doux); margin-top: 0; }
+.meta { color: var(--texte-doux); font-size: .92rem; display: flex; flex-wrap: wrap; gap: 4px 12px; align-items: center; margin: 4px 0; }
+.badge { display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: .8rem; font-weight: 600;
+  border: 1px solid var(--bord); background: var(--surface-2); color: var(--texte); }
 .badge-brouillon, .badge-a-valider { background: var(--alerte-fond); border-color: var(--alerte-bord); }
 .badge-valide { background: var(--succes-fond); border-color: var(--succes); }
-.avertissement { background: var(--alerte-fond); border-left: 4px solid var(--alerte-bord); padding: 8px 12px; border-radius: var(--radius-none); }
+.avertissement { background: var(--alerte-fond); border-left: 4px solid var(--alerte-bord); padding: 8px 12px; border-radius: 4px; }
 
-.surtitre { font-size: 13px; letter-spacing: .1em; color: var(--ink-muted); margin: 0; }
-.surtitre-or { color: var(--gold-deep); }
-
-/* Catalogue : présentation à gauche, bloc « Reprendre » à droite. */
-.catalogue-tete { display: grid; gap: 32px 64px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 380px), 1fr));
-  align-items: end; padding: 32px 0 40px; border-bottom: 1px solid var(--hairline); }
-.catalogue-intro { min-width: 0; }
-.catalogue-intro h1 { font-size: clamp(2.4rem, 5vw, 3.4rem); line-height: 1.12; margin: 16px 0 20px; }
-.catalogue-intro .chapo { margin: 0; max-width: 52ch; font-size: 1.06rem; }
-.reprise { display: flex; flex-direction: column; gap: 10px; padding: 28px 28px 24px; min-width: 0;
-  background: var(--surface-alt); border-top: 3px solid var(--accent); }
-.reprise p { margin: 0; }
-.reprise-titre { font-family: var(--font-display); font-size: 1.8rem; line-height: 1.2; font-weight: 300; }
-.reprise-detail { color: var(--ink-muted); font-size: .95rem; }
-.reprise-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 24px; margin-top: 10px; }
-.reprise-bilan { font-size: .92rem; color: var(--ink-muted); }
-
-.groupe { margin: 48px 0 0; }
-.groupe-tete { display: flex; align-items: baseline; flex-wrap: wrap; gap: 4px 12px; margin: 0 0 18px; }
-.groupe-tete h2 { font-size: 2rem; line-height: 1.2; margin: 0; }
-.groupe-nb { color: var(--ink-muted); font-size: .9rem; }
-.cartes { list-style: none; padding: 0; margin: 0; display: grid; gap: 14px; grid-template-columns: repeat(auto-fill, minmax(min(100%, 320px), 1fr)); }
-.carte { background: var(--surface); border: 1px solid var(--hairline); border-top: 3px solid var(--accent); border-radius: var(--radius-none);
-  padding: 18px 20px 16px; display: flex; flex-direction: column; gap: 10px; transition: border-color var(--dur-fast); }
-.carte:hover, .carte:focus-within { border-color: var(--gold-deep); }
+.groupe { margin: 20px 0; }
+.cartes { list-style: none; padding: 0; margin: 0; display: grid; gap: 12px; grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr)); }
+.carte { background: var(--surface); border: 1px solid var(--bord); border-radius: var(--rayon); padding: 16px; display: flex; flex-direction: column; gap: 6px; }
 .carte p { margin: 0; }
-.carte .meta { font-size: .84rem; }
-.carte-lien { font-family: var(--font-display); font-size: 1.55rem; font-weight: 300; line-height: 1.25; text-decoration: none; }
-.carte-lien:hover { color: var(--ink); text-decoration: underline; }
-.carte-resume { color: var(--ink-muted); font-size: .95rem; line-height: 1.5; flex: 1; }
-.carte-pied { display: flex; flex-direction: column; gap: 6px; padding-top: 12px; margin-top: 4px; border-top: 1px solid var(--hairline); }
-.carte-pied .meta { justify-content: space-between; margin: 0; }
-.carte-pied b { color: var(--ink); }
+.carte-lien { font-size: 1.1rem; font-weight: 700; text-decoration: none; }
+.carte-lien:hover { text-decoration: underline; }
 
-.jauge { height: 6px; border-radius: var(--radius-pill); background: var(--surface-alt); overflow: hidden; margin-top: 4px; }
-.jauge span { display: block; height: 100%; border-radius: var(--radius-pill); background: var(--accent); }
+.jauge { height: 8px; border-radius: 999px; background: var(--surface-2); border: 1px solid var(--bord); overflow: hidden; margin-top: 4px; }
+.jauge span { display: block; height: 100%; background: var(--accent); }
 
-.fil { font-size: .9rem; color: var(--ink-muted); margin: 8px 0 0; }
+.fil { font-size: .9rem; color: var(--texte-doux); margin: 8px 0 0; }
 /* Petit écran : la section d'abord, le sommaire ensuite. */
 .grille { display: flex; flex-direction: column; gap: 16px; margin-top: 12px; }
 .grille > .sommaire { order: 2; }
 .grille > .contenu { order: 1; }
-/* En-tête collant : 64 px sur une ligne (dès 900 px), environ 128 px sur deux. */
 @media (min-width: 800px) {
-  .grille { display: grid; grid-template-columns: 290px minmax(0, 1fr); gap: 24px; align-items: start; }
-  .grille > .sommaire { order: 0; position: sticky; top: 144px; max-height: calc(100vh - 160px); overflow-y: auto; }
+  .grille { display: grid; grid-template-columns: 270px minmax(0, 1fr); align-items: start; }
+  .grille > .sommaire { order: 0; position: sticky; top: 8px; }
 }
-@media (min-width: 900px) {
-  .grille > .sommaire { top: 88px; max-height: calc(100vh - 104px); }
-}
-.sommaire { background: var(--surface); border: 1px solid var(--hairline); border-radius: var(--radius-none); padding: 18px 12px 12px; }
-.sommaire > .sommaire-titre, .sommaire > .meta, .sommaire > .jauge { margin-left: 8px; margin-right: 8px; }
-.sommaire-titre { font-size: 13px; letter-spacing: .1em; color: var(--ink-muted); margin: 0 0 8px; }
-.sommaire ol, .outils-liste { list-style: none; padding: 0; margin: 12px 0 0; display: flex; flex-direction: column; gap: 2px; }
-.sommaire a { display: grid; grid-template-columns: 26px minmax(0, 1fr); gap: 0 10px; align-items: start; padding: 8px; min-height: 44px;
-  border-radius: var(--radius-none); color: var(--ink); text-decoration: none; font-size: .92rem; line-height: 1.35; }
-.outils-liste a { display: flex; align-items: center; }
-.sommaire a:hover { background: var(--surface-alt); color: var(--ink); }
-.sommaire a[aria-current] { background: var(--accent-soft); font-weight: 500; }
-.sommaire-texte { display: flex; flex-direction: column; min-width: 0; }
-.sommaire-type { font-size: 11px; letter-spacing: .06em; color: var(--ink-muted); font-weight: 700; }
+.sommaire { background: var(--surface); border: 1px solid var(--bord); border-radius: var(--rayon); padding: 12px; }
+.sommaire-titre { font-size: 1rem; margin: 0 0 4px; }
+.sommaire ol { list-style: none; padding: 0; margin: 8px 0 0; }
+.sommaire a { display: flex; gap: 8px; align-items: baseline; padding: 8px; min-height: 44px; border-radius: 6px;
+  color: var(--texte); text-decoration: none; }
+.sommaire a[aria-current] { background: var(--accent-doux); font-weight: 600; }
+.sommaire-type { font-size: .75rem; color: var(--texte-doux); min-width: 5.5em; }
+.sommaire .vu { margin-left: auto; color: var(--succes); }
 
-/* Pastille numérotée : sommaire et étapes de calcul. */
-.pastille { flex: none; width: 26px; height: 26px; border-radius: var(--radius-pill); display: inline-flex; align-items: center;
-  justify-content: center; font-size: .78rem; font-weight: 700; line-height: 1; font-variant-numeric: tabular-nums;
-  border: 1.5px solid var(--control-border); background: var(--surface); color: var(--ink-muted); }
-.sommaire a[aria-current] .pastille { border-color: var(--accent); background: var(--accent); color: var(--on-accent); }
-.pastille-vue, .sommaire a[aria-current] .pastille-vue { border-color: var(--succes); background: var(--succes-fond); color: var(--succes); }
-
-.contenu { background: var(--surface); border: 1px solid var(--hairline); border-radius: var(--radius-none); padding: clamp(18px, 3.5vw, 36px); min-width: 0; }
-.section-type { font-size: 13px; letter-spacing: .1em; color: var(--gold-deep); margin: 0 0 8px; display: flex; flex-wrap: wrap; gap: 4px 8px; align-items: center; }
-.section-position { color: var(--ink-muted); }
-.titre-contenu { font-size: clamp(1.8rem, 3vw, 2.4rem); line-height: 1.2; margin: 0 0 16px; }
-.intro { color: var(--ink-muted); }
-.formule { font-family: ui-monospace, "Cascadia Mono", Consolas, monospace; background: var(--surface-alt);
-  padding: 8px 12px; border-radius: var(--radius-none); margin: 4px 0; overflow-wrap: anywhere; }
-.alerte-bloc { background: var(--alerte-fond); border-left: 4px solid var(--alerte-bord); padding: 8px 12px; border-radius: var(--radius-none); }
-.source-element { display: block; font-size: .8rem; color: var(--ink-muted); margin: 2px 0 8px; }
+.contenu { background: var(--surface); border: 1px solid var(--bord); border-radius: var(--rayon); padding: 16px; min-width: 0; }
+.section-type { font-size: .85rem; color: var(--texte-doux); margin: 0; text-transform: uppercase; letter-spacing: .04em; }
+.intro { color: var(--texte-doux); }
+.formule { font-family: ui-monospace, "Cascadia Mono", Consolas, monospace; background: var(--surface-2);
+  padding: 8px 12px; border-radius: 6px; margin: 4px 0; overflow-wrap: anywhere; }
+.alerte-bloc { background: var(--alerte-fond); border-left: 4px solid var(--alerte-bord); padding: 8px 12px; border-radius: 4px; }
+.source-element { display: block; font-size: .8rem; color: var(--texte-doux); margin: 2px 0 8px; }
 li > .source-element { margin: 0; }
 .badge-techno { text-transform: none; letter-spacing: 0; margin-left: 4px; }
-.glossaire dt { font-weight: 500; margin-top: 12px; }
-.glossaire dd { margin: 4px 0 0 0; padding-left: 12px; border-left: 3px solid var(--hairline); }
+.glossaire dt { font-weight: 700; margin-top: 12px; }
+.glossaire dd { margin: 4px 0 0 0; padding-left: 12px; border-left: 3px solid var(--bord); }
 
-.compteur { color: var(--ink-muted); font-size: .92rem; }
+.compteur { color: var(--texte-doux); font-size: .92rem; }
 .coches { list-style: none; padding: 0; margin: 0; }
-.coches li { display: grid; grid-template-columns: 28px 1fr; gap: 4px 8px; padding: 10px 0; border-bottom: 1px solid var(--hairline); }
-.coches input { width: 24px; height: 24px; margin: 2px 0 0; accent-color: var(--gold-deep); }
+.coches li { display: grid; grid-template-columns: 28px 1fr; gap: 4px 8px; padding: 10px 0; border-bottom: 1px solid var(--bord); }
+.coches input { width: 24px; height: 24px; margin: 2px 0 0; accent-color: var(--accent); }
 .coches label { cursor: pointer; }
-.coches .fait label { color: var(--ink-muted); text-decoration: line-through; }
-.coches .detail, .coches .perio { grid-column: 2; margin: 0; font-size: .9rem; color: var(--ink-muted); }
-.perio-titre { font-size: 13px; color: var(--ink-muted); margin: 16px 0 0; }
+.coches .fait label { color: var(--texte-doux); text-decoration: line-through; }
+.coches .detail, .coches .perio { grid-column: 2; margin: 0; font-size: .9rem; color: var(--texte-doux); }
+.perio-titre { font-size: 1rem; margin: 16px 0 0; }
 
-.calc-desc { color: var(--ink-muted); }
-.calc-portee { font-size: .92rem; color: var(--ink-muted); margin-top: -4px; }
+.calc-desc { color: var(--texte-doux); }
+.calc-portee { font-size: .92rem; color: var(--texte-doux); margin-top: -4px; }
 .champs { display: grid; gap: 12px; grid-template-columns: repeat(auto-fill, minmax(min(100%, 220px), 1fr)); }
-.champ label { display: block; font-weight: 500; }
+.champ label { display: block; font-weight: 600; }
 .champ-large { grid-column: 1 / -1; }
 .champ-exo { max-width: 320px; margin: 12px 0; }
 .champ input { width: 100%; min-height: 44px; font: inherit; font-size: 1.1rem; padding: 6px 10px; margin-top: 4px;
-  border: 1px solid var(--control-border); border-radius: var(--radius-none); background: var(--surface); color: var(--ink); }
-.champ input:focus { border-color: var(--gold-deep); }
-.unite { font-weight: 300; color: var(--ink-muted); }
-.origine { font-size: .8rem; color: var(--ink-muted); margin: 4px 0 0; }
-.sorties { margin: 24px 0 8px; padding: 6px 20px; border-radius: var(--radius-none); background: var(--accent-soft); }
-.resultat { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: baseline; gap: 4px 16px; margin: 0;
-  padding: 12px 0; border-bottom: 1px solid var(--hairline); }
-.resultat:last-of-type { border-bottom: 0; }
-.resultat strong { font-size: 1.6rem; line-height: 1.2; font-weight: 500; font-variant-numeric: tabular-nums; }
-.alertes { margin: 12px 0; padding: 10px 14px 10px 30px; background: var(--alerte-fond); border: 1px solid var(--alerte-bord); border-radius: var(--radius-none); }
-.surtitre-bloc { margin: 28px 0 12px; }
-.etapes-calc { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 14px; }
-.etapes-calc li { display: grid; grid-template-columns: 26px minmax(0, 1fr); gap: 4px 12px; }
-.etapes-calc .pastille { background: var(--surface-alt); color: var(--ink); border-width: 1px; }
-.etape-corps { min-width: 0; }
-.etape-corps .formule { font-size: .9rem; }
-.formule-titre { margin: 2px 0 6px; font-weight: 500; }
+  border: 1px solid var(--bord); border-radius: 6px; background: var(--fond); color: var(--texte); }
+.unite { font-weight: 400; color: var(--texte-doux); }
+.origine { font-size: .8rem; color: var(--texte-doux); margin: 4px 0 0; }
+.sorties { margin: 16px 0; padding: 12px 16px; border-radius: var(--rayon); background: var(--accent-doux); }
+.resultat { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 4px 12px; margin: 4px 0; }
+.resultat strong { font-size: 1.35rem; }
+.alertes { margin: 8px 0 0; padding: 8px 12px 8px 28px; background: var(--alerte-fond); border-radius: 6px; }
+.etapes-calc { padding-left: 20px; }
+.etapes-calc li { margin-bottom: 12px; }
+.formule-titre { margin: 0; font-weight: 600; }
 
-.question { border: 1px solid var(--hairline); border-radius: var(--radius-none); margin: 0 0 16px; padding: 16px 18px 18px; min-width: 0; }
-.question legend { font-weight: 500; padding: 0 4px; }
-.consigne { font-size: .9rem; color: var(--ink-muted); margin: 4px 0; }
+.question { border: 1px solid var(--bord); border-radius: var(--rayon); margin: 0 0 16px; padding: 8px 16px 16px; min-width: 0; }
+.question legend { font-weight: 600; padding: 0 4px; }
+.consigne { font-size: .9rem; color: var(--texte-doux); margin: 4px 0; }
 .choix { display: flex; flex-direction: column; gap: 8px; margin-top: 8px; }
-.choix-bouton { display: flex; align-items: center; gap: 12px; text-align: left; min-height: 48px; padding: 10px 14px;
-  border-radius: var(--radius-none); border: 2px solid var(--control-border); background: var(--surface); color: var(--ink); }
-.choix-bouton:hover:not(:disabled) { border-color: var(--gold-deep); }
-.choix-bouton.pris { border-color: var(--accent); background: var(--accent-soft); }
+.choix-bouton { text-align: left; min-height: 44px; padding: 8px 12px; border-radius: 8px;
+  border: 2px solid var(--bord); background: var(--fond); color: var(--texte); }
+.choix-bouton.pris { border-color: var(--accent); background: var(--accent-doux); }
 .choix-bouton.bonne { border-color: var(--succes); background: var(--succes-fond); }
 .choix-bouton.fausse { border-color: var(--erreur); background: var(--erreur-fond); }
-/* Marque A, B, C… : ronde (une réponse), carrée (plusieurs) ; ✓ ou ✕ à la correction. */
-.marque { flex: none; width: 26px; height: 26px; border-radius: var(--radius-pill); display: inline-flex; align-items: center;
-  justify-content: center; font-size: .78rem; font-weight: 700; line-height: 1; border: 2px solid var(--control-border); color: var(--ink-muted); }
-.marque-carree { border-radius: var(--radius-none); }
-.pris .marque { border-color: var(--accent); background: var(--accent); color: var(--on-accent); }
-.bonne .marque { border-color: var(--succes); background: var(--succes); color: var(--surface); }
-.fausse .marque { border-color: var(--erreur); background: var(--erreur); color: var(--surface); }
 .choix-bouton:disabled { cursor: default; opacity: 1; }
-.correction { margin: 8px 0 0; padding: 8px 12px; border-radius: var(--radius-none); }
+.correction { margin: 8px 0 0; padding: 8px 12px; border-radius: 6px; }
 .correction.juste, .retour.juste { background: var(--succes-fond); }
 .correction.fausse, .retour.fausse { background: var(--erreur-fond); }
-.score { font-size: 1.3rem; font-weight: 500; font-variant-numeric: tabular-nums; }
+.score { font-size: 1.2rem; font-weight: 700; }
 .situation { font-size: 1.05rem; }
-.retour { padding: 8px 12px; border-radius: var(--radius-none); }
+.retour { padding: 8px 12px; border-radius: 6px; }
 
-/* Précédent : bloc à filet ; Suivant : bloc or. */
-.suite { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 36px; padding-top: 20px; border-top: 1px solid var(--hairline); }
-.suite a { flex: 1 1 220px; display: flex; flex-direction: column; gap: 2px; padding: 12px 16px; min-height: 56px;
-  border-radius: var(--radius-none); text-decoration: none; }
-.suite .precedent { border: 1px solid var(--hairline); color: var(--ink); }
-.suite .precedent:hover { border-color: var(--gold-deep); color: var(--ink); }
-.suite .suivant { margin-left: auto; text-align: right; background: var(--accent); color: var(--on-accent); }
-.suite .suivant:hover { background: var(--accent-hover); color: var(--on-accent); }
-.suite-sens { font-family: var(--font-signal); font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: .08em; }
-.suite .precedent .suite-sens { color: var(--ink-muted); }
-.suite-titre { font-weight: 500; }
+.suite { display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-top: 24px;
+  padding-top: 12px; border-top: 1px solid var(--bord); }
+.suite a { min-height: 44px; display: inline-flex; align-items: center; }
+.suite .suivant { margin-left: auto; text-align: right; }
 
 .outils-liste { list-style: none; padding: 0; margin: 8px 0 0; }
+.outils-groupe { font-size: .8rem; text-transform: uppercase; letter-spacing: .04em; color: var(--texte-doux); margin: 16px 0 0; }
+.modes { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 12px; }
+.mode { display: inline-flex; align-items: center; min-height: 44px; padding: 6px 14px; border: 1px solid var(--accent); border-radius: 22px; text-decoration: none; }
+.mode[aria-current] { background: var(--accent); color: var(--accent-texte); font-weight: 600; }
+.champ-titre { font-weight: 600; margin: 0; }
+.valeur-mesuree { margin: 4px 0; font-size: 1.1rem; }
+.sous-champs { display: grid; gap: 8px; margin: 4px 0 0; padding: 8px 0 8px 12px; border-left: 3px solid var(--accent-doux); }
+.bouton-mesure { min-height: 44px; margin-top: 6px; padding: 6px 10px; border: 1px dashed var(--accent); border-radius: 6px; background: transparent; color: inherit; text-align: left; }
+.bouton-mesure[aria-pressed="true"] { border-style: solid; background: var(--accent-doux); }
 
 .tableau-conteneur { overflow-x: auto; max-width: 100%; }
 .tableau { border-collapse: collapse; width: 100%; background: var(--surface); }
-.tableau caption { text-align: left; font-weight: 500; padding: 8px 0; }
-.tableau th, .tableau td { border: 1px solid var(--hairline); padding: 8px; text-align: left; vertical-align: top; }
-.tableau thead th { background: var(--surface-alt); font-weight: 500; }
+.tableau caption { text-align: left; font-weight: 600; padding: 8px 0; }
+.tableau th, .tableau td { border: 1px solid var(--bord); padding: 8px; text-align: left; vertical-align: top; }
+.tableau thead th { background: var(--surface-2); }
 .tableau tr.hors-seuil th, .tableau tr.hors-seuil td { font-weight: 700; color: var(--erreur); background: var(--erreur-fond); }
 
 @media print {
@@ -297,18 +222,17 @@ li > .source-element { margin: 0; }
 </helmet>
 <div class="app">
   <header class="entete">
-    <div class="entete-int">
+    <div class="entete-haut">
       <a class="marque" href="{{ lienCatalogue }}">Formation machines</a>
-      <nav class="nav" aria-label="Navigation principale">
-        <a href="{{ lienCatalogue }}" aria-current="{{ navCatalogue }}">Modules</a>
-        <a href="{{ lienOutils }}" aria-current="{{ navOutils }}">Calculateurs</a>
-        <a href="{{ lienProgression }}" aria-current="{{ navProgression }}">Progression</a>
-        <a href="{{ lienGlossaire }}" aria-current="{{ navGlossaire }}">Glossaire</a>
-      </nav>
-      <button class="bouton-discret bouton-theme" onClick="{{ basculerTheme }}" aria-label="{{ themeAria }}">{{ themeLibelle }}</button>
+      <button class="bouton-discret" onClick="{{ basculerTheme }}" aria-label="{{ themeAria }}">{{ themeLibelle }}</button>
     </div>
+    <nav class="nav" aria-label="Navigation principale">
+      <a href="{{ lienCatalogue }}" aria-current="{{ navCatalogue }}">Modules</a>
+      <a href="{{ lienOutils }}" aria-current="{{ navOutils }}">Calculateurs</a>
+      <a href="{{ lienProgression }}" aria-current="{{ navProgression }}">Progression</a>
+      <a href="{{ lienGlossaire }}" aria-current="{{ navGlossaire }}">Glossaire</a>
+    </nav>
   </header>
-  <div class="page">
 
   <sc-if value="{{ aErreurs }}" hint-placeholder-val="{{ false }}">
     <div class="bandeau-erreur" role="alert">
@@ -333,44 +257,23 @@ li > .source-element { margin: 0; }
 
     <!-- Catalogue -->
     <sc-if value="{{ estCatalogue }}" hint-placeholder-val="{{ true }}">
-      <div class="catalogue-tete">
-        <div class="catalogue-intro">
-          <p class="surtitre surtitre-or">Machinisme viticole</p>
-          <h1>Modules de formation</h1>
-          <p class="chapo">Fiches, procédures, calculateurs et quiz pour régler et entretenir les machines. Fonctionne sans réseau.</p>
-        </div>
-        <div class="reprise">
-          <p class="surtitre">{{ reprise.surtitre }}</p>
-          <p class="reprise-titre">{{ reprise.titre }}</p>
-          <p class="reprise-detail">{{ reprise.detail }}</p>
-          <div class="reprise-actions">
-            <a class="bouton-principal" href="{{ reprise.lien }}">{{ reprise.action }}</a>
-            <a class="reprise-bilan" href="{{ lienProgression }}">{{ reprise.bilanTxt }}</a>
-          </div>
-        </div>
-      </div>
+      <h1>Modules de formation</h1>
+      <p class="chapo">Fiches, procédures, calculateurs et quiz pour régler et entretenir les machines. Fonctionne sans réseau.</p>
       <sc-for list="{{ domainesCatalogue }}" as="dom" hint-placeholder-count="2">
         <section class="groupe" aria-labelledby="{{ dom.titreId }}">
-          <div class="groupe-tete">
-            <h2 id="{{ dom.titreId }}">{{ dom.libelle }}</h2>
-            <span class="groupe-nb">{{ dom.nbTxt }}</span>
-          </div>
+          <h2 id="{{ dom.titreId }}">{{ dom.libelle }}</h2>
           <ul class="cartes">
             <sc-for list="{{ dom.modules }}" as="carte" hint-placeholder-count="2">
               <li class="carte">
+                <a class="carte-lien" href="{{ carte.lien }}">{{ carte.titre }}</a>
+                <p>{{ carte.resume }}</p>
                 <p class="meta">
                   <span class="{{ carte.statutClasse }}">{{ carte.statutLibelle }}</span>
                   <span>{{ carte.dureeTxt }}</span>
+                  <span>{{ carte.etatLibelle }} · {{ carte.avancementTxt }}</span>
+                  <span>{{ carte.quizTxt }}</span>
                 </p>
-                <a class="carte-lien" href="{{ carte.lien }}">{{ carte.titre }}</a>
-                <p class="carte-resume">{{ carte.resume }}</p>
-                <div class="carte-pied">
-                  <p class="meta">
-                    <span><b>{{ carte.etatLibelle }}</b> · {{ carte.avancementTxt }}</span>
-                    <span>{{ carte.quizTxt }}</span>
-                  </p>
-                  <div class="jauge" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="{{ carte.pct }}" aria-label="{{ carte.jaugeLabel }}"><span style="width:{{ carte.pct }}%"></span></div>
-                </div>
+                <div class="jauge" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="{{ carte.pct }}" aria-label="{{ carte.jaugeLabel }}"><span style="width:{{ carte.pct }}%"></span></div>
               </li>
             </sc-for>
           </ul>
@@ -416,9 +319,9 @@ li > .source-element { margin: 0; }
               <sc-for list="{{ sommaire }}" as="it" hint-placeholder-count="5">
                 <li>
                   <a href="{{ it.lien }}" aria-current="{{ it.courant }}">
-                    <span class="{{ it.pastilleClasse }}" aria-hidden="true">{{ it.pastille }}</span>
-                    <span class="sommaire-texte"><span class="sommaire-type">{{ it.typeLibelle }}</span><span>{{ it.titre }}</span></span>
-                    <sc-if value="{{ it.vu }}"><span class="sr">(consultée)</span></sc-if>
+                    <span class="sommaire-type">{{ it.typeLibelle }}</span>
+                    <span>{{ it.titre }}</span>
+                    <sc-if value="{{ it.vu }}"><span class="vu" aria-hidden="true">✓</span><span class="sr">(consultée)</span></sc-if>
                   </a>
                 </li>
               </sc-for>
@@ -428,23 +331,26 @@ li > .source-element { margin: 0; }
         <sc-if value="{{ estOutils }}">
           <nav class="sommaire" aria-label="Liste des calculateurs">
             <h2 class="sommaire-titre">Calculateurs</h2>
-            <ul class="outils-liste">
-              <sc-for list="{{ outilsListe }}" as="ou" hint-placeholder-count="5">
-                <li><a href="{{ ou.lien }}" aria-current="{{ ou.courant }}">{{ ou.titre }}</a></li>
-              </sc-for>
-            </ul>
+            <sc-for list="{{ outilsGroupes }}" as="gp" hint-placeholder-count="4">
+              <h3 class="outils-groupe">{{ gp.titre }}</h3>
+              <ul class="outils-liste">
+                <sc-for list="{{ gp.calcs }}" as="ou" hint-placeholder-count="3">
+                  <li><a href="{{ ou.lien }}" aria-current="{{ ou.courant }}">{{ ou.titre }}</a></li>
+                </sc-for>
+              </ul>
+            </sc-for>
           </nav>
         </sc-if>
 
         <article class="contenu" aria-labelledby="titre-contenu">
           <sc-if value="{{ estModule }}">
-            <p class="section-type"><span>{{ section.typeLibelle }}</span> <span class="section-position">{{ section.position }}</span><sc-if value="{{ section.aTechno }}"> <span class="badge badge-techno">{{ section.technoLibelle }}</span></sc-if></p>
-            <h2 class="titre-contenu" id="titre-contenu">{{ section.titre }}</h2>
+            <p class="section-type">{{ section.typeLibelle }} · {{ section.position }}<sc-if value="{{ section.aTechno }}"> <span class="badge badge-techno">{{ section.technoLibelle }}</span></sc-if></p>
+            <h2 id="titre-contenu">{{ section.titre }}</h2>
             <sc-if value="{{ section.aIntro }}"><p class="intro">{{ section.intro }}</p></sc-if>
             <sc-if value="{{ section.aSourceEntete }}"><p class="source-element">{{ section.sourceTxt }}</p></sc-if>
           </sc-if>
           <sc-if value="{{ estOutils }}">
-            <h2 class="titre-contenu" id="titre-contenu">{{ outilsTitre }}</h2>
+            <h2 id="titre-contenu">{{ outilsTitre }}</h2>
             <sc-if value="{{ outilsMessage }}"><p class="intro">{{ outilsMessage }}</p></sc-if>
           </sc-if>
 
@@ -476,7 +382,7 @@ li > .source-element { margin: 0; }
                 </li>
               </sc-for>
             </ol>
-            <div class="actions"><button class="bouton-secondaire bouton-petit" onClick="{{ imprimer }}">Imprimer la procédure</button></div>
+            <div class="actions"><button class="bouton-secondaire" onClick="{{ imprimer }}">Imprimer la procédure</button></div>
           </sc-if>
 
           <!-- Entretien -->
@@ -494,28 +400,21 @@ li > .source-element { margin: 0; }
                 </sc-for>
               </ul>
             </sc-for>
-            <div class="actions"><button class="bouton-secondaire bouton-petit" onClick="{{ imprimer }}">Imprimer le plan d'entretien</button></div>
+            <div class="actions"><button class="bouton-secondaire" onClick="{{ imprimer }}">Imprimer le plan d'entretien</button></div>
           </sc-if>
 
-          <!-- Calculateur : fragment unique, section de module ou page Calculateurs -->
+          <!-- Calculateur : fragment unique, section de module ou page Calculateurs.
+               Ordre : autres calculs de la famille, résultats, champs, détail. -->
           <sc-if value="{{ aCalc }}">
+            <sc-if value="{{ calcCourant.aModes }}">
+              <nav class="modes" aria-label="{{ calcCourant.modesAria }}">
+                <sc-for list="{{ calcCourant.modes }}" as="mo" hint-placeholder-count="3">
+                  <a class="mode" href="{{ mo.lien }}" aria-current="{{ mo.courant }}">{{ mo.titre }}</a>
+                </sc-for>
+              </nav>
+            </sc-if>
             <p class="calc-desc">{{ calcCourant.description }}</p>
             <sc-if value="{{ calcCourant.aTechnos }}"><p class="calc-portee">{{ calcCourant.technosTxt }}</p></sc-if>
-            <div class="champs">
-              <sc-for list="{{ calcCourant.entrees }}" as="en" hint-placeholder-count="3">
-                <div class="{{ en.classe }}">
-                  <label for="{{ en.inputId }}">{{ en.label }} <span class="unite">{{ en.uniteTxt }}</span></label>
-                  <sc-if value="{{ en.estListe }}">
-                    <p class="consigne" id="{{ en.consigneId }}">Séparez les valeurs par un point-virgule.</p>
-                    <input id="{{ en.inputId }}" type="text" inputmode="text" autocomplete="off" value="{{ en.valeur }}" onInput="{{ onSaisie }}" data-calc="{{ en.calc }}" data-entree="{{ en.id }}" aria-describedby="{{ en.decritPar }}">
-                  </sc-if>
-                  <sc-if value="{{ !en.estListe }}">
-                    <input id="{{ en.inputId }}" type="text" inputmode="decimal" autocomplete="off" value="{{ en.valeur }}" onInput="{{ onSaisie }}" data-calc="{{ en.calc }}" data-entree="{{ en.id }}" aria-describedby="{{ en.origineId }}">
-                  </sc-if>
-                  <p class="origine" id="{{ en.origineId }}">Par défaut : {{ en.defautTxt }}. {{ en.origine }}</p>
-                </div>
-              </sc-for>
-            </div>
             <div class="sorties" aria-live="polite">
               <sc-for list="{{ calcCourant.resultats }}" as="res" hint-placeholder-count="1">
                 <p class="resultat"><span>{{ res.label }}</span> <strong>{{ res.texte }}</strong></p>
@@ -524,23 +423,54 @@ li > .source-element { margin: 0; }
                 <ul class="alertes"><sc-for list="{{ calcCourant.alertes }}" as="al"><li>{{ al }}</li></sc-for></ul>
               </sc-if>
             </div>
-            <sc-if value="{{ calcCourant.aTableau }}">
-              <div class="tableau-conteneur">{{ calcCourant.tableau }}</div>
-            </sc-if>
-            <h3 class="surtitre surtitre-bloc">Détail du calcul</h3>
+            <sc-if value="{{ calcCourant.aPartage }}"><p class="consigne">{{ calcCourant.partageTxt }}</p></sc-if>
+            <div class="champs">
+              <sc-for list="{{ calcCourant.entrees }}" as="en" hint-placeholder-count="3">
+                <div class="{{ en.classe }}">
+                  <sc-if value="{{ !en.mesureActive }}">
+                    <label for="{{ en.inputId }}">{{ en.label }} <span class="unite">{{ en.uniteTxt }}</span></label>
+                    <sc-if value="{{ en.estListe }}">
+                      <p class="consigne" id="{{ en.consigneId }}">Séparez les valeurs par un point-virgule.</p>
+                      <input id="{{ en.inputId }}" type="text" inputmode="text" autocomplete="off" value="{{ en.valeur }}" onInput="{{ onSaisie }}" data-calc="{{ en.calc }}" data-entree="{{ en.id }}" aria-describedby="{{ en.decritPar }}">
+                    </sc-if>
+                    <sc-if value="{{ !en.estListe }}">
+                      <input id="{{ en.inputId }}" type="text" inputmode="decimal" autocomplete="off" value="{{ en.valeur }}" onInput="{{ onSaisie }}" data-calc="{{ en.calc }}" data-entree="{{ en.id }}" aria-describedby="{{ en.origineId }}">
+                    </sc-if>
+                    <p class="origine" id="{{ en.origineId }}">Par défaut : {{ en.defautTxt }}. {{ en.origine }}</p>
+                  </sc-if>
+                  <sc-if value="{{ en.mesureActive }}">
+                    <p class="champ-titre">{{ en.label }} <span class="unite">{{ en.uniteTxt }}</span></p>
+                    <p class="valeur-mesuree"><strong>{{ en.valeurMesureeTxt }}</strong> {{ en.mesureTxt }}</p>
+                    <div class="sous-champs">
+                      <sc-for list="{{ en.sousEntrees }}" as="se" hint-placeholder-count="2">
+                        <div class="champ">
+                          <label for="{{ se.inputId }}">{{ se.label }} <span class="unite">{{ se.uniteTxt }}</span></label>
+                          <input id="{{ se.inputId }}" type="text" inputmode="decimal" autocomplete="off" value="{{ se.valeur }}" onInput="{{ onSaisie }}" data-calc="{{ se.calc }}" data-entree="{{ se.id }}" aria-describedby="{{ se.origineId }}">
+                          <p class="origine" id="{{ se.origineId }}">Par défaut : {{ se.defautTxt }}. {{ se.origine }}</p>
+                        </div>
+                      </sc-for>
+                    </div>
+                  </sc-if>
+                  <sc-if value="{{ en.estMesurable }}">
+                    <button type="button" class="bouton-mesure" aria-pressed="{{ en.mesurePresse }}" value="{{ en.basculeValeur }}" onClick="{{ basculerMesure }}">{{ en.basculeTexte }}</button>
+                  </sc-if>
+                </div>
+              </sc-for>
+            </div>
+            <h3>Détail du calcul</h3>
             <ol class="etapes-calc">
               <sc-for list="{{ calcCourant.etapes }}" as="fe" hint-placeholder-count="1">
                 <li>
-                  <span class="pastille" aria-hidden="true">{{ fe.num }}</span>
-                  <div class="etape-corps">
-                    <p class="formule-titre">{{ fe.titre }}</p>
-                    <p class="formule">{{ fe.formule }}</p>
-                    <p class="formule">= {{ fe.substitution }} = <b>{{ fe.resultat }}</b></p>
-                  </div>
+                  <p class="formule-titre">{{ fe.titre }}</p>
+                  <p class="formule">{{ fe.formule }}</p>
+                  <p class="formule">= {{ fe.substitution }} = {{ fe.resultat }}</p>
                 </li>
               </sc-for>
             </ol>
-            <div class="actions"><button class="bouton-secondaire bouton-petit" value="{{ calcCourant.id }}" onClick="{{ reinitialiserCalc }}">Revenir aux valeurs par défaut</button></div>
+            <sc-if value="{{ calcCourant.aTableau }}">
+              <div class="tableau-conteneur">{{ calcCourant.tableau }}</div>
+            </sc-if>
+            <div class="actions"><button class="bouton-secondaire" value="{{ calcCourant.id }}" onClick="{{ reinitialiserCalc }}">{{ calcCourant.reinitTxt }}</button></div>
           </sc-if>
 
           <!-- Quiz -->
@@ -551,7 +481,7 @@ li > .source-element { margin: 0; }
                 <sc-if value="{{ qu.multiple }}"><p class="consigne">Plusieurs réponses possibles.</p></sc-if>
                 <div class="choix">
                   <sc-for list="{{ qu.choix }}" as="ch" hint-placeholder-count="3">
-                    <button type="button" class="{{ ch.classe }}" aria-pressed="{{ ch.presse }}" value="{{ ch.valeur }}" onClick="{{ onChoix }}" disabled="{{ quiz.verrouille }}"><span class="{{ qu.marqueClasse }}" aria-hidden="true">{{ ch.marque }}</span><span>{{ ch.texte }}</span></button>
+                    <button type="button" class="{{ ch.classe }}" aria-pressed="{{ ch.presse }}" value="{{ ch.valeur }}" onClick="{{ onChoix }}" disabled="{{ quiz.verrouille }}">{{ ch.texte }}</button>
                   </sc-for>
                 </div>
                 <sc-if value="{{ quiz.corrige }}"><p class="{{ qu.correctionClasse }}">{{ qu.correction }}</p></sc-if>
@@ -574,7 +504,7 @@ li > .source-element { margin: 0; }
             <sc-if value="{{ cas.aSource }}"><p class="source-element">{{ cas.sourceTxt }}</p></sc-if>
             <div class="choix">
               <sc-for list="{{ cas.options }}" as="op" hint-placeholder-count="3">
-                <button type="button" class="{{ op.classe }}" aria-pressed="{{ op.presse }}" value="{{ op.valeur }}" onClick="{{ choisirCas }}"><span class="marque" aria-hidden="true">{{ op.marque }}</span><span>{{ op.texte }}</span></button>
+                <button type="button" class="{{ op.classe }}" aria-pressed="{{ op.presse }}" value="{{ op.valeur }}" onClick="{{ choisirCas }}">{{ op.texte }}</button>
               </sc-for>
             </div>
             <div aria-live="polite">
@@ -607,12 +537,9 @@ li > .source-element { margin: 0; }
                 <ol class="etapes-calc">
                   <sc-for list="{{ exo.etapes }}" as="xe" hint-placeholder-count="1">
                     <li>
-                      <span class="pastille" aria-hidden="true">{{ xe.num }}</span>
-                      <div class="etape-corps">
-                        <p class="formule-titre">{{ xe.titre }}</p>
-                        <p class="formule">{{ xe.formule }}</p>
-                        <p class="formule">= {{ xe.substitution }} = <b>{{ xe.resultat }}</b></p>
-                      </div>
+                      <p class="formule-titre">{{ xe.titre }}</p>
+                      <p class="formule">{{ xe.formule }}</p>
+                      <p class="formule">= {{ xe.substitution }} = {{ xe.resultat }}</p>
                     </li>
                   </sc-for>
                 </ol>
@@ -627,8 +554,8 @@ li > .source-element { margin: 0; }
 
           <sc-if value="{{ estModule }}">
             <nav class="suite" aria-label="Sections voisines">
-              <sc-if value="{{ aPrec }}"><a class="precedent" href="{{ prec.lien }}"><span class="suite-sens">← Précédent</span><span class="suite-titre">{{ prec.titre }}</span></a></sc-if>
-              <sc-if value="{{ aSuiv }}"><a class="suivant" href="{{ suiv.lien }}"><span class="suite-sens">Suivant →</span><span class="suite-titre">{{ suiv.titre }}</span></a></sc-if>
+              <sc-if value="{{ aPrec }}"><a href="{{ prec.lien }}">← {{ prec.titre }}</a></sc-if>
+              <sc-if value="{{ aSuiv }}"><a class="suivant" href="{{ suiv.lien }}">{{ suiv.titre }} →</a></sc-if>
             </nav>
           </sc-if>
         </article>
@@ -649,7 +576,6 @@ li > .source-element { margin: 0; }
     <p>Outil de formation. Les valeurs proposées dans les calculateurs sont des exemples : l'origine de chacune est indiquée sous son champ.</p>
     <sc-if value="{{ aEdition }}"><p>{{ editionTxt }}</p></sc-if>
   </footer>
-  </div>
 </div>
 </x-dc>
 <script type="text/x-dc" data-dc-script>
@@ -726,9 +652,6 @@ function fmtNombre(x, decimales) {
   const txt = Math.abs(x).toLocaleString('fr-FR', { maximumFractionDigits: d });
   return (x < 0 && txt !== '0' ? '−' : '') + txt;
 }
-// Repère d'un choix de quiz ou de cas pratique : A, B, C…
-const LETTRES = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
-function lettre(k) { return LETTRES[k] || String(k + 1); }
 function avecUnite(txt, unite) { return unite ? txt + ESPACE + unite : txt; }
 function pourcent(taux) { return fmtNombre(Math.round((Number(taux) || 0) * 100), 0) + ESPACE + '%'; }
 // Date ISO → jj/mm/aaaa, sans relire l'horloge.
@@ -761,6 +684,8 @@ function pourcentSigne(fraction, decimales) {
   return (x > 0 ? '+' : '') + fmtNombre(x, decimales) + ESPACE + '%';
 }
 function valeurDe(e) { const t = e && (e.currentTarget || e.target); return t ? String(t.value) : ''; }
+// Identifiant de calculateur → clé de saisie (famille partagée ou calculateur, D-C2-2).
+function cleDe(calcId) { return window.OAD && window.OAD.CALCULATEURS[calcId] ? window.OAD.cleSaisie(calcId) : calcId; }
 function attributDe(e, nom) { const t = e && (e.currentTarget || e.target); return t && t.getAttribute ? t.getAttribute(nom) : null; }
 
 class Component extends DCLogic {
@@ -774,7 +699,8 @@ class Component extends DCLogic {
       ordre: ordreContenu(),
       prog: lireProgression(),
       theme: lireTheme(),
-      saisies: {},    // { [calcId]: { [entreeId]: texte brut } }
+      saisies: {},    // { [cleSaisie]: { [entreeId]: texte brut } } — cleSaisie : famille partagée ou calculateur
+      mesures: {},    // { '<cleSaisie>|<entreeId>': true } — entrée calculée à partir d'une mesure (D-C2-3)
       quizRep: {},    // { [sectionId]: { [qid]: number[] } }
       quizScore: {},  // { [sectionId]: score | null }
       casChoix: {},   // { [sectionId]: number | null }
@@ -810,11 +736,20 @@ class Component extends DCLogic {
     this.onSaisie = (e) => {
       const calc = attributDe(e, 'data-calc'), entree = attributDe(e, 'data-entree'), val = valeurDe(e);
       if (!calc || !entree) return;
-      this.setState(s => ({ saisies: { ...s.saisies, [calc]: { ...(s.saisies[calc] || {}), [entree]: val } } }));
+      const cle = cleDe(calc);
+      this.setState(s => ({ saisies: { ...s.saisies, [cle]: { ...(s.saisies[cle] || {}), [entree]: val } } }));
     };
+    // Valeur du bouton : clé de saisie (famille ou calculateur). Les mesures
+    // gardent leurs saisies : elles appartiennent à leur propre calculateur.
     this.reinitialiserCalc = (e) => {
-      const id = valeurDe(e);
+      const id = cleDe(valeurDe(e));
       this.setState(s => { const n = { ...s.saisies }; delete n[id]; return { saisies: n }; });
+    };
+    // Bascule « saisir directement » / « calculer à partir d'une mesure ».
+    this.basculerMesure = (e) => {
+      const k = valeurDe(e);
+      if (!k) return;
+      this.setState(s => { const n = { ...s.mesures }; if (n[k]) delete n[k]; else n[k] = true; return { mesures: n }; });
     };
 
     // Quiz : valeur du bouton "<sectionId>|<qid>|<k>".
@@ -905,7 +840,6 @@ class Component extends DCLogic {
       this.setState({ prog: window.OAD.progressionVide(), quizRep: {}, quizScore: {}, casChoix: {}, exoRep: {}, exoCorr: {} });
     };
 
-    this.onSchema = () => this.appliquerTheme();
     this.basculerTheme = () => {
       this.setState(s => {
         const t = THEMES[(THEMES.indexOf(s.theme) + 1) % THEMES.length];
@@ -918,10 +852,6 @@ class Component extends DCLogic {
 
   componentDidMount() {
     window.addEventListener('hashchange', this.onHash);
-    try {
-      this.__mqSombre = window.matchMedia('(prefers-color-scheme: dark)');
-      this.__mqSombre.addEventListener('change', this.onSchema);
-    } catch (e) { this.__mqSombre = null; }
     this.appliquerTheme();
     if (this.state.pret) this.apresRendu();
     else this.attendreMoteur();
@@ -932,17 +862,16 @@ class Component extends DCLogic {
   }
   componentWillUnmount() {
     window.removeEventListener('hashchange', this.onHash);
-    if (this.__mqSombre) this.__mqSombre.removeEventListener('change', this.onSchema);
     if (this.__minuteur) clearTimeout(this.__minuteur);
   }
 
   // Thème : attribut sur <html>, que rien dans <x-dc> n'atteint.
   appliquerTheme() {
     try {
-      // Charte : data-theme="sombre" ou "clair" ; en « auto », suit le réglage du système.
-      const t = this.state.theme;
-      const sombre = t === 'sombre' || (t === 'auto' && !!window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches);
-      document.documentElement.setAttribute('data-theme', sombre ? 'sombre' : 'clair');
+      const el = document.documentElement;
+      if (this.state.theme === 'clair') el.setAttribute('data-theme', 'light');
+      else if (this.state.theme === 'sombre') el.setAttribute('data-theme', 'dark');
+      else el.removeAttribute('data-theme');
     } catch (e) { /* hors navigateur */ }
   }
 
@@ -997,13 +926,12 @@ class Component extends DCLogic {
       enChargement: true, echecChargement: false,
       lienCatalogue: '#/', lienOutils: '#/outils', lienProgression: '#/progression', lienGlossaire: '#/module/glossaire',
       navCatalogue: null, navOutils: null, navProgression: null, navGlossaire: null,
-      themeLibelle: { auto: '◐ Auto', clair: '○ Clair', sombre: '● Sombre' }[t],
+      themeLibelle: 'Thème : ' + THEMES_LIBELLES[t],
       themeAria: 'Changer de thème (actuel : ' + THEMES_LIBELLES[t] + ')',
       aErreurs: false, erreursListe: [],
       estCatalogue: false, estModule: false, estOutils: false, estProgression: false, estInconnu: false,
       aGrille: false,
       domainesCatalogue: [],
-      reprise: { surtitre: '', titre: '', detail: '', action: '', lien: '#/', bilanTxt: '' },
       mod: { aChiffresSansSource: false, chiffresSansSourceTxt: '' }, sommaire: [],
       section: { aTechno: false, technoLibelle: '', aSourceEntete: false, sourceTxt: '' },
       estFiche: false, estProcedure: false, estEntretien: false, estCalculateur: false, estQuiz: false, estCas: false,
@@ -1014,11 +942,12 @@ class Component extends DCLogic {
       quiz: { questions: [] },
       cas: { options: [], aSource: false, sourceTxt: '', aSourceRetour: false, sourceRetourTxt: '' },
       aPrec: false, aSuiv: false, prec: {}, suiv: {},
-      outilsListe: [], outilsTitre: '', outilsMessage: '',
-      aCalc: false, calcCourant: { entrees: [], etapes: [], resultats: [], alertes: [], technosTxt: '', aTechnos: false, tableau: null, aTableau: false },
+      outilsGroupes: [], outilsTitre: '', outilsMessage: '',
+      aCalc: false, calcCourant: { id: '', cle: '', entrees: [], etapes: [], resultats: [], alertes: [], technosTxt: '', aTechnos: false, tableau: null, aTableau: false,
+        aModes: false, modes: [], modesAria: '', aPartage: false, partageTxt: '', reinitTxt: '' },
       progResume: '', tableauProgression: null,
       aEdition: false, editionTxt: '',
-      basculerTheme: this.basculerTheme, onSaisie: this.onSaisie, reinitialiserCalc: this.reinitialiserCalc,
+      basculerTheme: this.basculerTheme, onSaisie: this.onSaisie, reinitialiserCalc: this.reinitialiserCalc, basculerMesure: this.basculerMesure,
       onChoix: this.onChoix, validerQuiz: this.validerQuiz, recommencerQuiz: this.recommencerQuiz,
       choisirCas: this.choisirCas, basculerEtape: this.basculerEtape, basculerTache: this.basculerTache,
       onReponseExo: this.onReponseExo, verifierExo: this.verifierExo, recommencerExo: this.recommencerExo,
@@ -1088,39 +1017,11 @@ class Component extends DCLogic {
     const OAD = ctx.OAD;
     return {
       estCatalogue: true,
-      reprise: this.reprise(ctx, prog),
-      domainesCatalogue: OAD.DOMAINES.filter(d => d !== 'transversal').map(d => {
-        const modules = OAD.listerModules(ctx.modules, { domaine: d }).map(m => this.carte(OAD, m, prog));
-        return {
-          titreId: 'domaine-' + d,
-          libelle: OAD.DOMAINES_LIBELLES[d],
-          nbTxt: modules.length + ' module' + (modules.length > 1 ? 's' : ''),
-          modules
-        };
-      }).filter(g => g.modules.length > 0)
-    };
-  }
-
-  // Bloc « Reprendre » : le choix du module et de la section vient du moteur (prochaineReprise).
-  reprise(ctx, prog) {
-    const OAD = ctx.OAD;
-    const suivis = ctx.modules.filter(m => !OAD.estModuleReference(m));
-    const maitrises = suivis.filter(m => OAD.etatModule(prog, m) === 'maitrise').length;
-    const bilanTxt = maitrises + ' sur ' + suivis.length + ' module' + (suivis.length > 1 ? 's' : '') +
-      ' maîtrisé' + (suivis.length > 1 ? 's' : '');
-    const r = OAD.prochaineReprise(prog, ctx.modules);
-    if (!r) {
-      return { surtitre: 'Parcours terminé', titre: 'Tous les modules sont maîtrisés',
-        detail: 'Vous pouvez revoir un module ou refaire un quiz.', action: 'Voir ma progression',
-        lien: OAD.lien('progression'), bilanTxt };
-    }
-    const s = OAD.trouverSection(ctx.modules, r.moduleId, r.sectionId);
-    return {
-      surtitre: r.entame ? 'Reprendre là où vous en étiez' : 'Pour commencer',
-      titre: OAD.trouverModule(ctx.modules, r.moduleId).titre,
-      detail: 'Section suivante : ' + (s ? s.titre : ''),
-      action: r.entame ? 'Reprendre' : 'Commencer',
-      lien: OAD.lien('module', r.moduleId, r.sectionId), bilanTxt
+      domainesCatalogue: OAD.DOMAINES.filter(d => d !== 'transversal').map(d => ({
+        titreId: 'domaine-' + d,
+        libelle: OAD.DOMAINES_LIBELLES[d],
+        modules: OAD.listerModules(ctx.modules, { domaine: d }).map(m => this.carte(OAD, m, prog))
+      })).filter(g => g.modules.length > 0)
     };
   }
 
@@ -1168,15 +1069,12 @@ class Component extends DCLogic {
         avancementTxt: carte.avancementTxt + ' consultées',
         pct: carte.pct, jaugeLabel: carte.jaugeLabel
       },
-      sommaire: m.sections.map((s, k) => {
-        const vu = OAD.progressionSection(prog, m.id, s.id).vue;
-        return {
-          titre: s.titre, lien: OAD.lien('module', m.id, s.id),
-          typeLibelle: OAD.TYPES_SECTION_LIBELLES[s.type] || s.type,
-          courant: s.id === sec.id ? 'page' : null,
-          vu, pastille: vu ? '✓' : String(k + 1), pastilleClasse: 'pastille' + (vu ? ' pastille-vue' : '')
-        };
-      }),
+      sommaire: m.sections.map(s => ({
+        titre: s.titre, lien: OAD.lien('module', m.id, s.id),
+        typeLibelle: OAD.TYPES_SECTION_LIBELLES[s.type] || s.type,
+        courant: s.id === sec.id ? 'page' : null,
+        vu: OAD.progressionSection(prog, m.id, s.id).vue
+      })),
       section: {
         titre: sec.titre, typeLibelle: OAD.TYPES_SECTION_LIBELLES[sec.type] || sec.type,
         position: 'section ' + (i + 1) + ' sur ' + n,
@@ -1265,15 +1163,12 @@ class Component extends DCLogic {
         const juste = !!(d && d.juste);
         return Object.assign({
           num: i + 1, enonce: q.enonce, multiple: q.bonnes.length > 1,
-          // Marque ronde : une seule réponse ; carrée : plusieurs.
-          marqueClasse: 'marque' + (q.bonnes.length > 1 ? ' marque-carree' : ''),
           choix: q.choix.map((c, k) => {
             const pris = choisis.includes(k), bonne = q.bonnes.includes(k);
             let classe = 'choix-bouton' + (pris ? ' pris' : '');
-            let marque = lettre(k);
-            if (corrige && bonne) { classe += ' bonne'; marque = '✓'; }
-            if (corrige && pris && !bonne) { classe += ' fausse'; marque = '✕'; }
-            return { texte: c, valeur: sid + '|' + q.id + '|' + k, presse: pris ? 'true' : 'false', classe, marque };
+            if (corrige && bonne) classe += ' bonne';
+            if (corrige && pris && !bonne) classe += ' fausse';
+            return { texte: c, valeur: sid + '|' + q.id + '|' + k, presse: pris ? 'true' : 'false', classe };
           }),
           correction: (juste ? 'Juste. ' : 'À revoir. ') + (q.explication || ''),
           correctionClasse: 'correction ' + (juste ? 'juste' : 'fausse')
@@ -1303,8 +1198,7 @@ class Component extends DCLogic {
         const pris = k === choix;
         return {
           texte: o.texte, valeur: sid + '|' + k, presse: pris ? 'true' : 'false',
-          classe: 'choix-bouton' + (pris ? ' pris' + (o.correct ? ' bonne' : ' fausse') : ''),
-          marque: pris ? (o.correct ? '✓' : '✕') : lettre(k)
+          classe: 'choix-bouton' + (pris ? ' pris' + (o.correct ? ' bonne' : ' fausse') : '')
         };
       }),
       aRetour: !!opt,
@@ -1322,8 +1216,8 @@ class Component extends DCLogic {
 
   // Étapes de calcul du moteur → formule ouverte en fr-FR (calculateur, exercice).
   etapesFormatees(OAD, etapes) {
-    return etapes.map((et, k) => ({
-      num: k + 1, titre: et.titre, formule: et.formule,
+    return etapes.map(et => ({
+      titre: et.titre, formule: et.formule,
       substitution: OAD.substituer(et.gabarit, et.operandes.map(o => fmtNombre(o.valeur, o.decimales))),
       resultat: avecUnite(fmtNombre(et.resultat.valeur, et.resultat.decimales), et.resultat.unite)
     }));
@@ -1351,11 +1245,9 @@ class Component extends DCLogic {
     }, this.sourceVals(m || {}, sec));
   }
 
-  // Fragment calculateur : entrées, résultats, formules ouvertes, tout formaté.
-  valsCalc(OAD, calcId) {
-    const C = OAD.CALCULATEURS[calcId];
-    if (!C) return null;
-    const saisie = this.state.saisies[calcId] || {};
+  // Saisies d'un calculateur : texte brut (ou défaut) et nombre converti, par entrée.
+  saisiesDe(C) {
+    const saisie = this.state.saisies[window.OAD.cleSaisie(C.id)] || {};
     const textes = {}, nombres = {};
     C.entrees.forEach(en => {
       const liste = en.type === 'liste';
@@ -1363,22 +1255,63 @@ class Component extends DCLogic {
       textes[en.id] = t;
       nombres[en.id] = liste ? versListe(t) : versNombre(t);
     });
-    const r = C.compute(nombres);   // tout calcul vient du moteur
+    return { textes, nombres };
+  }
+
+  // Champ de saisie d'une entrée (calculateur ou mesure imbriquée).
+  champ(C, en, texte) {
+    const liste = en.type === 'liste';
+    const origineId = 'origine-' + C.id + '-' + en.id, consigneId = 'consigne-' + C.id + '-' + en.id;
     return {
-      id: C.id, titre: C.titre, description: C.description,
+      id: en.id, calc: C.id, label: en.label,
+      estListe: liste, classe: liste ? 'champ champ-large' : 'champ',
+      inputId: 'calc-' + C.id + '-' + en.id, origineId, consigneId,
+      decritPar: consigneId + ' ' + origineId,
+      uniteTxt: en.unite ? '(' + en.unite + ')' : '',
+      valeur: texte,
+      defautTxt: avecUnite(liste ? texteListe(en.defaut) : fmtNombre(en.defaut, 3), en.unite),
+      origine: en.origineDefaut
+    };
+  }
+
+  /* Fragment calculateur (D-C2) : autres calculs de la famille, entrées
+     mesurables, résultats, formules ouvertes — tout formaté ici, tout
+     calculé par le moteur. `dansModule` : lien vers la page Calculateurs. */
+  valsCalc(OAD, calcId) {
+    const C = OAD.CALCULATEURS[calcId];
+    if (!C) return null;
+    const cle = OAD.cleSaisie(C.id);
+    const { textes, nombres } = this.saisiesDe(C);
+    const actives = {};
+    C.entrees.forEach(en => {
+      if (en.mesure && OAD.CALCULATEURS[en.mesure] && this.state.mesures[cle + '|' + en.id])
+        actives[en.id] = this.saisiesDe(OAD.CALCULATEURS[en.mesure]);
+    });
+    const mesures = {};
+    Object.keys(actives).forEach(id => { mesures[id] = actives[id].nombres; });
+    const r = OAD.calculer(C.id, nombres, mesures);   // tout calcul vient du moteur
+    const f = OAD.familleDe(C.id);
+    const freres = f ? f.calculateurs.filter(id => OAD.CALCULATEURS[id]) : [];
+    return {
+      id: C.id, cle, titre: C.titre, description: C.description,
+      aModes: freres.length > 1,
+      modesAria: f ? f.titre : '',
+      modes: freres.map(id => ({ titre: OAD.CALCULATEURS[id].titreCourt, lien: OAD.lien('outils', id), courant: id === C.id ? 'page' : null })),
+      aPartage: !!(f && f.partage && freres.length > 1),
+      partageTxt: f && f.partage ? 'Les valeurs saisies ici sont reprises par les autres calculs de « ' + f.titre + ' ».' : '',
+      reinitTxt: f && f.partage && freres.length > 1 ? 'Revenir aux valeurs par défaut (toute la famille)' : 'Revenir aux valeurs par défaut',
       entrees: C.entrees.map(en => {
-        const liste = en.type === 'liste';
-        const origineId = 'origine-' + C.id + '-' + en.id, consigneId = 'consigne-' + C.id + '-' + en.id;
-        return {
-          id: en.id, calc: C.id, label: en.label,
-          estListe: liste, classe: liste ? 'champ champ-large' : 'champ',
-          inputId: 'calc-' + C.id + '-' + en.id, origineId, consigneId,
-          decritPar: consigneId + ' ' + origineId,
-          uniteTxt: en.unite ? '(' + en.unite + ')' : '',
-          valeur: textes[en.id],
-          defautTxt: avecUnite(liste ? texteListe(en.defaut) : fmtNombre(en.defaut, 3), en.unite),
-          origine: en.origineDefaut
-        };
+        const M = en.mesure ? OAD.CALCULATEURS[en.mesure] : null;
+        const k = cle + '|' + en.id, active = !!actives[en.id];
+        const m = r.mesurees && r.mesurees[en.id];
+        return Object.assign(this.champ(C, en, textes[en.id]), {
+          estMesurable: !!M, mesureActive: active,
+          basculeValeur: M ? k : '', mesurePresse: active ? 'true' : 'false',
+          basculeTexte: M ? (active ? 'Saisir directement' : 'Calculer à partir d\'une mesure : ' + M.titreCourt.toLowerCase()) : '',
+          valeurMesureeTxt: m ? avecUnite(fmtNombre(m.valeur, m.decimales), m.unite) : '',
+          mesureTxt: M ? '(' + M.titre.toLowerCase() + ', mêmes saisies que sur sa page)' : '',
+          sousEntrees: active ? M.entrees.map(se => this.champ(M, se, actives[en.id].textes[se.id])) : []
+        });
       }),
       etapes: this.etapesFormatees(OAD, r.etapes),
       resultats: r.resultats.map(x => ({ label: x.label, texte: avecUnite(fmtNombre(x.valeur, x.decimales), x.unite) })),
@@ -1409,11 +1342,15 @@ class Component extends DCLogic {
 
   valsOutils(ctx) {
     const OAD = ctx.OAD, id = ctx.route.calcId;
-    const calcs = Object.keys(OAD.CALCULATEURS).map(k => OAD.CALCULATEURS[k]);
     const c = id ? this.valsCalc(OAD, id) : null;
     return {
       estOutils: true, aGrille: true,
-      outilsListe: calcs.map(x => ({ titre: x.titre, lien: OAD.lien('outils', x.id), courant: x.id === id ? 'page' : null })),
+      // D-C2-2 : liste groupée par famille, dans l'ordre du registre des familles.
+      outilsGroupes: OAD.FAMILLES_CALCULATEURS.map(f => ({
+        titre: f.titre,
+        calcs: f.calculateurs.filter(k => OAD.CALCULATEURS[k]).map(k => ({
+          titre: OAD.CALCULATEURS[k].titre, lien: OAD.lien('outils', k), courant: k === id ? 'page' : null }))
+      })),
       aCalc: !!c,
       calcCourant: c || this.valeursVides().calcCourant,
       outilsTitre: c ? c.titre : (id ? 'Calculateur introuvable' : 'Choisir un calculateur'),
