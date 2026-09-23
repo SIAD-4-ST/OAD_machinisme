@@ -193,24 +193,31 @@ const TOLERANCE_FLOTTANTE = 1e-9;
 // Débit lisible : nombre fini, positif ou nul (0 = diffuseur bouché, à signaler).
 function debitLisible(x) { return typeof x === 'number' && Number.isFinite(x) && x >= 0; }
 
-/* Écart de chaque débit mesuré q à la moyenne m des débits lisibles :
-   m = Σ q / n ; e = (q − m) / m (fraction, pas pourcentage). rang = position
-   dans la liste saisie (à partir de 1) ; les valeurs illisibles sont
-   ignorées mais gardent leur rang. Signalé si |e| > seuil (strict).
-   Moins de 2 débits lisibles, ou moyenne nulle : moyenne NaN, aucun écart. */
+/* Écart de chaque débit mesuré q à la moyenne m des débits utiles (lisibles
+   et non nuls) : m = Σ q / n ; e = (q − m) / m (fraction, pas pourcentage).
+   rang = position dans la liste saisie (à partir de 1) ; les valeurs
+   illisibles sont ignorées mais gardent leur rang. Signalé si |e| > seuil
+   (strict). Chaque écart porte bouche (booléen).
+   D-C1-1 : un débit nul = diffuseur bouché, exclu de la moyenne (sinon il
+   fait signaler les diffuseurs sains), toujours signalé : ecart null,
+   horsSeuil true, bouche true.
+   D-C1-2 : moins de 2 débits utiles → moyenne NaN ; ecarts = les seuls nuls,
+   qui restent signalés. */
 function ecartsALaMoyenne(debits, seuil) {
   const s = Number(seuil);
   const lus = (Array.isArray(debits) ? debits : [])
     .map((d, i) => ({ rang: i + 1, debit: d }))
     .filter(x => debitLisible(x.debit));
-  const somme = lus.reduce((a, x) => a + x.debit, 0);
-  const moyenne = lus.length >= 2 && somme > 0 ? somme / lus.length : NaN;
-  if (!Number.isFinite(moyenne)) return { moyenne: NaN, ecarts: [], horsSeuil: [] };
-  const ecarts = lus.map(x => {
+  const utiles = lus.filter(x => x.debit > 0);
+  const somme = utiles.reduce((a, x) => a + x.debit, 0);
+  const moyenne = utiles.length >= 2 ? somme / utiles.length : NaN;
+  const ok = Number.isFinite(moyenne);
+  const ecarts = lus.filter(x => ok || x.debit === 0).map(x => {
+    if (x.debit === 0) return { rang: x.rang, debit: 0, ecart: null, horsSeuil: true, bouche: true };
     const ecart = (x.debit - moyenne) / moyenne;
-    return { rang: x.rang, debit: x.debit, ecart, horsSeuil: Number.isFinite(s) && Math.abs(ecart) > s + TOLERANCE_FLOTTANTE };
+    return { rang: x.rang, debit: x.debit, ecart, horsSeuil: Number.isFinite(s) && Math.abs(ecart) > s + TOLERANCE_FLOTTANTE, bouche: false };
   });
-  return { moyenne, ecarts, horsSeuil: ecarts.filter(x => x.horsSeuil).map(x => x.rang) };
+  return { moyenne: ok ? moyenne : NaN, ecarts, horsSeuil: ecarts.filter(x => x.horsSeuil).map(x => x.rang) };
 }
 
 /* --- 3. Registre des calculateurs ------------------------------------
@@ -363,6 +370,12 @@ const CALCULATEURS = {
           'changez de calibre de buse ou de vitesse plutôt que de forcer la pression.',
           [operande(pMin, 2), operande(pMax, 2)]));
       }
+      // D-C1-3 : alerte P1 après l'alerte P2, pour ne pas décaler les indices.
+      const P1 = positif(e.P1);
+      if (pMin < pMax && (P1 < pMin || P1 > pMax)) {
+        alertes.push(alerteChiffree('Pression actuelle hors de la plage de la buse ({0} à {1} bar) : ' +
+          'vérifiez la saisie ou la buse montée.', [operande(pMin, 2), operande(pMax, 2)]));
+      }
       return {
         etapes: [
           etape('Rapport des volumes', 'r = V2 / V1', '{0} / {1}',
@@ -496,22 +509,27 @@ const CALCULATEURS = {
     compute(e) {
       const liste = Array.isArray(e.debits) ? e.debits : [];
       const r = ecartsALaMoyenne(liste, ECART_DIFFUSEUR_MAX);
-      const lisibles = r.ecarts.map(x => x.debit);
+      // D-C1-1 : la moyenne ne porte que sur les débits utiles (non nuls).
+      const lisibles = r.ecarts.filter(x => !x.bouche).map(x => x.debit);
       const ok = Number.isFinite(r.moyenne);
+      const bouches = r.ecarts.some(x => x.bouche);
       const resultats = [
         resultat('Débit moyen', r.moyenne, 'L/min', 2),
-        resultat('Diffuseurs à contrôler', ok ? r.horsSeuil.length : NaN, '', 0)
+        // D-C1-2 : un débit nul se compte même sans moyenne calculable.
+        resultat('Diffuseurs à contrôler', ok || bouches ? r.horsSeuil.length : NaN, '', 0)
       ];
       const alertes = [];
       liste.forEach((d, i) => {
         if (!debitLisible(d)) alertes.push(alerteChiffree('Valeur n° {0} illisible : elle est ignorée.', [operande(i + 1, 0)]));
       });
       if (!ok) alertes.push(ALERTE_LISTE_COURTE);
-      r.ecarts.filter(x => x.horsSeuil).forEach(x => alertes.push(alerteChiffree(
-        'Diffuseur n° {0} : écart de {1} % à la moyenne, au-delà de {2} % : à contrôler.',
-        [operande(x.rang, 0), operande(x.ecart * 100, 2), operande(ECART_DIFFUSEUR_MAX * 100, 0)])));
-      // Exemple d'écart : le diffuseur le plus éloigné de la moyenne.
-      const loin = r.ecarts.reduce((a, x) => (!a || Math.abs(x.ecart) > Math.abs(a.ecart)) ? x : a, null);
+      r.ecarts.filter(x => x.horsSeuil).forEach(x => alertes.push(x.bouche
+        ? alerteChiffree('Diffuseur n° {0} : débit nul, diffuseur bouché : à contrôler.', [operande(x.rang, 0)])
+        : alerteChiffree('Diffuseur n° {0} : écart de {1} % à la moyenne, au-delà de {2} % : à contrôler.',
+          [operande(x.rang, 0), operande(x.ecart * 100, 2), operande(ECART_DIFFUSEUR_MAX * 100, 0)])));
+      // Exemple d'écart : le diffuseur non bouché le plus éloigné de la moyenne.
+      const loin = r.ecarts.filter(x => !x.bouche)
+        .reduce((a, x) => (!a || Math.abs(x.ecart) > Math.abs(a.ecart)) ? x : a, null);
       return {
         etapes: [
           etape('Moyenne', 'm = Σ q / n',

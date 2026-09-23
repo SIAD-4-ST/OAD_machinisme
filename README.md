@@ -123,7 +123,10 @@ questions ; `aria-pressed` sur les choix ; focus visible.
 Neuf calculateurs. `ecartDiffuseurs` reçoit une **liste** (valeurs séparées
 par un point-virgule, la virgule restant décimale) et affiche le détail par
 diffuseur dans un tableau ; un diffuseur est signalé si son écart dépasse
-strictement 10 % (`ECART_DIFFUSEUR_MAX`, F-VHA).
+strictement 10 % (`ECART_DIFFUSEUR_MAX`, F-VHA). Un débit nul désigne un
+diffuseur bouché : il n'entre pas dans la moyenne, qui porte sur les seuls
+débits non nuls (au moins deux), et il est toujours signalé, même quand la
+moyenne n'est pas calculable (D-C1-1, D-C1-2).
 
 Formule sans calculateur, utilisée par les tests du cas pratique :
 `volumeApresChangementVitesse(V1, v1, v2) = V1 × v1 / v2`.
@@ -132,8 +135,10 @@ Les facteurs 600, 3,6 et 10 sont des conversions d'unités, démontrées en
 commentaire dans `moteur-oad.js`. Alerte de pression : le résultat est
 comparé à la plage de la buse **saisie** (`pMin`, `pMax`) ; hors plage,
 l'écran conseille de changer de calibre ou de vitesse plutôt que de forcer
-la pression (D-B1-2). Le calculateur de pression indique sa portée : buses
-hydrauliques, pas les diffuseurs pneumatiques.
+la pression (D-B1-2). La pression actuelle saisie est comparée à la même
+plage, bornes incluses : hors plage, une seconde alerte demande de vérifier
+la saisie ou la buse montée (D-C1-3). Le calculateur de pression indique
+sa portée : buses hydrauliques, pas les diffuseurs pneumatiques.
 
 ## 5. Valeurs ASSUMÉ
 
@@ -717,3 +722,26 @@ dans Chrome en `file://` (catalogue, calculateurs, exercice, filtration,
 glossaire, progression) et dans un cadre de 400 px (tableau d'écart lisible
 sans défilement de la page ; tableau de filtration à 5 colonnes défilant dans
 son conteneur). Vérificateur du skill oad-maquette : OK.
+
+### C1 — diffuseur bouché, pression actuelle hors plage (23/09/2026)
+
+- **D-C1-1** : un débit nul = diffuseur bouché ; exclu de la moyenne,
+  toujours signalé (`bouche: true`, `ecart: null`, `horsSeuil: true`).
+  Avant : `[1,4 ×7 ; 0]` donnait une moyenne de 1,225 L/min et signalait les
+  8 diffuseurs (+14,29 % pour les 7 sains). Écartés : médiane comme référence
+  (s'écarte du texte F-VHA « écart à la moyenne ») ; exclusion itérative des
+  valeurs hors seuil (idem, et résultat dépendant de l'ordre d'exclusion).
+  À réviser si le référent pulvérisation en décide autrement.
+- **D-C1-2** : la moyenne exige au moins 2 débits **non nuls** lisibles ;
+  sinon résultat `null` et alerte « Calcul impossible », mais les débits nuls
+  restent signalés et comptés dans « Diffuseurs à contrôler ».
+- **D-C1-3** : `pressionPourVolume` signale une pression actuelle `P1` hors
+  de la plage `pMin`–`pMax` (bornes incluses), si la plage est valide ;
+  l'alerte vient **après** l'alerte sur P2, pour ne pas décaler l'indice des
+  alertes testées.
+
+Sans débit nul et avec P1 dans la plage, résultats et alertes inchangés.
+Le libellé « Calcul impossible : saisissez au moins deux débits lisibles »
+est conservé ; il reste exact sauf quand les débits lisibles sont surtout
+nuls (ex. `[0 ; 0 ; 1,4]`), cas où « non nuls » serait plus juste. Point
+laissé au rédacteur.

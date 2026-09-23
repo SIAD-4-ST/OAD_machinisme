@@ -1327,5 +1327,69 @@ test('rendu à blanc : badge de technologie sur chaque section', () => {
   });
 });
 
+// ----------------------------------------------------------------------
+section('§20 C1 — diffuseur bouché, pression actuelle hors plage');
+// Valeurs calculées à la main (D-C1-1 à D-C1-3).
+
+const SAINS_ET_BOUCHE = [1.4, 1.4, 1.4, 1.4, 1.4, 1.4, 1.4, 0];
+test('[1,4 ×7 ; 0] : moyenne 1,4 (le nul est exclu), hors seuil [8], rang 8 bouché (D-C1-1)', () => {
+  const r = OAD.ecartsALaMoyenne(SAINS_ET_BOUCHE, 0.10);
+  assertClose(r.moyenne, 1.4, 1e-12);
+  assert.deepStrictEqual(r.horsSeuil, [8]);
+  const n8 = r.ecarts.find(x => x.rang === 8);
+  assert.strictEqual(n8.bouche, true);
+  assert.strictEqual(n8.ecart, null);
+  assert.ok(r.ecarts.filter(x => x.rang !== 8).every(x => x.bouche === false && x.horsSeuil === false));
+});
+test('calculateur [1,4 ×7 ; 0] : 1 diffuseur à contrôler, une alerte « débit nul »', () => {
+  const r = OAD.CALCULATEURS.ecartDiffuseurs.compute({ debits: SAINS_ET_BOUCHE });
+  assertClose(r.resultats[0].valeur, 1.4, 1e-12);
+  assert.strictEqual(r.resultats[1].valeur, 1);
+  const g = r.alertes.filter(a => typeof a === 'object').map(a => a.gabarit);
+  assert.strictEqual(g.length, 1);
+  assert.ok(g[0].includes('débit nul'), g[0]);
+  assert.strictEqual(r.etapes[0].operandes.length, 8);   // 7 débits utiles + n
+  assert.strictEqual(r.etapes[0].operandes[7].valeur, 7);
+  assert.notStrictEqual(r.etapes[1].operandes[0].valeur, 0);   // plus éloigné : parmi les non bouchés
+});
+test('[0 ; 0 ; 1,4] : moyenne NaN, hors seuil [1, 2] ; calculateur : moyenne null, 2 à contrôler (D-C1-2)', () => {
+  const r = OAD.ecartsALaMoyenne([0, 0, 1.4], 0.10);
+  assert.ok(Number.isNaN(r.moyenne));
+  assert.deepStrictEqual(r.horsSeuil, [1, 2]);
+  assert.deepStrictEqual(r.ecarts.map(x => x.rang), [1, 2]);
+  const c = OAD.CALCULATEURS.ecartDiffuseurs.compute({ debits: [0, 0, 1.4] });
+  assert.strictEqual(c.resultats[0].valeur, null);
+  assert.strictEqual(c.resultats[1].valeur, 2);
+  assert.ok(c.alertes.some(a => typeof a === 'string' && a.startsWith('Calcul impossible')));
+  assert.strictEqual(c.alertes.filter(a => typeof a === 'object' && a.gabarit.includes('débit nul')).length, 2);
+});
+test('[1,4 ; 0 ; 1,3] : moyenne 1,35, écarts +3,70 % et −3,70 %, hors seuil [2]', () => {
+  const r = OAD.ecartsALaMoyenne([1.4, 0, 1.3], 0.10);
+  assertClose(r.moyenne, 1.35, 1e-12);
+  assert.deepStrictEqual(r.ecarts.filter(x => !x.bouche).map(x => centieme(x.ecart)), [3.7, -3.7]);
+  assert.deepStrictEqual(r.horsSeuil, [2]);
+});
+test('rendu à blanc [1,4 ×7 ; 0] : ligne n° 8 « débit nul — bouché, à contrôler », classe hors-seuil', () => {
+  const c = new Component({});
+  c.onSaisie(evt('1,4 ; 1,4 ; 1,4 ; 1,4 ; 1,4 ; 1,4 ; 1,4 ; 0', { 'data-calc': 'ecartDiffuseurs', 'data-entree': 'debits' }));
+  const out = rendre(c, '#/outils/ecartDiffuseurs');
+  const lignes = [].concat(...out.calcCourant.tableau.c.find(x => x && x.t === 'tbody').c);
+  assert.strictEqual(lignes.length, 8);
+  const hors = lignes.filter(l => l.p.className === 'hors-seuil');
+  assert.strictEqual(hors.length, 1);
+  assert.strictEqual(hors[0].c[2].c[0], 'débit nul — bouché, à contrôler');
+  assert.ok(out.calcCourant.alertes.some(a => a.startsWith('Diffuseur n° 8 : débit nul')));
+});
+test('pression P1 = 6, plage 3–4,5, volume inchangé : P2 = 6 ; 2 alertes, la seconde « Pression actuelle hors de la plage » (D-C1-3)', () => {
+  const r = CALC.pressionPourVolume.compute({ P1: 6, V1: 150, V2: 150, b: 0.5, pMin: 3, pMax: 4.5 });
+  assertClose(r.resultats[0].valeur, 6, 1e-12);
+  assert.strictEqual(r.alertes.length, 2);
+  assert.ok(r.alertes[0].gabarit.includes('Pression calculée hors de la plage'));
+  assert.ok(r.alertes[1].gabarit.includes('Pression actuelle hors de la plage'));
+});
+test('pression P1 = pMin = 3 (bornes incluses), 150 → 180 L/ha : aucune alerte', () => {
+  assert.deepStrictEqual(CALC.pressionPourVolume.compute({ P1: 3, V1: 150, V2: 180, b: 0.5, pMin: 3, pMax: 4.5 }).alertes, []);
+});
+
 console.log(`\n${passed} ok, ${failed} FAIL, ${skipped} skip`);
 if (failed > 0) process.exit(1);
