@@ -128,6 +128,35 @@ function debitChantierTheorique(v, L) {
   return fini(positif(v) * positif(L) / 10);
 }
 
+/* Largeur traitée L (m) : n écartements de e (m). Enjambeur : n = rangs
+   traités par passage. Chenillard : n = 1, 2 ou 3 selon que l'on passe
+   toutes les routes, toutes les 2 ou toutes les 3 (D-B2-1). */
+function largeurTraitee(n, e) {
+  return fini(positif(n) * positif(e));
+}
+
+/* Débit total Q (L/min) mesuré au niveau de la cuve : volume refait (L)
+   après avoir pulvérisé pendant la durée (min). Q = volume / durée. */
+function debitParNiveauCuve(volume, duree) {
+  return fini(positif(volume) / positif(duree));
+}
+
+/* Volume V2 (L/ha) après changement du nombre de hauteurs de buses par
+   descente, à même débit par hauteur, vitesse et largeur inchangées : le
+   débit total est proportionnel au nombre de hauteurs ⇒ V2 = V1 × h2 / h1.
+   h1, h2 sont des effectifs : arrondis à l'entier, au moins 1 (D-B2-3). */
+function volumeSelonHauteurs(V1, h1, h2) {
+  const a = Math.round(Number(h1)), b = Math.round(Number(h2));
+  if (!(a >= 1) || !(b >= 1)) return NaN;
+  return fini(positif(V1) * b / a);
+}
+
+/* Volume V2 (L/ha) après passage de la vitesse v1 à v2 (km/h), débit et
+   largeur inchangés : V = 600 × Q / (v × L) ⇒ V2 = V1 × v1 / v2 (D-B2-4). */
+function volumeApresChangementVitesse(V1, v1, v2) {
+  return fini(positif(V1) * positif(v1) / positif(v2));
+}
+
 /* --- 3. Registre des calculateurs ------------------------------------
    Chaque calculateur : entrées (avec l'origine de leur valeur par défaut)
    et compute(valeurs numériques) → { etapes, resultats, alertes }.
@@ -164,6 +193,13 @@ const ORIGINE_PLAGE_EXEMPLE = 'Exemple dans la plage de travail de la buse de r�
 // D-B1-1 : Q déduit de V = 150 L/ha, v = 5 km/h, L = 7,7 m (Q exact = 9,625),
 // arrondi pour une saisie lisible.
 const ORIGINE_Q_DEDUIT = 'Exemple déduit de 150 L/ha à 5 km/h sur 7,7 m';
+// D-B2-2 : 48 L = 9,6 L/min × 5 min, cohérent avec volHa.
+const ORIGINE_VOLUME_CUVE = 'Exemple déduit de 9,6 L/min pendant 5 min';
+// F-VHA (février 2014) : 2 min en jets projetés, 5 min en pneumatiques et jets portés.
+const ORIGINE_DUREE_CUVE = 'Durée pour pneumatiques et jets portés ; 2 min pour les jets projetés (fiche Volume/hectare, CIVC, février 2014)';
+// A-LVC : article Le Vigneron Champenois, M.-P. Vacavant, avril 2014 — 180 L/ha
+// avec 3 hauteurs de buses par descente → 120 L/ha avec 2 (synthèse §2.1).
+const ORIGINE_HAUTEURS_ALVC = 'Exemple de l\'article Le Vigneron Champenois, avril 2014';
 
 const ALERTE_SAISIE = 'Calcul impossible : chaque valeur doit être un nombre strictement positif.';
 
@@ -311,6 +347,68 @@ const CALCULATEURS = {
       return {
         etapes: [etape('Débit de chantier', 'S = v × L / 10', '{0} × {1} / 10',
           [operande(e.v, 1), operande(e.L, 2)], S, 'ha/h', 2)],
+        resultats,
+        alertes: alertesSaisie(resultats)
+      };
+    }
+  },
+
+  largeurTraitee: {
+    id: 'largeurTraitee',
+    titre: 'Largeur traitée',
+    description: 'Enjambeur : nombre de rangs traités par passage × écartement. Chenillard : 1, 2 ou 3 écartements selon que l\'on passe toutes les routes, toutes les 2 ou toutes les 3 routes.',
+    entrees: [
+      { id: 'n', label: 'Nombre d\'écartements traités par passage', unite: 'rangs', defaut: 7, origineDefaut: ORIGINE_LARGEUR_FVHA },
+      { id: 'e', label: 'Écartement entre rangs', unite: 'm', defaut: 1.1, origineDefaut: ORIGINE_LARGEUR_FVHA }
+    ],
+    compute(e) {
+      const L = largeurTraitee(e.n, e.e);
+      const resultats = [resultat('Largeur traitée', L, 'm', 2)];
+      return {
+        etapes: [etape('Largeur traitée', 'L = n × e', '{0} × {1}',
+          [operande(e.n, 0), operande(e.e, 2)], L, 'm', 2)],
+        resultats,
+        alertes: alertesSaisie(resultats)
+      };
+    }
+  },
+
+  debitCuve: {
+    id: 'debitCuve',
+    titre: 'Débit total par le niveau de la cuve',
+    description: 'Remplir la ou les cuves à ras bord, pulvériser pendant la durée choisie, puis refaire le niveau en mesurant le volume ajouté : le débit total est ce volume divisé par la durée.',
+    entrees: [
+      { id: 'volume', label: 'Volume refait', unite: 'L', defaut: 48, origineDefaut: ORIGINE_VOLUME_CUVE },
+      { id: 'duree', label: 'Durée de pulvérisation', unite: 'min', defaut: 5, origineDefaut: ORIGINE_DUREE_CUVE }
+    ],
+    compute(e) {
+      const Q = debitParNiveauCuve(e.volume, e.duree);
+      const resultats = [resultat('Débit total', Q, 'L/min', 2)];
+      return {
+        etapes: [etape('Débit total', 'Q = volume refait / durée', '{0} / {1}',
+          [operande(e.volume, 2), operande(e.duree, 2)], Q, 'L/min', 2)],
+        resultats,
+        alertes: alertesSaisie(resultats)
+      };
+    }
+  },
+
+  hauteursBuses: {
+    id: 'hauteursBuses',
+    titre: 'Volume selon le nombre de hauteurs de buses',
+    description: 'Volume obtenu en changeant le nombre de hauteurs de buses par descente, à vitesse égale et avec le même débit à chaque hauteur de buse.',
+    entrees: [
+      { id: 'V1', label: 'Volume actuel', unite: 'L/ha', defaut: 180, origineDefaut: ORIGINE_HAUTEURS_ALVC },
+      { id: 'h1', label: 'Hauteurs de buses actuelles', unite: 'hauteurs', defaut: 3, origineDefaut: ORIGINE_HAUTEURS_ALVC },
+      { id: 'h2', label: 'Hauteurs de buses après changement', unite: 'hauteurs', defaut: 2, origineDefaut: ORIGINE_HAUTEURS_ALVC }
+    ],
+    compute(e) {
+      const V2 = volumeSelonHauteurs(e.V1, e.h1, e.h2);
+      const resultats = [resultat('Volume après changement', V2, 'L/ha', 0)];
+      return {
+        etapes: [etape('Volume après changement', 'V2 = V1 × h2 / h1', '{0} × {1} / {2}',
+          [operande(e.V1, 0), operande(Math.round(Number(e.h2)), 0), operande(Math.round(Number(e.h1)), 0)],
+          V2, 'L/ha', 0)],
         resultats,
         alertes: alertesSaisie(resultats)
       };
@@ -621,6 +719,7 @@ const OAD = {
   // formules
   volumeHectare, debitTotalPourVolume, debitParBuse, ajustementPuissance,
   pressionPourVolume, vitesseMesuree, debitChantierTheorique,
+  largeurTraitee, debitParNiveauCuve, volumeSelonHauteurs, volumeApresChangementVitesse,
   // calculateurs
   CALCULATEURS, substituer,
   // schéma, quiz, progression

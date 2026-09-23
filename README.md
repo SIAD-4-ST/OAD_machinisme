@@ -68,7 +68,7 @@ refusé.
 
 **Parcours.** Catalogue (modules groupés par domaine, statut, durée,
 avancement) → module (sommaire, section courante, sections voisines) ; page
-Calculateurs (les 5 calculateurs hors module) ; page Progression (tableau par
+Calculateurs (les calculateurs hors module) ; page Progression (tableau par
 module, effacement). Navigation par hash : liens profonds et bouton retour.
 
 **Restitution.** Calculateurs : résultats en tête, puis « Détail du calcul »
@@ -97,6 +97,12 @@ questions ; `aria-pressed` sur les choix ; focus visible.
 | Pression pour un nouveau volume (`pressionPourVolume`) | P2 = P1 × (V2 / V1)^(1 / b) | 3 bar, 150 → 180 L/ha, b = 0,5, plage de la buse 3 à 4,5 bar → 4,3 bar (4,32), sans alerte |
 | Vitesse réelle mesurée (`vitesseMesuree`) | v = 3,6 × d / t | 50 m, 30 s → 6 km/h |
 | Débit de chantier théorique (`debitChantier`) | S = v × L / 10 | 6 km/h, 2,5 m → 1,5 ha/h |
+| Largeur traitée (`largeurTraitee`) | L = n × e | 7 rangs, 1,10 m → 7,7 m |
+| Débit total par le niveau de la cuve (`debitCuve`) | Q = volume refait / durée | 48 L, 5 min → 9,6 L/min |
+| Volume selon le nombre de hauteurs de buses (`hauteursBuses`) | V2 = V1 × h2 / h1 | 180 L/ha, 3 → 2 hauteurs → 120 L/ha |
+
+Formule sans calculateur, utilisée par les tests du cas pratique :
+`volumeApresChangementVitesse(V1, v1, v2) = V1 × v1 / v2`.
 
 Les facteurs 600, 3,6 et 10 sont des conversions d'unités, démontrées en
 commentaire dans `moteur-oad.js`. Alerte de pression : le résultat est
@@ -286,6 +292,9 @@ contrôler une à une sur le document primaire.
 | 150–180 L/ha en pleine végétation (jets portés) | `pressionPourVolume.V2` (180) | F-PRE, F-IDE | | | |
 | 50 m en 30 s → 6 km/h | `vitesseMesuree.d`, `vitesseMesuree.t` | F-VHA | | | |
 | Pression de travail 3,0–4,5 bar, TeeJet Conejet TXA80 0050 | `pressionPourVolume.pMin`, `.pMax`, `.P1` (3) | F-PRE, F-IDE | | | |
+| 7 rangs × 1,10 m | `largeurTraitee.n`, `.e` | F-VHA | | | |
+| Durée de mesure au niveau de cuve : 5 min (pneumatiques, jets portés), 2 min (jets projetés) | `debitCuve.duree` | F-VHA | | | |
+| 180 L/ha avec 3 hauteurs de buses → 120 L/ha avec 2 | `hauteursBuses.V1`, `.h1`, `.h2` | A-LVC | | | |
 
 ## 14. Journal d'arbitrages — lot B
 
@@ -329,3 +338,18 @@ buses « sourcé » (absent du corpus). **Point de révision.** `n` et
 `debitChantier` dès que le référent fournit des valeurs. Les formules
 (section 2 du moteur) sont inchangées : test §1 `volumeHectare(12, 6, 2,5) =
 480` toujours vert.
+
+### B2 — nouveaux calculateurs scalaires (23/09/2026)
+
+- **D-B2-1** : `largeurTraitee`, une seule formule L = n × e ; le chenillard
+  passe par n (1, 2 ou 3 écartements), dit dans la description.
+- **D-B2-2** : `debitCuve`, durée 5 min (F-VHA) ; volume 48 L déduit
+  (9,6 L/min × 5 min), cohérent avec `volHa` (testé : 149,61 L/ha).
+- **D-B2-3** : `hauteursBuses` suppose le même débit à chaque hauteur de buse
+  (dit dans la description) ; h1, h2 arrondis à l'entier, au moins 1.
+- **D-B2-4** : formule `volumeApresChangementVitesse` sans calculateur, pour
+  le test du cas pratique (B5).
+
+La page Calculateurs liste 8 calculateurs (testé). Le compte de routes du
+test §6 est calculé à partir des modules et des calculateurs, pas écrit en
+dur : pas de modification.

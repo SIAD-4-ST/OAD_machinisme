@@ -292,14 +292,15 @@ test('enregistrerQuiz : la date vient de l\'appelant ; absente → null', () => 
   assert.strictEqual(OAD.progressionSection(p2, 'm', 'q').quiz.date, null);
   assert.strictEqual(OAD.progressionSection(OAD.enregistrerQuiz(p0, 'm', 'q', { taux: 1 }, 42), 'm', 'q').quiz.date, null);
 });
-// Pourquoi : défauts recalés sur le corpus, B1 — +pMin, +pMax (était 15).
-test('chaque entrée de chaque calculateur a un origineDefaut non vide (17 entrées)', () => {
+// Pourquoi : défauts recalés sur le corpus, B1 — +pMin, +pMax (était 15) ;
+// puis 3 calculateurs ajoutés, B2 — +7 entrées (était 17).
+test('chaque entrée de chaque calculateur a un origineDefaut non vide (24 entrées)', () => {
   let n = 0;
   Object.values(OAD.CALCULATEURS).forEach(c => c.entrees.forEach(e => {
     n++;
     assert.ok(typeof e.origineDefaut === 'string' && e.origineDefaut.trim(), c.id + '.' + e.id);
   }));
-  assert.strictEqual(n, 17);   // 3 + 4 + 6 + 2 + 2
+  assert.strictEqual(n, 24);   // 3 + 4 + 6 + 2 + 2 + 2 + 2 + 3
 });
 // Pourquoi : défauts recalés sur le corpus, B1 — seuls n et debitChantier
 // restent sans source (D-B1-3, D-B1-4).
@@ -672,6 +673,46 @@ test('statique : aucun origineDefaut ne contient « O4 » ni « prompt » (D-B1-
   Object.values(CALC).forEach(c => c.entrees.forEach(e => {
     assert.ok(!/O4|prompt/i.test(e.origineDefaut), c.id + '.' + e.id + ' : ' + e.origineDefaut);
   }));
+});
+
+// ----------------------------------------------------------------------
+section('§9 B2 — nouveaux calculateurs');
+
+test('largeurTraitee(7, 1,10) = 7,7 m ; largeurTraitee(2, 1,10) = 2,2 m', () => {
+  assertClose(OAD.largeurTraitee(7, 1.10), 7.7, 1e-9);
+  assertClose(OAD.largeurTraitee(2, 1.10), 2.2, 1e-9);
+});
+test('debitParNiveauCuve(48, 5) = 9,6 L/min ; (19,2, 2) = 9,6 L/min', () => {
+  assertClose(OAD.debitParNiveauCuve(48, 5), 9.6, 1e-9);
+  assertClose(OAD.debitParNiveauCuve(19.2, 2), 9.6, 1e-9);
+});
+test('volumeSelonHauteurs(180, 3, 2) = 120 L/ha ; (180, 3, 0) → NaN, calculateur null + alerte', () => {
+  assertClose(OAD.volumeSelonHauteurs(180, 3, 2), 120, 1e-9);
+  assert.ok(Number.isNaN(OAD.volumeSelonHauteurs(180, 3, 0)));
+  const r = OAD.CALCULATEURS.hauteursBuses.compute({ V1: 180, h1: 3, h2: 0 });
+  assert.strictEqual(r.resultats[0].valeur, null);
+  assert.strictEqual(r.alertes.length, 1);
+});
+test('volumeApresChangementVitesse(150, 6, 7) = 128,5714 L/ha', () => {
+  assertClose(OAD.volumeApresChangementVitesse(150, 6, 7), 128.5714, 1e-4);
+});
+test('cohérence : volumeHectare(debitParNiveauCuve(48, 5), 5, largeurTraitee(7, 1,10)) = 149,6104 (comme B1)', () => {
+  assertClose(OAD.volumeHectare(OAD.debitParNiveauCuve(48, 5), 5, OAD.largeurTraitee(7, 1.10)), 149.6104, 1e-4);
+});
+test('registre : les nouvelles entrées ont un origineDefaut non vide ; 8 calculateurs listés', () => {
+  ['largeurTraitee', 'debitCuve', 'hauteursBuses'].forEach(id => {
+    const c = OAD.CALCULATEURS[id];
+    assert.ok(c, id);
+    c.entrees.forEach(e => assert.ok(typeof e.origineDefaut === 'string' && e.origineDefaut.trim(), id + '.' + e.id));
+  });
+  const c = new Component({});
+  assert.strictEqual(rendre(c, '#/outils').outilsListe.length, 8);
+});
+test('rendu à blanc : #/outils/largeurTraitee, debitCuve, hauteursBuses', () => {
+  const c = new Component({});
+  assert.strictEqual(rendre(c, '#/outils/largeurTraitee').calcCourant.resultats[0].texte, '7,7 m');
+  assert.strictEqual(rendre(c, '#/outils/debitCuve').calcCourant.resultats[0].texte, '9,6 L/min');
+  assert.strictEqual(rendre(c, '#/outils/hauteursBuses').calcCourant.resultats[0].texte, '120 L/ha');
 });
 
 console.log(`\n${passed} ok, ${failed} FAIL, ${skipped} skip`);
