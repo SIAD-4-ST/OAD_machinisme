@@ -1,0 +1,1062 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<title>Formation machines</title>
+<!-- React embarqué pour le hors-ligne : support.js ne télécharge pas React s'il est déjà présent (D-A3-4). Octets identiques aux SRI de support.js. -->
+<script src="./vendor/react.production.min.js"></script>
+<script src="./vendor/react-dom.production.min.js"></script>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+/* Jetons de couleur : toute couleur de l'écran passe par eux. */
+:root {
+  --fond: #f6f5f0; --surface: #ffffff; --surface-2: #eef0ea;
+  --texte: #1d2521; --texte-doux: #4f5a54; --bord: #cfd4cc;
+  --accent: #2f6b3a; --accent-texte: #ffffff; --accent-doux: #e1eee3;
+  --alerte-fond: #fff4d6; --alerte-bord: #a86b12;
+  --erreur: #b3261e; --erreur-fond: #fdecea;
+  --succes: #1e6b35; --succes-fond: #e3f3e6;
+  --focus: #1a5fb4;
+  --rayon: 10px;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --fond: #121614; --surface: #1b211e; --surface-2: #232b27;
+    --texte: #e8ece9; --texte-doux: #a9b3ad; --bord: #3a4640;
+    --accent: #7cc38a; --accent-texte: #0d1a10; --accent-doux: #203a26;
+    --alerte-fond: #3a2f12; --alerte-bord: #e0b050;
+    --erreur: #ff8a80; --erreur-fond: #3d1b19;
+    --succes: #86d49a; --succes-fond: #19331f;
+    --focus: #8ab4f8;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --fond: #121614; --surface: #1b211e; --surface-2: #232b27;
+  --texte: #e8ece9; --texte-doux: #a9b3ad; --bord: #3a4640;
+  --accent: #7cc38a; --accent-texte: #0d1a10; --accent-doux: #203a26;
+  --alerte-fond: #3a2f12; --alerte-bord: #e0b050;
+  --erreur: #ff8a80; --erreur-fond: #3d1b19;
+  --succes: #86d49a; --succes-fond: #19331f;
+  --focus: #8ab4f8;
+  color-scheme: dark;
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+html, body { background: var(--fond); color: var(--texte); }
+body { margin: 0; font: 17px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+a { color: var(--accent); }
+:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
+h1 { font-size: 1.6rem; line-height: 1.25; margin: 8px 0 8px; }
+h2 { font-size: 1.3rem; line-height: 1.3; margin: 4px 0 12px; }
+h3 { font-size: 1.05rem; margin: 20px 0 8px; }
+.sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+/* Gouttière 16 px : aucune largeur fixe au-delà de l'écran (400 px utilisable). */
+.app { max-width: 1080px; margin: 0 auto; padding: 0 16px; min-height: 100%; display: flex; flex-direction: column; }
+.principal { flex: 1; padding: 8px 0 32px; min-width: 0; }
+
+.entete { border-bottom: 1px solid var(--bord); padding: 12px 0 0; }
+.entete-haut { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.marque { font-weight: 700; font-size: 1.15rem; color: var(--texte); text-decoration: none; }
+.nav { display: flex; gap: 4px; flex-wrap: wrap; margin-top: 8px; }
+.nav a { padding: 10px 14px; min-height: 44px; display: inline-flex; align-items: center;
+  border-radius: var(--rayon) var(--rayon) 0 0; color: var(--texte); text-decoration: none; font-weight: 600; }
+.nav a[aria-current] { background: var(--accent-doux); box-shadow: inset 0 -3px 0 var(--accent); }
+
+.pied { border-top: 1px solid var(--bord); padding: 12px 0 20px; color: var(--texte-doux); font-size: .9rem; }
+
+button { font: inherit; cursor: pointer; }
+.bouton-principal, .bouton-secondaire, .bouton-danger, .bouton-discret {
+  min-height: 44px; padding: 8px 16px; border-radius: var(--rayon); border: 1px solid transparent; }
+.bouton-principal { background: var(--accent); color: var(--accent-texte); font-weight: 600; }
+.bouton-secondaire { background: var(--surface); color: var(--texte); border-color: var(--bord); }
+.bouton-danger { background: var(--surface); color: var(--erreur); border-color: var(--erreur); }
+.bouton-discret { background: transparent; color: var(--texte-doux); border-color: var(--bord); font-size: .9rem; }
+.actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 16px; }
+
+.bandeau-erreur { background: var(--erreur-fond); border: 1px solid var(--erreur); border-radius: var(--rayon);
+  padding: 8px 16px; margin: 12px 0; }
+.bandeau-erreur ul { margin: 4px 0 8px; padding-left: 20px; }
+.chargement { color: var(--texte-doux); padding: 24px 0; }
+
+.chapo { color: var(--texte-doux); margin-top: 0; }
+.meta { color: var(--texte-doux); font-size: .92rem; display: flex; flex-wrap: wrap; gap: 4px 12px; align-items: center; margin: 4px 0; }
+.badge { display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: .8rem; font-weight: 600;
+  border: 1px solid var(--bord); background: var(--surface-2); color: var(--texte); }
+.badge-brouillon, .badge-a-valider { background: var(--alerte-fond); border-color: var(--alerte-bord); }
+.badge-valide { background: var(--succes-fond); border-color: var(--succes); }
+.avertissement { background: var(--alerte-fond); border-left: 4px solid var(--alerte-bord); padding: 8px 12px; border-radius: 4px; }
+
+.groupe { margin: 20px 0; }
+.cartes { list-style: none; padding: 0; margin: 0; display: grid; gap: 12px; grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr)); }
+.carte { background: var(--surface); border: 1px solid var(--bord); border-radius: var(--rayon); padding: 16px; display: flex; flex-direction: column; gap: 6px; }
+.carte p { margin: 0; }
+.carte-lien { font-size: 1.1rem; font-weight: 700; text-decoration: none; }
+.carte-lien:hover { text-decoration: underline; }
+
+.jauge { height: 8px; border-radius: 999px; background: var(--surface-2); border: 1px solid var(--bord); overflow: hidden; margin-top: 4px; }
+.jauge span { display: block; height: 100%; background: var(--accent); }
+
+.fil { font-size: .9rem; color: var(--texte-doux); margin: 8px 0 0; }
+/* Petit écran : la section d'abord, le sommaire ensuite. */
+.grille { display: flex; flex-direction: column; gap: 16px; margin-top: 12px; }
+.grille > .sommaire { order: 2; }
+.grille > .contenu { order: 1; }
+@media (min-width: 800px) {
+  .grille { display: grid; grid-template-columns: 270px minmax(0, 1fr); align-items: start; }
+  .grille > .sommaire { order: 0; position: sticky; top: 8px; }
+}
+.sommaire { background: var(--surface); border: 1px solid var(--bord); border-radius: var(--rayon); padding: 12px; }
+.sommaire-titre { font-size: 1rem; margin: 0 0 4px; }
+.sommaire ol { list-style: none; padding: 0; margin: 8px 0 0; }
+.sommaire a { display: flex; gap: 8px; align-items: baseline; padding: 8px; min-height: 44px; border-radius: 6px;
+  color: var(--texte); text-decoration: none; }
+.sommaire a[aria-current] { background: var(--accent-doux); font-weight: 600; }
+.sommaire-type { font-size: .75rem; color: var(--texte-doux); min-width: 5.5em; }
+.sommaire .vu { margin-left: auto; color: var(--succes); }
+
+.contenu { background: var(--surface); border: 1px solid var(--bord); border-radius: var(--rayon); padding: 16px; min-width: 0; }
+.section-type { font-size: .85rem; color: var(--texte-doux); margin: 0; text-transform: uppercase; letter-spacing: .04em; }
+.intro { color: var(--texte-doux); }
+.formule { font-family: ui-monospace, "Cascadia Mono", Consolas, monospace; background: var(--surface-2);
+  padding: 8px 12px; border-radius: 6px; margin: 4px 0; overflow-wrap: anywhere; }
+.alerte-bloc { background: var(--alerte-fond); border-left: 4px solid var(--alerte-bord); padding: 8px 12px; border-radius: 4px; }
+
+.compteur { color: var(--texte-doux); font-size: .92rem; }
+.coches { list-style: none; padding: 0; margin: 0; }
+.coches li { display: grid; grid-template-columns: 28px 1fr; gap: 4px 8px; padding: 10px 0; border-bottom: 1px solid var(--bord); }
+.coches input { width: 24px; height: 24px; margin: 2px 0 0; accent-color: var(--accent); }
+.coches label { cursor: pointer; }
+.coches .fait label { color: var(--texte-doux); text-decoration: line-through; }
+.coches .detail, .coches .perio { grid-column: 2; margin: 0; font-size: .9rem; color: var(--texte-doux); }
+.perio-titre { font-size: 1rem; margin: 16px 0 0; }
+
+.calc-desc { color: var(--texte-doux); }
+.champs { display: grid; gap: 12px; grid-template-columns: repeat(auto-fill, minmax(min(100%, 220px), 1fr)); }
+.champ label { display: block; font-weight: 600; }
+.champ input { width: 100%; min-height: 44px; font: inherit; font-size: 1.1rem; padding: 6px 10px; margin-top: 4px;
+  border: 1px solid var(--bord); border-radius: 6px; background: var(--fond); color: var(--texte); }
+.unite { font-weight: 400; color: var(--texte-doux); }
+.origine { font-size: .8rem; color: var(--texte-doux); margin: 4px 0 0; }
+.sorties { margin: 16px 0; padding: 12px 16px; border-radius: var(--rayon); background: var(--accent-doux); }
+.resultat { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 4px 12px; margin: 4px 0; }
+.resultat strong { font-size: 1.35rem; }
+.alertes { margin: 8px 0 0; padding: 8px 12px 8px 28px; background: var(--alerte-fond); border-radius: 6px; }
+.etapes-calc { padding-left: 20px; }
+.etapes-calc li { margin-bottom: 12px; }
+.formule-titre { margin: 0; font-weight: 600; }
+
+.question { border: 1px solid var(--bord); border-radius: var(--rayon); margin: 0 0 16px; padding: 8px 16px 16px; min-width: 0; }
+.question legend { font-weight: 600; padding: 0 4px; }
+.consigne { font-size: .9rem; color: var(--texte-doux); margin: 4px 0; }
+.choix { display: flex; flex-direction: column; gap: 8px; margin-top: 8px; }
+.choix-bouton { text-align: left; min-height: 44px; padding: 8px 12px; border-radius: 8px;
+  border: 2px solid var(--bord); background: var(--fond); color: var(--texte); }
+.choix-bouton.pris { border-color: var(--accent); background: var(--accent-doux); }
+.choix-bouton.bonne { border-color: var(--succes); background: var(--succes-fond); }
+.choix-bouton.fausse { border-color: var(--erreur); background: var(--erreur-fond); }
+.choix-bouton:disabled { cursor: default; opacity: 1; }
+.correction { margin: 8px 0 0; padding: 8px 12px; border-radius: 6px; }
+.correction.juste, .retour.juste { background: var(--succes-fond); }
+.correction.fausse, .retour.fausse { background: var(--erreur-fond); }
+.score { font-size: 1.2rem; font-weight: 700; }
+.situation { font-size: 1.05rem; }
+.retour { padding: 8px 12px; border-radius: 6px; }
+
+.suite { display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-top: 24px;
+  padding-top: 12px; border-top: 1px solid var(--bord); }
+.suite a { min-height: 44px; display: inline-flex; align-items: center; }
+.suite .suivant { margin-left: auto; text-align: right; }
+
+.outils-liste { list-style: none; padding: 0; margin: 8px 0 0; }
+
+.tableau-conteneur { overflow-x: auto; max-width: 100%; }
+.tableau { border-collapse: collapse; width: 100%; background: var(--surface); }
+.tableau caption { text-align: left; font-weight: 600; padding: 8px 0; }
+.tableau th, .tableau td { border: 1px solid var(--bord); padding: 8px; text-align: left; vertical-align: top; }
+.tableau thead th { background: var(--surface-2); }
+
+@media print {
+  .entete, .pied, .sommaire, .suite, .actions, .nav, .bouton-discret, .bandeau-erreur { display: none !important; }
+  html, body { background: #fff; color: #000; }
+  .contenu { border: none; padding: 0; }
+  .coches .fait label { text-decoration: none; color: #000; }
+}
+</style>
+<script src="contenu/pulve-reglage-volume.js"></script>
+<script src="contenu/pulve-entretien.js"></script>
+<script src="contenu/sol-outil-interceps.js"></script>
+<script src="moteur-oad.js"></script>
+</helmet>
+<div class="app">
+  <header class="entete">
+    <div class="entete-haut">
+      <a class="marque" href="{{ lienCatalogue }}">Formation machines</a>
+      <button class="bouton-discret" onClick="{{ basculerTheme }}" aria-label="{{ themeAria }}">{{ themeLibelle }}</button>
+    </div>
+    <nav class="nav" aria-label="Navigation principale">
+      <a href="{{ lienCatalogue }}" aria-current="{{ navCatalogue }}">Modules</a>
+      <a href="{{ lienOutils }}" aria-current="{{ navOutils }}">Calculateurs</a>
+      <a href="{{ lienProgression }}" aria-current="{{ navProgression }}">Progression</a>
+    </nav>
+  </header>
+
+  <sc-if value="{{ aErreurs }}" hint-placeholder-val="{{ false }}">
+    <div class="bandeau-erreur" role="alert">
+      <p><b>Contenu à corriger.</b> Les éléments suivants ne respectent pas le format attendu :</p>
+      <ul>
+        <sc-for list="{{ erreursListe }}" as="err" hint-placeholder-count="2">
+          <li>{{ err }}</li>
+        </sc-for>
+      </ul>
+    </div>
+  </sc-if>
+
+  <main class="principal" id="principal">
+    <sc-if value="{{ enChargement }}" hint-placeholder-val="{{ false }}">
+      <p class="chargement" role="status">Chargement des modules…</p>
+    </sc-if>
+    <sc-if value="{{ echecChargement }}" hint-placeholder-val="{{ false }}">
+      <div class="bandeau-erreur" role="alert">
+        <p><b>Les modules n'ont pas pu être chargés.</b> Vérifiez que le dossier de l'outil est complet (fichiers moteur-oad.js et contenu/), puis rechargez la page.</p>
+      </div>
+    </sc-if>
+
+    <!-- Catalogue -->
+    <sc-if value="{{ estCatalogue }}" hint-placeholder-val="{{ true }}">
+      <h1>Modules de formation</h1>
+      <p class="chapo">Fiches, procédures, calculateurs et quiz pour régler et entretenir les machines. Fonctionne sans réseau.</p>
+      <sc-for list="{{ domainesCatalogue }}" as="dom" hint-placeholder-count="2">
+        <section class="groupe" aria-labelledby="{{ dom.titreId }}">
+          <h2 id="{{ dom.titreId }}">{{ dom.libelle }}</h2>
+          <ul class="cartes">
+            <sc-for list="{{ dom.modules }}" as="carte" hint-placeholder-count="2">
+              <li class="carte">
+                <a class="carte-lien" href="{{ carte.lien }}">{{ carte.titre }}</a>
+                <p>{{ carte.resume }}</p>
+                <p class="meta">
+                  <span class="{{ carte.statutClasse }}">{{ carte.statutLibelle }}</span>
+                  <span>{{ carte.dureeTxt }}</span>
+                  <span>{{ carte.etatLibelle }} · {{ carte.avancementTxt }}</span>
+                </p>
+                <div class="jauge" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="{{ carte.pct }}" aria-label="{{ carte.jaugeLabel }}"><span style="width:{{ carte.pct }}%"></span></div>
+              </li>
+            </sc-for>
+          </ul>
+        </section>
+      </sc-for>
+    </sc-if>
+
+    <!-- Module inconnu -->
+    <sc-if value="{{ estInconnu }}" hint-placeholder-val="{{ false }}">
+      <h1>Module introuvable</h1>
+      <p>Ce lien ne correspond à aucun module du catalogue. <a href="{{ lienCatalogue }}">Revenir aux modules</a></p>
+    </sc-if>
+
+    <!-- En-tête de module -->
+    <sc-if value="{{ estModule }}" hint-placeholder-val="{{ false }}">
+      <p class="fil"><a href="{{ lienCatalogue }}">Modules</a> › {{ mod.domaineLibelle }}</p>
+      <h1>{{ mod.titre }}</h1>
+      <p class="meta">
+        <span class="{{ mod.statutClasse }}">{{ mod.statutLibelle }}</span>
+        <span>{{ mod.public }}</span>
+        <span>{{ mod.dureeTxt }}</span>
+      </p>
+      <sc-if value="{{ mod.nonValide }}" hint-placeholder-val="{{ true }}">
+        <p class="avertissement">Contenu en cours de rédaction, pas encore validé par un expert. {{ mod.sourcesTxt }}</p>
+      </sc-if>
+    </sc-if>
+
+    <!-- Page Calculateurs -->
+    <sc-if value="{{ estOutils }}" hint-placeholder-val="{{ false }}">
+      <h1>Calculateurs</h1>
+      <p class="chapo">Chaque résultat montre sa formule et les valeurs utilisées.</p>
+    </sc-if>
+
+    <!-- Grille commune : module (sommaire + section) et calculateurs (liste + calculateur) -->
+    <sc-if value="{{ aGrille }}" hint-placeholder-val="{{ false }}">
+      <div class="grille">
+        <sc-if value="{{ estModule }}">
+          <nav class="sommaire" aria-label="Sommaire du module">
+            <h2 class="sommaire-titre">Sommaire</h2>
+            <p class="meta">{{ mod.avancementTxt }}</p>
+            <div class="jauge" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="{{ mod.pct }}" aria-label="{{ mod.jaugeLabel }}"><span style="width:{{ mod.pct }}%"></span></div>
+            <ol>
+              <sc-for list="{{ sommaire }}" as="it" hint-placeholder-count="5">
+                <li>
+                  <a href="{{ it.lien }}" aria-current="{{ it.courant }}">
+                    <span class="sommaire-type">{{ it.typeLibelle }}</span>
+                    <span>{{ it.titre }}</span>
+                    <sc-if value="{{ it.vu }}"><span class="vu" aria-hidden="true">✓</span><span class="sr">(consultée)</span></sc-if>
+                  </a>
+                </li>
+              </sc-for>
+            </ol>
+          </nav>
+        </sc-if>
+        <sc-if value="{{ estOutils }}">
+          <nav class="sommaire" aria-label="Liste des calculateurs">
+            <h2 class="sommaire-titre">Calculateurs</h2>
+            <ul class="outils-liste">
+              <sc-for list="{{ outilsListe }}" as="ou" hint-placeholder-count="5">
+                <li><a href="{{ ou.lien }}" aria-current="{{ ou.courant }}">{{ ou.titre }}</a></li>
+              </sc-for>
+            </ul>
+          </nav>
+        </sc-if>
+
+        <article class="contenu" aria-labelledby="titre-contenu">
+          <sc-if value="{{ estModule }}">
+            <p class="section-type">{{ section.typeLibelle }} · {{ section.position }}</p>
+            <h2 id="titre-contenu">{{ section.titre }}</h2>
+            <sc-if value="{{ section.aIntro }}"><p class="intro">{{ section.intro }}</p></sc-if>
+          </sc-if>
+          <sc-if value="{{ estOutils }}">
+            <h2 id="titre-contenu">{{ outilsTitre }}</h2>
+            <sc-if value="{{ outilsMessage }}"><p class="intro">{{ outilsMessage }}</p></sc-if>
+          </sc-if>
+
+          <!-- Fiche -->
+          <sc-if value="{{ estFiche }}">
+            <sc-for list="{{ blocs }}" as="bl" hint-placeholder-count="3">
+              <sc-if value="{{ bl.estParagraphe }}"><p>{{ bl.texte }}</p></sc-if>
+              <sc-if value="{{ bl.estFormule }}"><p class="formule">{{ bl.texte }}</p></sc-if>
+              <sc-if value="{{ bl.estAlerte }}"><p class="alerte-bloc"><b>Attention :</b> {{ bl.texte }}</p></sc-if>
+              <sc-if value="{{ bl.estListe }}">
+                <ul><sc-for list="{{ bl.items }}" as="item"><li>{{ item }}</li></sc-for></ul>
+              </sc-if>
+            </sc-for>
+          </sc-if>
+
+          <!-- Procédure -->
+          <sc-if value="{{ estProcedure }}">
+            <p class="compteur" aria-live="polite">{{ procedure.compteur }}</p>
+            <ol class="coches">
+              <sc-for list="{{ procedure.etapes }}" as="et" hint-placeholder-count="4">
+                <li class="{{ et.classe }}">
+                  <input type="checkbox" id="{{ et.inputId }}" checked="{{ et.fait }}" onChange="{{ basculerEtape }}" data-etape="{{ et.id }}">
+                  <label for="{{ et.inputId }}">{{ et.num }}. {{ et.texte }}</label>
+                  <sc-if value="{{ et.aDetail }}"><p class="detail">{{ et.detail }}</p></sc-if>
+                </li>
+              </sc-for>
+            </ol>
+            <div class="actions"><button class="bouton-secondaire" onClick="{{ imprimer }}">Imprimer la procédure</button></div>
+          </sc-if>
+
+          <!-- Entretien -->
+          <sc-if value="{{ estEntretien }}">
+            <p class="compteur" aria-live="polite">{{ entretien.compteur }}</p>
+            <sc-for list="{{ entretien.groupes }}" as="gr" hint-placeholder-count="3">
+              <h3 class="perio-titre">{{ gr.libelle }}</h3>
+              <ul class="coches">
+                <sc-for list="{{ gr.taches }}" as="ta" hint-placeholder-count="2">
+                  <li class="{{ ta.classe }}">
+                    <input type="checkbox" id="{{ ta.inputId }}" checked="{{ ta.fait }}" onChange="{{ basculerTache }}" data-tache="{{ ta.id }}">
+                    <label for="{{ ta.inputId }}">{{ ta.texte }}</label>
+                  </li>
+                </sc-for>
+              </ul>
+            </sc-for>
+            <div class="actions"><button class="bouton-secondaire" onClick="{{ imprimer }}">Imprimer le plan d'entretien</button></div>
+          </sc-if>
+
+          <!-- Calculateur : fragment unique, section de module ou page Calculateurs -->
+          <sc-if value="{{ aCalc }}">
+            <p class="calc-desc">{{ calcCourant.description }}</p>
+            <div class="champs">
+              <sc-for list="{{ calcCourant.entrees }}" as="en" hint-placeholder-count="3">
+                <div class="champ">
+                  <label for="{{ en.inputId }}">{{ en.label }} <span class="unite">{{ en.uniteTxt }}</span></label>
+                  <input id="{{ en.inputId }}" type="text" inputmode="decimal" autocomplete="off" value="{{ en.valeur }}" onInput="{{ onSaisie }}" data-calc="{{ en.calc }}" data-entree="{{ en.id }}" aria-describedby="{{ en.origineId }}">
+                  <p class="origine" id="{{ en.origineId }}">Par défaut : {{ en.defautTxt }}. {{ en.origine }}</p>
+                </div>
+              </sc-for>
+            </div>
+            <div class="sorties" aria-live="polite">
+              <sc-for list="{{ calcCourant.resultats }}" as="res" hint-placeholder-count="1">
+                <p class="resultat"><span>{{ res.label }}</span> <strong>{{ res.texte }}</strong></p>
+              </sc-for>
+              <sc-if value="{{ calcCourant.aAlertes }}">
+                <ul class="alertes"><sc-for list="{{ calcCourant.alertes }}" as="al"><li>{{ al }}</li></sc-for></ul>
+              </sc-if>
+            </div>
+            <h3>Détail du calcul</h3>
+            <ol class="etapes-calc">
+              <sc-for list="{{ calcCourant.etapes }}" as="fe" hint-placeholder-count="1">
+                <li>
+                  <p class="formule-titre">{{ fe.titre }}</p>
+                  <p class="formule">{{ fe.formule }}</p>
+                  <p class="formule">= {{ fe.substitution }} = {{ fe.resultat }}</p>
+                </li>
+              </sc-for>
+            </ol>
+            <div class="actions"><button class="bouton-secondaire" value="{{ calcCourant.id }}" onClick="{{ reinitialiserCalc }}">Revenir aux valeurs par défaut</button></div>
+          </sc-if>
+
+          <!-- Quiz -->
+          <sc-if value="{{ estQuiz }}">
+            <sc-for list="{{ quiz.questions }}" as="qu" hint-placeholder-count="2">
+              <fieldset class="question">
+                <legend>{{ qu.num }}. {{ qu.enonce }}</legend>
+                <sc-if value="{{ qu.multiple }}"><p class="consigne">Plusieurs réponses possibles.</p></sc-if>
+                <div class="choix">
+                  <sc-for list="{{ qu.choix }}" as="ch" hint-placeholder-count="3">
+                    <button type="button" class="{{ ch.classe }}" aria-pressed="{{ ch.presse }}" value="{{ ch.valeur }}" onClick="{{ onChoix }}" disabled="{{ quiz.verrouille }}">{{ ch.texte }}</button>
+                  </sc-for>
+                </div>
+                <sc-if value="{{ quiz.corrige }}"><p class="{{ qu.correctionClasse }}">{{ qu.correction }}</p></sc-if>
+              </fieldset>
+            </sc-for>
+            <div aria-live="polite">
+              <sc-if value="{{ quiz.corrige }}"><p class="score">{{ quiz.scoreTxt }}</p></sc-if>
+              <sc-if value="{{ quiz.aDernier }}"><p class="meta">{{ quiz.dernierTxt }}</p></sc-if>
+            </div>
+            <div class="actions">
+              <sc-if value="{{ !quiz.corrige }}"><button class="bouton-principal" value="{{ quiz.sid }}" onClick="{{ validerQuiz }}">Valider mes réponses</button></sc-if>
+              <sc-if value="{{ quiz.corrige }}"><button class="bouton-secondaire" value="{{ quiz.sid }}" onClick="{{ recommencerQuiz }}">Recommencer</button></sc-if>
+            </div>
+          </sc-if>
+
+          <!-- Cas pratique -->
+          <sc-if value="{{ estCas }}">
+            <p class="situation">{{ cas.situation }}</p>
+            <div class="choix">
+              <sc-for list="{{ cas.options }}" as="op" hint-placeholder-count="3">
+                <button type="button" class="{{ op.classe }}" aria-pressed="{{ op.presse }}" value="{{ op.valeur }}" onClick="{{ choisirCas }}">{{ op.texte }}</button>
+              </sc-for>
+            </div>
+            <div aria-live="polite">
+              <sc-if value="{{ cas.aRetour }}"><p class="{{ cas.retourClasse }}"><b>{{ cas.verdict }}</b> {{ cas.retour }}</p></sc-if>
+            </div>
+          </sc-if>
+
+          <sc-if value="{{ estModule }}">
+            <nav class="suite" aria-label="Sections voisines">
+              <sc-if value="{{ aPrec }}"><a href="{{ prec.lien }}">← {{ prec.titre }}</a></sc-if>
+              <sc-if value="{{ aSuiv }}"><a class="suivant" href="{{ suiv.lien }}">{{ suiv.titre }} →</a></sc-if>
+            </nav>
+          </sc-if>
+        </article>
+      </div>
+    </sc-if>
+
+    <!-- Progression -->
+    <sc-if value="{{ estProgression }}" hint-placeholder-val="{{ false }}">
+      <h1>Ma progression</h1>
+      <p class="chapo">{{ progResume }}</p>
+      <div class="tableau-conteneur">{{ tableauProgression }}</div>
+      <p class="meta">La progression est enregistrée sur cet appareil uniquement, dans ce navigateur.</p>
+      <div class="actions"><button class="bouton-danger" onClick="{{ effacerProgression }}">Effacer ma progression</button></div>
+    </sc-if>
+  </main>
+
+  <footer class="pied">
+    <p>Outil de formation. Les valeurs proposées dans les calculateurs sont des exemples : l'origine de chacune est indiquée sous son champ.</p>
+  </footer>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+/* =====================================================================
+   Composant unique. Contrat du runtime (support.js) : le gabarit ne voit
+   QUE l'objet renvoyé par renderVals() — ni this.state, ni les méthodes.
+   Pas de JSX (React.createElement), pas de <form>. Aucun appel réseau,
+   aucune donnée saisie dans l'URL (le hash ne porte que des identifiants).
+   Aucune formule, aucun seuil, aucune règle de notation ici : la vue
+   convertit les saisies, appelle window.OAD, met en forme en fr-FR.
+   ===================================================================== */
+
+/* Progression : clé et format conservés (D-A3-2) — { version, modules },
+   écart assumé au format { version, v } du squelette. VERSION_PROGRESSION
+   doit rester égal à OAD.VERSION_PROGRESSION (test statique). */
+const CLE_PROGRESSION = 'formation-machines:progression:v1';
+const VERSION_PROGRESSION = 1;
+// Préférence d'affichage, hors progression.
+const CLE_THEME = 'formation-machines:theme:v1';
+const THEMES = ['auto', 'clair', 'sombre'];
+const THEMES_LIBELLES = { auto: 'automatique', clair: 'clair', sombre: 'sombre' };
+
+/* Aucune de ces fonctions ne lève : localStorage peut être absent ou refusé
+   (navigation privée) ; l'outil reste alors utilisable, sans mémoire. */
+function lireProgression() {
+  try {
+    const brut = window.localStorage.getItem(CLE_PROGRESSION);
+    if (!brut) return null;
+    const o = JSON.parse(brut);
+    return (o && o.version === VERSION_PROGRESSION && o.modules && typeof o.modules === 'object') ? o : null;
+  } catch (e) { return null; }
+}
+function ecrireProgression(p) {
+  try { window.localStorage.setItem(CLE_PROGRESSION, JSON.stringify(p)); }
+  catch (e) { /* stockage indisponible : l'outil reste utilisable */ }
+}
+function effacerProgressionStockee() {
+  try { window.localStorage.removeItem(CLE_PROGRESSION); } catch (e) { /* idem */ }
+}
+function lireTheme() {
+  try { const t = window.localStorage.getItem(CLE_THEME); return THEMES.includes(t) ? t : 'auto'; }
+  catch (e) { return 'auto'; }
+}
+function ecrireTheme(t) {
+  try { window.localStorage.setItem(CLE_THEME, t); } catch (e) { /* idem */ }
+}
+
+function lireHash() {
+  try { return (window.location && window.location.hash) || ''; } catch (e) { return ''; }
+}
+
+/* Ordre du catalogue = ordre des <script src="contenu/…"> de <helmet>. Les
+   scripts réinjectés par le runtime arrivent dans l'ordre de fin de
+   chargement : la vue lit l'ordre déclaré et le moteur réordonne
+   (OAD.ordonnerModules). */
+function ordreContenu() {
+  try {
+    return Array.from(document.querySelectorAll('script[src^="contenu/"]'))
+      .map(s => (s.getAttribute('src') || '').replace(/^contenu\//, '').replace(/\.js$/, ''));
+  } catch (e) { return []; }
+}
+// Moteur et tous les fichiers de contenu déclarés sont chargés.
+function moteurPret() {
+  if (!window.OAD) return false;
+  const attendus = ordreContenu().length;
+  return attendus === 0 || window.OAD.modules().length >= attendus;
+}
+
+/* --- Mise en forme fr-FR (seul endroit où les nombres deviennent texte) --- */
+const ESPACE = ' ';
+function fmtNombre(x, decimales) {
+  if (typeof x !== 'number' || !Number.isFinite(x)) return '—';
+  const d = Number.isInteger(decimales) ? decimales : 2;
+  const txt = Math.abs(x).toLocaleString('fr-FR', { maximumFractionDigits: d });
+  return (x < 0 && txt !== '0' ? '−' : '') + txt;
+}
+function avecUnite(txt, unite) { return unite ? txt + ESPACE + unite : txt; }
+function pourcent(taux) { return fmtNombre(Math.round((Number(taux) || 0) * 100), 0) + ESPACE + '%'; }
+// Date ISO → jj/mm/aaaa, sans relire l'horloge.
+function dateFr(iso) {
+  const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(iso || ''));
+  return m ? m[3] + '/' + m[2] + '/' + m[1] : '';
+}
+// Valeur par défaut → texte de saisie (virgule décimale).
+function texteSaisie(n) { return String(n).replace('.', ','); }
+// Seul point de conversion saisie → nombre. Vide ou illisible → NaN (le moteur le signale).
+function versNombre(txt) {
+  const s = String(txt == null ? '' : txt).replace(/[\s  ]/g, '').replace(',', '.');
+  return s === '' ? NaN : Number(s);
+}
+function valeurDe(e) { const t = e && (e.currentTarget || e.target); return t ? String(t.value) : ''; }
+function attributDe(e, nom) { const t = e && (e.currentTarget || e.target); return t && t.getAttribute ? t.getAttribute(nom) : null; }
+
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    const OAD = window.OAD || null;
+    this.state = {
+      pret: moteurPret(),
+      echec: false,
+      route: OAD ? OAD.lireRoute(lireHash()) : null,
+      ordre: ordreContenu(),
+      prog: lireProgression(),
+      theme: lireTheme(),
+      saisies: {},    // { [calcId]: { [entreeId]: texte brut } }
+      quizRep: {},    // { [sectionId]: { [qid]: number[] } }
+      quizScore: {},  // { [sectionId]: score | null }
+      casChoix: {}    // { [sectionId]: number | null }
+    };
+    this.__essais = 0;
+    this.__minuteur = null;
+    this.__derniereRoute = null;
+    this.__dernierProg = this.state.prog ? JSON.stringify(this.state.prog) : null;
+
+    this.onHash = () => {
+      if (window.OAD) this.setState({ route: window.OAD.lireRoute(lireHash()) });
+    };
+    // Les scripts de <helmet> se chargent après le premier rendu : on attend
+    // le moteur et le contenu (10 s au plus), puis on rend.
+    this.attendreMoteur = () => {
+      this.__minuteur = null;
+      if (moteurPret()) {
+        this.setState({ pret: true, ordre: ordreContenu(), route: window.OAD.lireRoute(lireHash()) });
+        return;
+      }
+      this.__essais += 1;
+      if (this.__essais > 200) {
+        if (window.OAD) this.setState({ pret: true, ordre: ordreContenu(), route: window.OAD.lireRoute(lireHash()) });
+        else this.setState({ echec: true });
+        return;
+      }
+      this.__minuteur = setTimeout(this.attendreMoteur, 50);
+    };
+
+    // Saisie de calculateur : frappe stockée BRUTE, convertie dans renderVals.
+    this.onSaisie = (e) => {
+      const calc = attributDe(e, 'data-calc'), entree = attributDe(e, 'data-entree'), val = valeurDe(e);
+      if (!calc || !entree) return;
+      this.setState(s => ({ saisies: { ...s.saisies, [calc]: { ...(s.saisies[calc] || {}), [entree]: val } } }));
+    };
+    this.reinitialiserCalc = (e) => {
+      const id = valeurDe(e);
+      this.setState(s => { const n = { ...s.saisies }; delete n[id]; return { saisies: n }; });
+    };
+
+    // Quiz : valeur du bouton "<sectionId>|<qid>|<k>".
+    this.onChoix = (e) => {
+      const [sid, qid, k] = valeurDe(e).split('|');
+      const idx = Number(k);
+      const section = this.sectionCourante();
+      if (!section || section.id !== sid) return;
+      const q = (section.questions || []).find(x => x.id === qid);
+      if (!q || !Number.isInteger(idx)) return;
+      const multiple = q.bonnes.length > 1;
+      this.setState(s => {
+        if (s.quizScore[sid]) return {};
+        const rep = { ...(s.quizRep[sid] || {}) };
+        const cur = rep[qid] || [];
+        rep[qid] = multiple ? (cur.includes(idx) ? cur.filter(x => x !== idx) : [...cur, idx]) : [idx];
+        return { quizRep: { ...s.quizRep, [sid]: rep } };
+      });
+    };
+    this.validerQuiz = (e) => {
+      const sid = valeurDe(e);
+      const ctx = this.contexte();
+      if (!ctx || !ctx.module || !ctx.section || ctx.section.id !== sid) return;
+      const score = ctx.OAD.noterQuiz(ctx.section, this.state.quizRep[sid] || {});
+      // Seul point du projet qui lit l'horloge : la date est passée au moteur.
+      const dateISO = new Date().toISOString();
+      this.setState(s => ({
+        quizScore: { ...s.quizScore, [sid]: score },
+        prog: ctx.OAD.enregistrerQuiz(this.progression(s), ctx.module.id, sid, score, dateISO)
+      }));
+    };
+    this.recommencerQuiz = (e) => {
+      const sid = valeurDe(e);
+      this.setState(s => {
+        const rep = { ...s.quizRep }, sc = { ...s.quizScore };
+        delete rep[sid]; delete sc[sid];
+        return { quizRep: rep, quizScore: sc };
+      });
+    };
+    // Cas pratique : valeur du bouton "<sectionId>|<k>".
+    this.choisirCas = (e) => {
+      const [sid, k] = valeurDe(e).split('|');
+      const idx = Number(k);
+      if (!sid || !Number.isInteger(idx)) return;
+      this.setState(s => ({ casChoix: { ...s.casChoix, [sid]: idx } }));
+    };
+
+    this.basculerEtape = (e) => {
+      const id = attributDe(e, 'data-etape');
+      const ctx = this.contexte();
+      if (!id || !ctx || !ctx.module || !ctx.section) return;
+      this.setState(s => ({ prog: ctx.OAD.basculerEtape(this.progression(s), ctx.module.id, ctx.section.id, id) }));
+    };
+    this.basculerTache = (e) => {
+      const id = attributDe(e, 'data-tache');
+      const ctx = this.contexte();
+      if (!id || !ctx || !ctx.module || !ctx.section) return;
+      this.setState(s => ({ prog: ctx.OAD.basculerTache(this.progression(s), ctx.module.id, ctx.section.id, id) }));
+    };
+    this.effacerProgression = () => {
+      if (!window.OAD) return;
+      if (typeof window.confirm === 'function' &&
+        !window.confirm('Effacer toute la progression enregistrée sur cet appareil ?')) return;
+      effacerProgressionStockee();
+      this.__dernierProg = null;
+      this.setState({ prog: window.OAD.progressionVide(), quizRep: {}, quizScore: {}, casChoix: {} });
+    };
+
+    this.basculerTheme = () => {
+      this.setState(s => {
+        const t = THEMES[(THEMES.indexOf(s.theme) + 1) % THEMES.length];
+        ecrireTheme(t);
+        return { theme: t };
+      });
+    };
+    this.imprimer = () => { try { window.print(); } catch (e) { /* impression indisponible */ } };
+  }
+
+  componentDidMount() {
+    window.addEventListener('hashchange', this.onHash);
+    this.appliquerTheme();
+    if (this.state.pret) this.apresRendu();
+    else this.attendreMoteur();
+  }
+  componentDidUpdate() {
+    this.appliquerTheme();
+    this.apresRendu();
+  }
+  componentWillUnmount() {
+    window.removeEventListener('hashchange', this.onHash);
+    if (this.__minuteur) clearTimeout(this.__minuteur);
+  }
+
+  // Thème : attribut sur <html>, que rien dans <x-dc> n'atteint.
+  appliquerTheme() {
+    try {
+      const el = document.documentElement;
+      if (this.state.theme === 'clair') el.setAttribute('data-theme', 'light');
+      else if (this.state.theme === 'sombre') el.setAttribute('data-theme', 'dark');
+      else el.removeAttribute('data-theme');
+    } catch (e) { /* hors navigateur */ }
+  }
+
+  /* Effets après rendu (jamais dans renderVals) : section marquée vue quand
+     la route change (D-A3-6), progression écrite quand elle change. */
+  apresRendu() {
+    if (!window.OAD || !this.state.pret) return;
+    const ctx = this.contexte();
+    const cle = JSON.stringify(ctx.route);
+    if (cle !== this.__derniereRoute) {
+      this.__derniereRoute = cle;
+      try { window.scrollTo(0, 0); } catch (e) { /* hors navigateur */ }
+      if (ctx.module && ctx.section) {
+        const p = this.progression(this.state);
+        const n = ctx.OAD.marquerVue(p, ctx.module.id, ctx.section.id);
+        if (n !== p) { this.setState({ prog: n }); return; }
+      }
+    }
+    if (this.state.prog) {
+      const inst = JSON.stringify(this.state.prog);
+      if (inst !== this.__dernierProg) {
+        this.__dernierProg = inst;
+        ecrireProgression(this.state.prog);
+      }
+    }
+  }
+
+  progression(s) { return (s && s.prog) || window.OAD.progressionVide(); }
+
+  // Modules ordonnés, route, module et section effectifs.
+  contexte() {
+    const OAD = window.OAD;
+    if (!OAD) return null;
+    const modules = OAD.ordonnerModules(OAD.modules(), this.state.ordre);
+    const route = this.state.route || OAD.lireRoute('');
+    let module = null, section = null;
+    if (route.vue === 'module') {
+      module = OAD.trouverModule(modules, route.moduleId);
+      if (module) {
+        section = (route.sectionId && OAD.trouverSection(modules, module.id, route.sectionId)) ||
+          (module.sections && module.sections[0]) || null;
+      }
+    }
+    return { OAD, modules, route, module, section };
+  }
+  sectionCourante() { const c = this.contexte(); return c ? c.section : null; }
+
+  // Toutes les clés lues par le gabarit, à leur valeur neutre.
+  valeursVides() {
+    const t = this.state.theme;
+    return {
+      enChargement: true, echecChargement: false,
+      lienCatalogue: '#/', lienOutils: '#/outils', lienProgression: '#/progression',
+      navCatalogue: null, navOutils: null, navProgression: null,
+      themeLibelle: 'Thème : ' + THEMES_LIBELLES[t],
+      themeAria: 'Changer de thème (actuel : ' + THEMES_LIBELLES[t] + ')',
+      aErreurs: false, erreursListe: [],
+      estCatalogue: false, estModule: false, estOutils: false, estProgression: false, estInconnu: false,
+      aGrille: false,
+      domainesCatalogue: [],
+      mod: {}, sommaire: [], section: {},
+      estFiche: false, estProcedure: false, estEntretien: false, estCalculateur: false, estQuiz: false, estCas: false,
+      blocs: [], procedure: { etapes: [] }, entretien: { groupes: [] },
+      quiz: { questions: [] }, cas: { options: [] },
+      aPrec: false, aSuiv: false, prec: {}, suiv: {},
+      outilsListe: [], outilsTitre: '', outilsMessage: '',
+      aCalc: false, calcCourant: { entrees: [], etapes: [], resultats: [], alertes: [] },
+      progResume: '', tableauProgression: null,
+      basculerTheme: this.basculerTheme, onSaisie: this.onSaisie, reinitialiserCalc: this.reinitialiserCalc,
+      onChoix: this.onChoix, validerQuiz: this.validerQuiz, recommencerQuiz: this.recommencerQuiz,
+      choisirCas: this.choisirCas, basculerEtape: this.basculerEtape, basculerTache: this.basculerTache,
+      effacerProgression: this.effacerProgression, imprimer: this.imprimer
+    };
+  }
+
+  renderVals() {
+    const out = this.valeursVides();
+    if (!window.OAD || !this.state.pret) {
+      out.enChargement = !this.state.echec;
+      out.echecChargement = !!this.state.echec;
+      return out;
+    }
+    const ctx = this.contexte();
+    const OAD = ctx.OAD;
+    const prog = this.progression(this.state);
+    const vue = ctx.route.vue;
+
+    out.enChargement = false;
+    out.lienCatalogue = OAD.lien();
+    out.lienOutils = OAD.lien('outils');
+    out.lienProgression = OAD.lien('progression');
+    out.navCatalogue = vue === 'catalogue' ? 'page' : (vue === 'module' ? 'true' : null);
+    out.navOutils = vue === 'outils' ? 'page' : null;
+    out.navProgression = vue === 'progression' ? 'page' : null;
+
+    const erreurs = OAD.erreursContenu(ctx.modules);
+    if (ctx.modules.length === 0) erreurs.push('aucun module chargé');
+    out.aErreurs = erreurs.length > 0;
+    out.erreursListe = erreurs;
+
+    if (vue === 'module') Object.assign(out, this.valsModule(ctx, prog));
+    else if (vue === 'outils') Object.assign(out, this.valsOutils(ctx));
+    else if (vue === 'progression') Object.assign(out, this.valsProgression(ctx, prog));
+    else Object.assign(out, this.valsCatalogue(ctx, prog));
+    return out;
+  }
+
+  carte(OAD, m, prog) {
+    const a = OAD.avancement(prog, m);
+    const pct = Math.round(a.taux * 100);
+    return {
+      titre: m.titre, resume: m.resume, lien: OAD.lien('module', m.id),
+      statutLibelle: OAD.STATUTS_LIBELLES[m.statut] || m.statut,
+      statutClasse: 'badge badge-' + m.statut,
+      dureeTxt: m.dureeMin ? 'Environ ' + fmtNombre(m.dureeMin, 0) + ESPACE + 'min' : '',
+      etatLibelle: OAD.ETATS_MODULE_LIBELLES[OAD.etatModule(prog, m)],
+      avancementTxt: a.vues + ' / ' + a.total + ' sections',
+      pct, jaugeLabel: 'Sections consultées : ' + a.vues + ' sur ' + a.total
+    };
+  }
+
+  valsCatalogue(ctx, prog) {
+    const OAD = ctx.OAD;
+    return {
+      estCatalogue: true,
+      domainesCatalogue: OAD.DOMAINES.map(d => ({
+        titreId: 'domaine-' + d,
+        libelle: OAD.DOMAINES_LIBELLES[d],
+        modules: OAD.listerModules(ctx.modules, { domaine: d }).map(m => this.carte(OAD, m, prog))
+      })).filter(g => g.modules.length > 0)
+    };
+  }
+
+  valsModule(ctx, prog) {
+    const OAD = ctx.OAD, m = ctx.module, sec = ctx.section;
+    if (!m || !sec) return { estInconnu: true };
+    const carte = this.carte(OAD, m, prog);
+    const ps = OAD.progressionSection(prog, m.id, sec.id);
+    const i = m.sections.indexOf(sec), n = m.sections.length;
+    const voisin = s => s ? { lien: OAD.lien('module', m.id, s.id), titre: s.titre } : {};
+    const out = {
+      estModule: true, aGrille: true,
+      mod: {
+        titre: m.titre, domaineLibelle: OAD.DOMAINES_LIBELLES[m.domaine] || m.domaine,
+        statutLibelle: carte.statutLibelle, statutClasse: carte.statutClasse,
+        public: m.public || '', dureeTxt: carte.dureeTxt,
+        nonValide: m.statut !== 'valide',
+        sourcesTxt: (m.sources && m.sources.length)
+          ? 'Sources : ' + m.sources.map(s => s.reference + ' (' + s.date + ')').join(' ; ') + '.'
+          : 'Aucune source renseignée.',
+        avancementTxt: carte.avancementTxt + ' consultées',
+        pct: carte.pct, jaugeLabel: carte.jaugeLabel
+      },
+      sommaire: m.sections.map(s => ({
+        titre: s.titre, lien: OAD.lien('module', m.id, s.id),
+        typeLibelle: OAD.TYPES_SECTION_LIBELLES[s.type] || s.type,
+        courant: s.id === sec.id ? 'page' : null,
+        vu: OAD.progressionSection(prog, m.id, s.id).vue
+      })),
+      section: {
+        titre: sec.titre, typeLibelle: OAD.TYPES_SECTION_LIBELLES[sec.type] || sec.type,
+        position: 'section ' + (i + 1) + ' sur ' + n,
+        intro: sec.intro || '', aIntro: !!sec.intro
+      },
+      estFiche: sec.type === 'fiche', estProcedure: sec.type === 'procedure',
+      estEntretien: sec.type === 'entretien', estCalculateur: sec.type === 'calculateur',
+      estQuiz: sec.type === 'quiz', estCas: sec.type === 'cas',
+      aPrec: i > 0, aSuiv: i < n - 1,
+      prec: voisin(m.sections[i - 1]), suiv: voisin(m.sections[i + 1])
+    };
+
+    if (sec.type === 'fiche') {
+      out.blocs = sec.blocs.map(b => ({
+        texte: b.texte || '', items: b.items || [],
+        estParagraphe: b.type === 'paragraphe', estListe: b.type === 'liste',
+        estAlerte: b.type === 'alerte', estFormule: b.type === 'formule'
+      }));
+    } else if (sec.type === 'procedure') {
+      const faits = ps.etapes;
+      const nb = sec.etapes.filter(e => faits.includes(e.id)).length;
+      out.procedure = {
+        compteur: nb + ' / ' + sec.etapes.length + ' étapes cochées',
+        etapes: sec.etapes.map((e, k) => ({
+          id: e.id, num: k + 1, texte: e.texte, detail: e.detail || '', aDetail: !!e.detail,
+          inputId: 'etape-' + sec.id + '-' + e.id,
+          fait: faits.includes(e.id), classe: faits.includes(e.id) ? 'fait' : ''
+        }))
+      };
+    } else if (sec.type === 'entretien') {
+      const faits = ps.taches;
+      const nb = sec.taches.filter(t => faits.includes(t.id)).length;
+      out.entretien = {
+        compteur: nb + ' / ' + sec.taches.length + ' tâches cochées',
+        groupes: OAD.PERIODICITES.map(p => ({
+          libelle: OAD.PERIODICITES_LIBELLES[p],
+          taches: sec.taches.filter(t => t.periodicite === p).map(t => ({
+            id: t.id, texte: t.texte, inputId: 'tache-' + sec.id + '-' + t.id,
+            fait: faits.includes(t.id), classe: faits.includes(t.id) ? 'fait' : ''
+          }))
+        })).filter(g => g.taches.length > 0)
+      };
+    } else if (sec.type === 'calculateur') {
+      const c = this.valsCalc(OAD, sec.calculateur);
+      out.aCalc = !!c;
+      if (c) out.calcCourant = c;
+    } else if (sec.type === 'quiz') {
+      out.quiz = this.valsQuiz(sec, ps);
+    } else if (sec.type === 'cas') {
+      out.cas = this.valsCas(sec);
+    }
+    return out;
+  }
+
+  valsQuiz(sec, ps) {
+    const sid = sec.id;
+    const rep = this.state.quizRep[sid] || {};
+    const score = this.state.quizScore[sid] || null;
+    const corrige = !!score;
+    const details = score ? score.details : [];
+    const dernier = ps.quiz;
+    return {
+      sid, corrige, verrouille: corrige,
+      questions: sec.questions.map((q, i) => {
+        const choisis = rep[q.id] || [];
+        const d = details.find(x => x.qid === q.id);
+        const juste = !!(d && d.juste);
+        return {
+          num: i + 1, enonce: q.enonce, multiple: q.bonnes.length > 1,
+          choix: q.choix.map((c, k) => {
+            const pris = choisis.includes(k), bonne = q.bonnes.includes(k);
+            let classe = 'choix-bouton' + (pris ? ' pris' : '');
+            if (corrige && bonne) classe += ' bonne';
+            if (corrige && pris && !bonne) classe += ' fausse';
+            return { texte: c, valeur: sid + '|' + q.id + '|' + k, presse: pris ? 'true' : 'false', classe };
+          }),
+          correction: (juste ? 'Juste. ' : 'À revoir. ') + (q.explication || ''),
+          correctionClasse: 'correction ' + (juste ? 'juste' : 'fausse')
+        };
+      }),
+      scoreTxt: corrige
+        ? 'Score : ' + score.bonnes + ' / ' + score.total + ' (' + pourcent(score.taux) + ')'
+        : '',
+      aDernier: !!dernier && !corrige,
+      dernierTxt: dernier
+        ? 'Dernier résultat enregistré : ' + (dernier.bonnes === null ? '' : dernier.bonnes + ' / ' + dernier.total + ', ') +
+          pourcent(dernier.taux) + (dernier.date ? ', le ' + dateFr(dernier.date) : '') + '.'
+        : ''
+    };
+  }
+
+  valsCas(sec) {
+    const sid = sec.id;
+    const choix = this.state.casChoix[sid];
+    const opt = Number.isInteger(choix) ? sec.options[choix] : null;
+    return {
+      situation: sec.situation,
+      options: sec.options.map((o, k) => {
+        const pris = k === choix;
+        return {
+          texte: o.texte, valeur: sid + '|' + k, presse: pris ? 'true' : 'false',
+          classe: 'choix-bouton' + (pris ? ' pris' + (o.correct ? ' bonne' : ' fausse') : '')
+        };
+      }),
+      aRetour: !!opt,
+      verdict: opt ? (opt.correct ? 'Bonne réponse.' : 'Pas tout à fait.') : '',
+      retour: opt ? opt.retour : '',
+      retourClasse: 'retour ' + (opt && opt.correct ? 'juste' : 'fausse')
+    };
+  }
+
+  // Fragment calculateur : entrées, résultats, formules ouvertes, tout formaté.
+  valsCalc(OAD, calcId) {
+    const C = OAD.CALCULATEURS[calcId];
+    if (!C) return null;
+    const saisie = this.state.saisies[calcId] || {};
+    const textes = {}, nombres = {};
+    C.entrees.forEach(en => {
+      const t = saisie[en.id] !== undefined ? saisie[en.id] : texteSaisie(en.defaut);
+      textes[en.id] = t;
+      nombres[en.id] = versNombre(t);
+    });
+    const r = C.compute(nombres);   // tout calcul vient du moteur
+    return {
+      id: C.id, titre: C.titre, description: C.description,
+      entrees: C.entrees.map(en => ({
+        id: en.id, calc: C.id, label: en.label,
+        inputId: 'calc-' + C.id + '-' + en.id, origineId: 'origine-' + C.id + '-' + en.id,
+        uniteTxt: en.unite ? '(' + en.unite + ')' : '',
+        valeur: textes[en.id],
+        defautTxt: avecUnite(fmtNombre(en.defaut, 3), en.unite),
+        origine: en.origineDefaut
+      })),
+      etapes: r.etapes.map(et => ({
+        titre: et.titre, formule: et.formule,
+        substitution: OAD.substituer(et.gabarit, et.operandes.map(o => fmtNombre(o.valeur, o.decimales))),
+        resultat: avecUnite(fmtNombre(et.resultat.valeur, et.resultat.decimales), et.resultat.unite)
+      })),
+      resultats: r.resultats.map(x => ({ label: x.label, texte: avecUnite(fmtNombre(x.valeur, x.decimales), x.unite) })),
+      alertes: r.alertes, aAlertes: r.alertes.length > 0
+    };
+  }
+
+  valsOutils(ctx) {
+    const OAD = ctx.OAD, id = ctx.route.calcId;
+    const calcs = Object.keys(OAD.CALCULATEURS).map(k => OAD.CALCULATEURS[k]);
+    const c = id ? this.valsCalc(OAD, id) : null;
+    return {
+      estOutils: true, aGrille: true,
+      outilsListe: calcs.map(x => ({ titre: x.titre, lien: OAD.lien('outils', x.id), courant: x.id === id ? 'page' : null })),
+      aCalc: !!c,
+      calcCourant: c || this.valeursVides().calcCourant,
+      outilsTitre: c ? c.titre : (id ? 'Calculateur introuvable' : 'Choisir un calculateur'),
+      outilsMessage: c ? '' : (id ? 'Ce lien ne correspond à aucun calculateur. Choisissez-en un dans la liste.'
+        : 'Choisissez un calculateur dans la liste.')
+    };
+  }
+
+  valsProgression(ctx, prog) {
+    const OAD = ctx.OAD;
+    const termines = ctx.modules.filter(m => OAD.etatModule(prog, m) === 'termine').length;
+    return {
+      estProgression: true,
+      progResume: termines + ' module' + (termines > 1 ? 's' : '') + ' terminé' + (termines > 1 ? 's' : '') +
+        ' sur ' + ctx.modules.length + '.',
+      tableauProgression: this.tableauProgression(ctx, prog)
+    };
+  }
+
+  /* Tableau construit par React.createElement : aucune directive sc-for /
+     sc-if dans <table> (le parseur HTML les éjecte en file://, D-A3-3). */
+  tableauProgression(ctx, prog) {
+    const e = React.createElement, OAD = ctx.OAD;
+    const lignes = ctx.modules.map(m => {
+      const a = OAD.avancement(prog, m);
+      const quiz = m.sections.filter(s => s.type === 'quiz').map(s => {
+        const q = OAD.progressionSection(prog, m.id, s.id).quiz;
+        if (!q) return s.titre + ' : non fait';
+        return s.titre + ' : ' + (q.bonnes === null ? '' : q.bonnes + ' / ' + q.total + ', ') + pourcent(q.taux) +
+          (q.date ? ', le ' + dateFr(q.date) : '');
+      });
+      return e('tr', { key: m.id },
+        e('th', { scope: 'row' }, e('a', { href: OAD.lien('module', m.id) }, m.titre)),
+        e('td', null, a.vues + ' / ' + a.total),
+        e('td', null, quiz.length ? quiz.map((t, i) => e('div', { key: i }, t)) : '—'),
+        e('td', null, OAD.ETATS_MODULE_LIBELLES[OAD.etatModule(prog, m)]));
+    });
+    return e('table', { className: 'tableau' },
+      e('caption', null, 'Avancement par module'),
+      e('thead', null, e('tr', null,
+        ['Module', 'Sections consultées', 'Quiz', 'État'].map(t => e('th', { key: t, scope: 'col' }, t)))),
+      e('tbody', null, lignes));
+  }
+}
+</script>
+</body>
+</html>
