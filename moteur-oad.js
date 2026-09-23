@@ -22,10 +22,12 @@ if (typeof window === "undefined" || !window.OAD) {
 
 // `transversal` : modules de référence (glossaire), hors catalogue, hors
 // avancement et hors états (D-B10-1, D-B10-4).
-const DOMAINES = ['pulverisation', 'travail-du-sol', 'transversal'];
+// `effeuillage` : méthode de calage, sans valeur de réglage (D-B11, arbitrage A3).
+const DOMAINES = ['pulverisation', 'travail-du-sol', 'effeuillage', 'transversal'];
 const DOMAINES_LIBELLES = {
   pulverisation: 'Pulvérisation',
   'travail-du-sol': 'Travail du sol',
+  effeuillage: 'Effeuillage',
   transversal: 'Glossaire'
 };
 

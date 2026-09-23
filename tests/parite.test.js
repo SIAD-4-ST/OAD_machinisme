@@ -200,11 +200,11 @@ test('chaque clé de DOMAINES, PERIODICITES, STATUTS et TYPES_SECTION a un libel
   OAD.ETATS_MODULE.forEach(k => assert.ok(OAD.ETATS_MODULE_LIBELLES[k], k));
 });
 // Pourquoi : trois modules ajoutés après pulve-entretien, B9 ; glossaire en
-// dernier, B10.
+// dernier, B10 ; effeuillage avant le glossaire, B11.
 test('modules() suit l\'ordre de contenu/index.js', () => {
   assert.deepStrictEqual(MODULES.map(m => m.id),
     ['pulve-reglage-volume', 'pulve-entretien', 'pulve-filtration', 'pulve-remise-en-route',
-      'pulve-couverture', 'sol-outil-interceps', 'glossaire']);
+      'pulve-couverture', 'sol-outil-interceps', 'effeuillage-calage', 'glossaire']);
 });
 test('navigateur : modules() lit window.OAD_CONTENU à l\'appel et dédoublonne par id', () => {
   const src = fs.readFileSync(path.join(RACINE, 'moteur-oad.js'), 'utf8');
@@ -489,7 +489,8 @@ test('chaque route (' + ROUTES.length + ') rend sans exception, toutes les clés
 test('routes : bon écran affiché', () => {
   const c = new Component({});
   assert.strictEqual(rendre(c, '').estCatalogue, true);
-  assert.strictEqual(rendre(c, '').domainesCatalogue.length, 2);
+  // Pourquoi : domaine effeuillage ajouté au catalogue, B11 (était 2).
+  assert.strictEqual(rendre(c, '').domainesCatalogue.length, 3);
   assert.strictEqual(rendre(c, '#/module/inconnu').estInconnu, true);
   const o = rendre(c, '#/module/pulve-reglage-volume');
   assert.strictEqual(o.estModule, true);
@@ -1258,6 +1259,33 @@ test('progression : le glossaire n\'entre pas dans le tableau', () => {
   const titres = lignes.map(l => l.c[0].c[0].c[0]);
   assert.ok(!titres.includes('Glossaire'), titres.join(', '));
   assert.strictEqual(lignes.length, MODULES.filter(m => !OAD.estModuleReference(m)).length);
+});
+
+// ----------------------------------------------------------------------
+section('§18 B11 — effeuillage');
+
+const EFFEUILLAGE = MODULES.find(m => m.id === 'effeuillage-calage');
+test('module effeuillage conforme, brouillon, aucun élément chiffré sans source', () => {
+  assert.deepStrictEqual(OAD.validerModule(EFFEUILLAGE), []);
+  assert.deepStrictEqual(OAD.elementsChiffresSansSource(EFFEUILLAGE).map(x => x.sectionId), []);
+  assert.strictEqual(EFFEUILLAGE.statut, 'brouillon');
+  assert.deepStrictEqual(EFFEUILLAGE.sources.map(s => s.code), ['F-EPN', 'F-ERO', 'D-EF17']);
+});
+test('statique : ni « bar », ni « tr/min », ni « km/h », ni « h/ha » (aucune valeur de réglage, D-B11-2)', () => {
+  const t = textesModule(EFFEUILLAGE) + '\n' + EFFEUILLAGE.resume + '\n' + EFFEUILLAGE.titre;
+  [/\bbar\b/, /tr\/min/, /km\/h/, /h\/ha/].forEach(re => assert.ok(!re.test(t), String(re)));
+});
+test('catalogue : groupe « Effeuillage » avec 1 module, entre travail du sol et la fin', () => {
+  const out = rendre(new Component({}), '#/');
+  const g = out.domainesCatalogue.find(x => x.libelle === 'Effeuillage');
+  assert.ok(g);
+  assert.strictEqual(g.modules.length, 1);
+  assert.strictEqual(out.domainesCatalogue.map(x => x.libelle).indexOf('Effeuillage'), 2);
+});
+test('rendu à blanc de chaque section du module effeuillage', () => {
+  const c = new Component({});
+  EFFEUILLAGE.sections.forEach(s => rendre(c, '#/module/effeuillage-calage/' + s.id));
+  assert.strictEqual(rendre(c, '#/module/effeuillage-calage/principes').blocs[0].estTableau, true);
 });
 
 console.log(`\n${passed} ok, ${failed} FAIL, ${skipped} skip`);

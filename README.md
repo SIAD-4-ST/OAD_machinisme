@@ -76,7 +76,8 @@ module : sections consultées, quiz, quiz réussis, état ; effacement).
 **Catalogue.** Pulvérisation : régler le volume par hectare ; entretenir le
 pulvérisateur ; comprendre la filtration ; remettre le pulvérisateur en
 route ; contrôler la couverture. Travail du sol : régler et entretenir un
-outil interceps. Tous en `brouillon`.
+outil interceps. Effeuillage : caler une effeuilleuse. Plus le glossaire,
+atteint par la navigation. Tous en `brouillon`.
 
 **Progression.** L'état d'un module est calculé, jamais stocké : *Non
 commencé*, *En cours*, *Consulté* (toutes les sections ouvertes), *Maîtrisé*
@@ -626,3 +627,22 @@ Point à vérifier : la définition de « jets projetés » (sans assistance
 d'air, pendillards) s'appuie sur l'opposition « sans air / avec air » de la
 synthèse (§7.1) ; code A-LVC retenu. Date de D-ENQ : « 2013 » (enquête), la
 synthèse ne donne pas la date du diaporama.
+
+### B11 — domaine effeuillage : module de calage (23/09/2026, porte G1)
+
+- **D-B11-1** : contenu admis : tableau qualitatif pneumatique / rouleaux
+  (principe, stade, défaut type), stade, procédure de calage (réglage → essai
+  sur petite longueur → observation → correction), cible et compromis.
+- **D-B11-2** : exclus : pressions, vitesses, régimes, hauteurs, temps de
+  chantier (retours d'expérience 2016, divergents entre sources) et
+  efficacités chiffrées de l'enquête 2015 — testé (ni « bar », « tr/min »,
+  « km/h », « h/ha »).
+- **D-B11-3** : technologie `toutes` (le vocabulaire `TECHNOLOGIES` concerne
+  la pulvérisation).
+- **D-B11-4** : sources F-EPN, F-ERO, D-EF17.
+
+Domaine `effeuillage` ajouté au moteur ; module déclaré après les modules de
+travail du sol, avant le glossaire ; catalogue : groupe « Effeuillage ».
+Le tableau qualitatif, qui combine F-EPN, F-ERO et D-EF17 dans la synthèse,
+porte le code D-EF17 (diaporama des deux familles de machines). Dates de F-EPN
+et F-ERO : « sans date (retours d'expérience 2016) », comme la synthèse.
