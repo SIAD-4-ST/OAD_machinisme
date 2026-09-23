@@ -52,7 +52,9 @@ identifiants ; `OAD.lireRoute(hash)` et `OAD.lien(...segments)` sont purs.
 (étapes à cocher, imprimable), `entretien` (tâches à cocher groupées par
 périodicité, imprimable), `calculateur` (renvoie à un calculateur du moteur),
 `quiz` (choix simples ou multiples, notation exacte), `cas` (situation et
-options commentées).
+options commentées), `exercice` (calcul chiffré : réponse attendue calculée
+par `attenduExercice`, corrigée par `corrigerExercice`, enregistrée comme un
+quiz d'une question par `validerQuiz`, seul point de lecture de l'horloge).
 
 Champs transverses (B4) : `technologie` sur une section (vocabulaire
 `TECHNOLOGIES`), `technologies` sur un calculateur ; `code` sur chaque source

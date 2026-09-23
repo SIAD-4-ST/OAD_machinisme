@@ -261,6 +261,9 @@ puis message d'échec) ; préférence de thème stockée à part.
   prompt A2, non vérifiée lors de la création.
 - ~~Les textes `origineDefaut` affichés contiennent « (O4) »~~ — clos par B1
   (D-B1-5), testé.
+- ~~Contenu non relié au moteur (fragilité F5 de l'audit)~~ — clos par B5 :
+  section `exercice` corrigée par le moteur ; nombres des cas pratiques
+  vérifiés par `CAS_CHIFFRES` (garde statique contre les ajouts).
 - Charte graphique éventuelle du Comité Champagne.
 - Recette sur la tablette cible (section 7).
 
@@ -410,3 +413,23 @@ section compte comme élément de la section (sa source est celle de la
 section) — plus strict que la liste du prompt, pour qu'aucun chiffre visible
 n'échappe à D-B4-3. Garde du registre : `technologies` de chaque
 calculateur dans le vocabulaire (testé).
+
+### B5 — section « exercice » corrigée par le moteur (23/09/2026)
+
+- **D-B5-1** : section `exercice` : `enonce`, `calculateur`, `valeurs`,
+  `resultat`, `source?` ; l'attendu est calculé par le moteur
+  (`attenduExercice`).
+- **D-B5-2** : juste si réponse et attendu sont égaux une fois arrondis au
+  nombre de décimales du résultat (`corrigerExercice`, ne lève jamais).
+- **D-B5-3** : un exercice est enregistré comme un quiz d'une question
+  (taux 1 ou 0), via `enregistrerQuiz`.
+- **D-B5-4** : après correction, formule ouverte avec les valeurs (étapes
+  formatées par la même méthode que les calculateurs, `etapesFormatees`).
+- **D-B5-5** : les cas pratiques restent à choix ; `CAS_CHIFFRES` (tests)
+  recalcule chaque nombre (129 et le distracteur 175 de `cas-vitesse`).
+
+Choix de mise en œuvre : `verifierExo` délègue à `validerQuiz`, qui corrige
+quiz et exercices ; ainsi l'horloge reste lue une seule fois, dans
+`validerQuiz` (contrainte du `CLAUDE.md`, test statique inchangé). Unicité
+des ids de quiz, cas et exercices vérifiée aussi par `erreursContenu`
+(bandeau « Contenu à corriger »), plus seulement par un test.

@@ -133,10 +133,13 @@ test('chaque fichier contenu/<id>.js porte le module de même id', () => {
     assert.strictEqual(require(path.join(RACINE, 'contenu', m.id + '.js')).id, m.id);
   });
 });
-test('les 6 types de section sont utilisés par le contenu', () => {
+// Pourquoi : type « exercice » ajouté en B5, utilisé par le contenu à partir
+// de B7 — d'ici là, les 6 types d'origine sont utilisés et aucun inconnu.
+test('les types de section d\'origine sont utilisés par le contenu, aucun type inconnu', () => {
   const types = new Set();
   MODULES.forEach(m => m.sections.forEach(s => types.add(s.type)));
-  assert.deepStrictEqual([...types].sort(), OAD.TYPES_SECTION.slice().sort());
+  ['fiche', 'procedure', 'entretien', 'calculateur', 'quiz', 'cas'].forEach(t => assert.ok(types.has(t), t));
+  [...types].forEach(t => assert.ok(OAD.TYPES_SECTION.includes(t), t));
 });
 test('validerModule détecte les défauts d\'un module fabriqué', () => {
   const faux = {
@@ -161,9 +164,10 @@ test('erreursContenu signale un module en double', () => {
   const e = OAD.erreursContenu([MODULES[0], MODULES[0]]);
   assert.ok(e.some(x => x.includes('module en double')));
 });
-test('identifiants de section quiz et cas uniques sur tout le catalogue (clés d\'état de l\'écran)', () => {
+// B5 : les exercices s'ajoutent aux quiz et cas (clés d'état de l'écran).
+test('identifiants de section quiz, cas et exercice uniques sur tout le catalogue (clés d\'état de l\'écran)', () => {
   const ids = [];
-  MODULES.forEach(m => m.sections.filter(s => s.type === 'quiz' || s.type === 'cas').forEach(s => ids.push(s.id)));
+  MODULES.forEach(m => m.sections.filter(s => OAD.TYPES_SECTION_EVALUES.includes(s.type)).forEach(s => ids.push(s.id)));
   assert.strictEqual(new Set(ids).size, ids.length);
 });
 
@@ -891,6 +895,96 @@ test('bandeau : nombre d\'éléments chiffrés sans source d\'un module non vali
 test('rendu à blanc #/outils/pressionPourVolume : « S\'applique à : Jets portés, Jets projetés »', () => {
   const out = rendre(new Component({}), '#/outils/pressionPourVolume');
   assert.strictEqual(out.calcCourant.technosTxt, 'S\'applique à : Jets portés, Jets projetés');
+});
+
+// ----------------------------------------------------------------------
+section('§12 B5 — exercices');
+
+const exoVitesse = { id: 'exo-test-vitesse', type: 'exercice', titre: 'Vitesse', enonce: '50 m en 35 s : quelle vitesse ?',
+  calculateur: 'vitesseMesuree', valeurs: { d: 50, t: 35 }, resultat: 0 };
+const exoVolume = { id: 'exo-test-volume', type: 'exercice', titre: 'Volume', enonce: '9,6 L/min, 5 km/h, 7,7 m : quel volume ?',
+  calculateur: 'volHa', valeurs: { Q: 9.6, v: 5, L: 7.7 }, resultat: 0 };
+
+test('exercice vitesseMesuree {d: 50, t: 35} : attendu 5,142857 à 1 décimale ; 5,1 juste, 5,2 faux, « » faux', () => {
+  const a = OAD.attenduExercice(exoVitesse);
+  assertClose(a.valeur, 5.142857, 1e-6);
+  assert.strictEqual(a.decimales, 1);
+  assert.strictEqual(OAD.corrigerExercice(exoVitesse, 5.1).juste, true);
+  assert.strictEqual(OAD.corrigerExercice(exoVitesse, 5.2).juste, false);
+  assert.doesNotThrow(() => OAD.corrigerExercice(exoVitesse, ''));
+  assert.strictEqual(OAD.corrigerExercice(exoVitesse, '').juste, false);
+  assert.strictEqual(OAD.corrigerExercice(exoVitesse, NaN).juste, false);
+  assert.doesNotThrow(() => OAD.corrigerExercice(null, 1));
+});
+test('exercice volHa {Q: 9,6, v: 5, L: 7,7} : attendu 149,61 à 0 décimale ; 150 juste, 149 faux', () => {
+  assertClose(OAD.attenduExercice(exoVolume).valeur, 149.61, 1e-2);
+  assert.strictEqual(OAD.corrigerExercice(exoVolume, 150).juste, true);
+  assert.strictEqual(OAD.corrigerExercice(exoVolume, 149).juste, false);
+});
+test('validerModule : calculateur inconnu, valeurs incomplètes, indice 3 sur 1 résultat → une erreur chacun', () => {
+  const e1 = OAD.validerModule(moduleFabrique([Object.assign({}, exoVitesse, { calculateur: 'inconnu' })]));
+  assert.strictEqual(e1.filter(x => x.includes('calculateur inconnu')).length, 1);
+  const e2 = OAD.validerModule(moduleFabrique([Object.assign({}, exoVitesse, { valeurs: { d: 50 } })]));
+  assert.strictEqual(e2.filter(x => x.includes('valeurs manquantes (t)')).length, 1);
+  const e3 = OAD.validerModule(moduleFabrique([Object.assign({}, exoVitesse, { resultat: 3 })]));
+  assert.strictEqual(e3.filter(x => x.includes('indice de résultat invalide')).length, 1);
+  assert.deepStrictEqual(OAD.validerModule(moduleFabrique([exoVitesse])), []);
+});
+test('catalogue : deux exercices de même id dans deux modules → erreur', () => {
+  const a = moduleFabrique([exoVitesse]), b = Object.assign(moduleFabrique([exoVitesse]), { id: 'autre' });
+  assert.ok(OAD.erreursContenu([a, b]).some(x => x.includes('en double sur le catalogue')));
+});
+
+/* Nombres écrits en dur dans les cas pratiques, recalculés par le moteur
+   (D-B5-5) : un changement de formule qui les contredit est détecté. */
+const CAS_CHIFFRES = [
+  // 150 L/ha à 6 km/h, passage à 7 km/h : 150 × 6 / 7 = 128,57 ≈ 129.
+  { sectionId: 'cas-vitesse', nombre: 129, calcul: () => Math.round(OAD.volumeApresChangementVitesse(150, 6, 7)) },
+  // Distracteur : l'erreur de sens (150 × 7 / 6 = 175).
+  { sectionId: 'cas-vitesse', nombre: 175, calcul: () => Math.round(OAD.volumeApresChangementVitesse(150, 7, 6)) }
+];
+const sectionsCas = () => [].concat(...MODULES.map(m => m.sections.filter(s => s.type === 'cas')));
+test('CAS_CHIFFRES : chaque nombre figure dans les options de son cas et vaut le calcul du moteur', () => {
+  CAS_CHIFFRES.forEach(x => {
+    const s = sectionsCas().find(c => c.id === x.sectionId);
+    assert.ok(s, x.sectionId);
+    const texte = s.options.map(o => o.texte + ' ' + o.retour).join(' ');
+    assert.ok(new RegExp('\\b' + x.nombre + '\\b').test(texte), x.sectionId + ' : ' + x.nombre + ' absent');
+    assert.strictEqual(x.calcul(), x.nombre, x.sectionId + ' : ' + x.nombre);
+  });
+});
+test('statique : tout cas dont les options contiennent un nombre de plus d\'un chiffre a une entrée CAS_CHIFFRES', () => {
+  sectionsCas().forEach(s => {
+    const nombres = s.options.map(o => o.texte).join(' ').match(/\d{2,}/g) || [];
+    if (nombres.length) assert.ok(CAS_CHIFFRES.some(x => x.sectionId === s.id), s.id + ' : ' + nombres.join(', '));
+  });
+});
+test('rendu à blanc : exercice saisi puis vérifié → progression écrite avec taux 1 et une date', () => {
+  avecModules([moduleFabrique([exoVitesse])], () => {
+    const c = new Component({});
+    const h = '#/module/fabrique/exo-test-vitesse';
+    const o0 = rendre(c, h);
+    assert.strictEqual(o0.estExercice, true);
+    assert.strictEqual(o0.exo.uniteTxt, '(km/h)');
+    c.onReponseExo(evt('5,1', { 'data-exo': 'exo-test-vitesse' }));
+    c.verifierExo(evt('exo-test-vitesse'));
+    const out = rendre(c, h);
+    assert.strictEqual(out.exo.corrige, true);
+    assert.strictEqual(out.exo.verdict, 'Juste.');
+    assert.strictEqual(out.exo.attenduTxt, '5,1 km/h');
+    assert.strictEqual(out.exo.etapes[0].substitution, '3,6 × 50 / 35');
+    const q = OAD.progressionSection(c.state.prog, 'fabrique', 'exo-test-vitesse').quiz;
+    assert.strictEqual(q.taux, 1);
+    assert.ok(/^\d{4}-\d{2}-\d{2}T/.test(q.date));
+    c.recommencerExo(evt('exo-test-vitesse'));
+    const o2 = rendre(c, h);
+    assert.strictEqual(o2.exo.corrige, false);
+    assert.strictEqual(o2.exo.aDernier, true);
+    c.onReponseExo(evt('5,2', { 'data-exo': 'exo-test-vitesse' }));
+    c.verifierExo(evt('exo-test-vitesse'));
+    assert.strictEqual(rendre(c, h).exo.verdict, 'À revoir.');
+    assert.strictEqual(OAD.progressionSection(c.state.prog, 'fabrique', 'exo-test-vitesse').quiz.taux, 0);
+  });
 });
 
 console.log(`\n${passed} ok, ${failed} FAIL, ${skipped} skip`);

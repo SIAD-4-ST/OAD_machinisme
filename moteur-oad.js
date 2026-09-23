@@ -35,15 +35,18 @@ const STATUTS_LIBELLES = {
   valide: 'Validé'
 };
 
-const TYPES_SECTION = ['fiche', 'procedure', 'entretien', 'calculateur', 'quiz', 'cas'];
+const TYPES_SECTION = ['fiche', 'procedure', 'entretien', 'calculateur', 'quiz', 'cas', 'exercice'];
 const TYPES_SECTION_LIBELLES = {
   fiche: 'Fiche',
   procedure: 'Procédure',
   entretien: 'Entretien',
   calculateur: 'Calculateur',
   quiz: 'Quiz',
-  cas: 'Cas pratique'
+  cas: 'Cas pratique',
+  exercice: 'Exercice'
 };
+// Sections dont l'id est une clé d'état de l'écran : uniques sur tout le catalogue.
+const TYPES_SECTION_EVALUES = ['quiz', 'cas', 'exercice'];
 
 const TYPES_BLOC = ['paragraphe', 'liste', 'alerte', 'formule', 'tableau'];
 
@@ -647,6 +650,19 @@ function validerSection(s, i, err, codes) {
       else verifSource(o, ou + ' : option ' + (j + 1));
     });
     if (!s.options.some(o => o && o.correct === true)) err.push(ou + ' : aucune option correcte');
+  } else if (s.type === 'exercice') {
+    // D-B5-1 : la réponse attendue est calculée par un calculateur du moteur.
+    if (!estTexte(s.enonce)) err.push(ou + ' : énoncé manquant');
+    const C = Object.prototype.hasOwnProperty.call(CALCULATEURS, s.calculateur) ? CALCULATEURS[s.calculateur] : null;
+    if (!C) { err.push(ou + ' : calculateur inconnu « ' + s.calculateur + ' »'); return; }
+    const v = (s.valeurs && typeof s.valeurs === 'object') ? s.valeurs : {};
+    const manquantes = C.entrees.filter(en => !Object.prototype.hasOwnProperty.call(v, en.id)).map(en => en.id);
+    if (manquantes.length) err.push(ou + ' : valeurs manquantes (' + manquantes.join(', ') + ')');
+    else {
+      const n = C.compute(v).resultats.length;
+      if (!Number.isInteger(s.resultat) || s.resultat < 0 || s.resultat >= n)
+        err.push(ou + ' : indice de résultat invalide « ' + s.resultat + ' » (' + n + ' résultat' + (n > 1 ? 's' : '') + ')');
+    }
   }
 }
 
@@ -719,7 +735,7 @@ function validerModule(m) {
   return err;
 }
 
-/* --- 5. Quiz ------------------------------------------------------------
+/* --- 5. Quiz et exercices --------------------------------------------
    Une question est juste si l'ensemble des choix cochés égale exactement
    l'ensemble des bonnes réponses (ni oubli, ni choix en trop). */
 
@@ -738,6 +754,30 @@ function noterQuiz(section, reponses) {
   const details = qs.map(q => ({ qid: q.id, juste: noterQuestion(q, rep[q.id]) }));
   const bonnes = details.filter(d => d.juste).length;
   return { bonnes, total: qs.length, taux: qs.length ? bonnes / qs.length : 0, details };
+}
+
+/* Réponse attendue d'un exercice : résultat n° `resultat` du calculateur
+   appliqué aux `valeurs` de la section → { valeur, unite, decimales, etapes }
+   (valeur null si non calculable). Ne lève jamais. */
+function attenduExercice(section) {
+  const vide = { valeur: null, unite: '', decimales: 0, etapes: [] };
+  const C = section && Object.prototype.hasOwnProperty.call(CALCULATEURS, section.calculateur)
+    ? CALCULATEURS[section.calculateur] : null;
+  if (!C) return vide;
+  const r = C.compute((section.valeurs && typeof section.valeurs === 'object') ? section.valeurs : {});
+  const x = r.resultats[section.resultat];
+  if (!x) return vide;
+  return { valeur: x.valeur, unite: x.unite, decimales: x.decimales, etapes: r.etapes };
+}
+
+/* Correction (D-B5-2) : juste si la réponse, arrondie au nombre de
+   décimales du résultat, égale l'attendu arrondi de même. Aucune tolérance
+   arbitraire. Réponse non numérique ou non finie → faux. Ne lève jamais. */
+function arrondi(x, d) { const f = Math.pow(10, d); return Math.round(x * f); }
+function corrigerExercice(section, reponse) {
+  const attendu = attenduExercice(section);
+  const ok = typeof reponse === 'number' && Number.isFinite(reponse) && attendu.valeur !== null;
+  return { juste: ok && arrondi(reponse, attendu.decimales) === arrondi(attendu.valeur, attendu.decimales), attendu };
 }
 
 /* --- 6. Progression -------------------------------------------------
@@ -875,6 +915,12 @@ function erreursContenu(liste) {
     validerModule(m).forEach(e => err.push(nom + ' : ' + e));
   });
   doublons(mods.map(m => m && m.id)).forEach(d => err.push('module en double « ' + d + ' »'));
+  // Quiz, cas, exercices : l'id de section est une clé d'état de l'écran.
+  const evalues = [];
+  mods.forEach(m => (m && Array.isArray(m.sections) ? m.sections : []).forEach(s => {
+    if (s && TYPES_SECTION_EVALUES.includes(s.type)) evalues.push(s.id);
+  }));
+  doublons(evalues).forEach(d => err.push('section « ' + d + ' » en double sur le catalogue (quiz, cas ou exercice)'));
   return err;
 }
 
@@ -933,7 +979,8 @@ const OAD = {
   // calculateurs
   CALCULATEURS, erreursRegistre, substituer,
   // schéma, quiz, progression
-  validerModule, elementsChiffresSansSource, noterQuestion, noterQuiz,
+  TYPES_SECTION_EVALUES,
+  validerModule, elementsChiffresSansSource, noterQuestion, noterQuiz, attenduExercice, corrigerExercice,
   VERSION_PROGRESSION, progressionVide, marquerVue, basculerEtape, basculerTache,
   enregistrerQuiz, progressionSection, avancement, etatModule,
   // registre de contenu, routes

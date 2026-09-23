@@ -36,8 +36,8 @@ toucher au code de l'outil.
 ## Sections
 
 Chaque section a un `id` unique dans le module, un `titre` et un `type`.
-Les `id` des sections `quiz` et `cas` doivent aussi être uniques sur tout le
-catalogue.
+Les `id` des sections `quiz`, `cas` et `exercice` doivent aussi être uniques
+sur tout le catalogue.
 
 | Type | Champs |
 |---|---|
@@ -47,12 +47,35 @@ catalogue.
 | `calculateur` | `intro?`, `calculateur: 'volHa' \| 'debitBuse' \| 'pressionPourVolume' \| 'vitesseMesuree' \| 'debitChantier' \| 'largeurTraitee' \| 'debitCuve' \| 'hauteursBuses' \| 'ecartDiffuseurs'` |
 | `quiz` | `questions: [{ id, enonce, choix: ['…'], bonnes: [indices à partir de 0], explication, source? }]` — plusieurs bonnes réponses = question à choix multiples |
 | `cas` | `situation`, `source?` (celle de la situation), `options: [{ texte, correct: true/false, retour, source? }]`, au moins une option correcte |
+| `exercice` | `enonce`, `calculateur`, `valeurs: { … }` (toutes les entrées du calculateur), `resultat` (indice du résultat attendu, à partir de 0), `source?` — voir ci-dessous |
 
 Toute section accepte `technologie?` : `toutes` (défaut), `pneumatique`,
 `jets-portes`, `jets-projetes`, `confine`. Elle s'affiche en badge à côté du
 type. Le porteur (tracteur, chenillard) n'est pas une technologie. À utiliser
 dès qu'une consigne ne vaut que pour une technologie : certaines s'opposent
 d'une technologie à l'autre (buse anti-dérive, par exemple).
+
+## Exercices
+
+Un exercice pose un calcul chiffré. La réponse attendue n'est **pas écrite**
+dans le contenu : le moteur la calcule avec le calculateur nommé et les
+valeurs données, puis corrige la réponse de l'apprenant (juste si elle est
+égale une fois arrondie au nombre de décimales du résultat). Après
+correction, l'écran montre la formule avec les valeurs. Un exercice compte
+comme un quiz d'une question dans la progression.
+
+```js
+{
+  id: 'exo-vitesse', type: 'exercice', titre: 'Calculer une vitesse',
+  enonce: 'Vous parcourez 50 m entre deux jalons en 35 s. Quelle est votre vitesse ?',
+  calculateur: 'vitesseMesuree', valeurs: { d: 50, t: 35 }, resultat: 0,
+  source: 'F-VHA'
+}
+```
+
+Un nombre écrit en dur dans un **cas pratique** (« vers 129 L/ha ») doit être
+vérifié par un test : ajouter une ligne à `CAS_CHIFFRES` dans
+`tests/parite.test.js` (un test échoue sinon).
 
 ## Sources et provenance
 

@@ -147,6 +147,7 @@ li > .source-element { margin: 0; }
 .champs { display: grid; gap: 12px; grid-template-columns: repeat(auto-fill, minmax(min(100%, 220px), 1fr)); }
 .champ label { display: block; font-weight: 600; }
 .champ-large { grid-column: 1 / -1; }
+.champ-exo { max-width: 320px; margin: 12px 0; }
 .champ input { width: 100%; min-height: 44px; font: inherit; font-size: 1.1rem; padding: 6px 10px; margin-top: 4px;
   border: 1px solid var(--bord); border-radius: 6px; background: var(--fond); color: var(--texte); }
 .unite { font-weight: 400; color: var(--texte-doux); }
@@ -463,6 +464,35 @@ li > .source-element { margin: 0; }
             </div>
           </sc-if>
 
+          <!-- Exercice : réponse chiffrée corrigée par le moteur -->
+          <sc-if value="{{ estExercice }}">
+            <p class="situation">{{ exo.enonce }}</p>
+            <sc-if value="{{ exo.aSource }}"><p class="source-element">{{ exo.sourceTxt }}</p></sc-if>
+            <div class="champ champ-exo">
+              <label for="{{ exo.inputId }}">Votre réponse <span class="unite">{{ exo.uniteTxt }}</span></label>
+              <input id="{{ exo.inputId }}" type="text" inputmode="decimal" autocomplete="off" value="{{ exo.reponse }}" onInput="{{ onReponseExo }}" data-exo="{{ exo.sid }}" disabled="{{ exo.corrige }}">
+            </div>
+            <div aria-live="polite">
+              <sc-if value="{{ exo.corrige }}">
+                <p class="{{ exo.retourClasse }}"><b>{{ exo.verdict }}</b> Valeur attendue : {{ exo.attenduTxt }}.</p>
+                <ol class="etapes-calc">
+                  <sc-for list="{{ exo.etapes }}" as="xe" hint-placeholder-count="1">
+                    <li>
+                      <p class="formule-titre">{{ xe.titre }}</p>
+                      <p class="formule">{{ xe.formule }}</p>
+                      <p class="formule">= {{ xe.substitution }} = {{ xe.resultat }}</p>
+                    </li>
+                  </sc-for>
+                </ol>
+              </sc-if>
+              <sc-if value="{{ exo.aDernier }}"><p class="meta">{{ exo.dernierTxt }}</p></sc-if>
+            </div>
+            <div class="actions">
+              <sc-if value="{{ !exo.corrige }}"><button class="bouton-principal" value="{{ exo.sid }}" onClick="{{ verifierExo }}">Vérifier</button></sc-if>
+              <sc-if value="{{ exo.corrige }}"><button class="bouton-secondaire" value="{{ exo.sid }}" onClick="{{ recommencerExo }}">Recommencer</button></sc-if>
+            </div>
+          </sc-if>
+
           <sc-if value="{{ estModule }}">
             <nav class="suite" aria-label="Sections voisines">
               <sc-if value="{{ aPrec }}"><a href="{{ prec.lien }}">← {{ prec.titre }}</a></sc-if>
@@ -610,7 +640,9 @@ class Component extends DCLogic {
       saisies: {},    // { [calcId]: { [entreeId]: texte brut } }
       quizRep: {},    // { [sectionId]: { [qid]: number[] } }
       quizScore: {},  // { [sectionId]: score | null }
-      casChoix: {}    // { [sectionId]: number | null }
+      casChoix: {},   // { [sectionId]: number | null }
+      exoRep: {},     // { [sectionId]: texte brut saisi }
+      exoCorr: {}     // { [sectionId]: { juste, attendu } }
     };
     this.__essais = 0;
     this.__minuteur = null;
@@ -665,17 +697,24 @@ class Component extends DCLogic {
         return { quizRep: { ...s.quizRep, [sid]: rep } };
       });
     };
+    /* Évaluation d'un quiz ou d'un exercice (D-B5-3 : un exercice compte
+       comme un quiz d'une question, taux 1 ou 0). Seul point de correction
+       qui enregistre, donc seul point du projet qui lit l'horloge. */
     this.validerQuiz = (e) => {
       const sid = valeurDe(e);
       const ctx = this.contexte();
       if (!ctx || !ctx.module || !ctx.section || ctx.section.id !== sid) return;
-      const score = ctx.OAD.noterQuiz(ctx.section, this.state.quizRep[sid] || {});
+      const exo = ctx.section.type === 'exercice';
+      const corr = exo ? ctx.OAD.corrigerExercice(ctx.section, versNombre(this.state.exoRep[sid])) : null;
+      const score = exo
+        ? { taux: corr.juste ? 1 : 0, bonnes: corr.juste ? 1 : 0, total: 1 }
+        : ctx.OAD.noterQuiz(ctx.section, this.state.quizRep[sid] || {});
       // Seul point du projet qui lit l'horloge : la date est passée au moteur.
       const dateISO = new Date().toISOString();
-      this.setState(s => ({
-        quizScore: { ...s.quizScore, [sid]: score },
-        prog: ctx.OAD.enregistrerQuiz(this.progression(s), ctx.module.id, sid, score, dateISO)
-      }));
+      this.setState(s => Object.assign(exo
+        ? { exoCorr: { ...s.exoCorr, [sid]: corr } }
+        : { quizScore: { ...s.quizScore, [sid]: score } },
+        { prog: ctx.OAD.enregistrerQuiz(this.progression(s), ctx.module.id, sid, score, dateISO) }));
     };
     this.recommencerQuiz = (e) => {
       const sid = valeurDe(e);
@@ -683,6 +722,21 @@ class Component extends DCLogic {
         const rep = { ...s.quizRep }, sc = { ...s.quizScore };
         delete rep[sid]; delete sc[sid];
         return { quizRep: rep, quizScore: sc };
+      });
+    };
+    // Exercice : frappe stockée brute (convertie à la vérification), jamais persistée.
+    this.onReponseExo = (e) => {
+      const sid = attributDe(e, 'data-exo'), val = valeurDe(e);
+      if (!sid) return;
+      this.setState(s => (s.exoCorr[sid] ? {} : { exoRep: { ...s.exoRep, [sid]: val } }));
+    };
+    this.verifierExo = (e) => this.validerQuiz(e);
+    this.recommencerExo = (e) => {
+      const sid = valeurDe(e);
+      this.setState(s => {
+        const rep = { ...s.exoRep }, corr = { ...s.exoCorr };
+        delete rep[sid]; delete corr[sid];
+        return { exoRep: rep, exoCorr: corr };
       });
     };
     // Cas pratique : valeur du bouton "<sectionId>|<k>".
@@ -711,7 +765,7 @@ class Component extends DCLogic {
         !window.confirm('Effacer toute la progression enregistrée sur cet appareil ?')) return;
       effacerProgressionStockee();
       this.__dernierProg = null;
-      this.setState({ prog: window.OAD.progressionVide(), quizRep: {}, quizScore: {}, casChoix: {} });
+      this.setState({ prog: window.OAD.progressionVide(), quizRep: {}, quizScore: {}, casChoix: {}, exoRep: {}, exoCorr: {} });
     };
 
     this.basculerTheme = () => {
@@ -809,6 +863,9 @@ class Component extends DCLogic {
       mod: { aChiffresSansSource: false, chiffresSansSourceTxt: '' }, sommaire: [],
       section: { aTechno: false, technoLibelle: '', aSourceEntete: false, sourceTxt: '' },
       estFiche: false, estProcedure: false, estEntretien: false, estCalculateur: false, estQuiz: false, estCas: false,
+      estExercice: false,
+      exo: { sid: '', enonce: '', aSource: false, sourceTxt: '', inputId: '', uniteTxt: '', reponse: '', corrige: false,
+        verdict: '', retourClasse: '', attenduTxt: '', etapes: [], aDernier: false, dernierTxt: '' },
       blocs: [], procedure: { etapes: [] }, entretien: { groupes: [] },
       quiz: { questions: [] },
       cas: { options: [], aSource: false, sourceTxt: '', aSourceRetour: false, sourceRetourTxt: '' },
@@ -819,6 +876,7 @@ class Component extends DCLogic {
       basculerTheme: this.basculerTheme, onSaisie: this.onSaisie, reinitialiserCalc: this.reinitialiserCalc,
       onChoix: this.onChoix, validerQuiz: this.validerQuiz, recommencerQuiz: this.recommencerQuiz,
       choisirCas: this.choisirCas, basculerEtape: this.basculerEtape, basculerTache: this.basculerTache,
+      onReponseExo: this.onReponseExo, verifierExo: this.verifierExo, recommencerExo: this.recommencerExo,
       effacerProgression: this.effacerProgression, imprimer: this.imprimer
     };
   }
@@ -938,12 +996,12 @@ class Component extends DCLogic {
         aTechno: !!sec.technologie && sec.technologie !== 'toutes',
         technoLibelle: OAD.TECHNOLOGIES_LIBELLES[sec.technologie] || '',
         // Source de section : sous l'en-tête, sauf cas pratique (sous la situation).
-        aSourceEntete: srcSection.aSource && sec.type !== 'cas',
+        aSourceEntete: srcSection.aSource && sec.type !== 'cas' && sec.type !== 'exercice',
         sourceTxt: srcSection.sourceTxt
       },
       estFiche: sec.type === 'fiche', estProcedure: sec.type === 'procedure',
       estEntretien: sec.type === 'entretien', estCalculateur: sec.type === 'calculateur',
-      estQuiz: sec.type === 'quiz', estCas: sec.type === 'cas',
+      estQuiz: sec.type === 'quiz', estCas: sec.type === 'cas', estExercice: sec.type === 'exercice',
       aPrec: i > 0, aSuiv: i < n - 1,
       prec: voisin(m.sections[i - 1]), suiv: voisin(m.sections[i + 1])
     };
@@ -993,6 +1051,8 @@ class Component extends DCLogic {
       out.quiz = this.valsQuiz(sec, ps, m);
     } else if (sec.type === 'cas') {
       out.cas = this.valsCas(sec, m);
+    } else if (sec.type === 'exercice') {
+      out.exo = this.valsExo(OAD, sec, ps, m);
     }
     return out;
   }
@@ -1063,6 +1123,37 @@ class Component extends DCLogic {
     return OAD.substituer(a && a.gabarit, ((a && a.operandes) || []).map(o => fmtNombre(o.valeur, o.decimales)));
   }
 
+  // Étapes de calcul du moteur → formule ouverte en fr-FR (calculateur, exercice).
+  etapesFormatees(OAD, etapes) {
+    return etapes.map(et => ({
+      titre: et.titre, formule: et.formule,
+      substitution: OAD.substituer(et.gabarit, et.operandes.map(o => fmtNombre(o.valeur, o.decimales))),
+      resultat: avecUnite(fmtNombre(et.resultat.valeur, et.resultat.decimales), et.resultat.unite)
+    }));
+  }
+
+  valsExo(OAD, sec, ps, m) {
+    const sid = sec.id;
+    const corr = this.state.exoCorr[sid] || null;
+    const att = OAD.attenduExercice(sec);
+    const dernier = ps.quiz;
+    return Object.assign({
+      sid, enonce: sec.enonce, inputId: 'exo-' + sid,
+      uniteTxt: att.unite ? '(' + att.unite + ')' : '',
+      reponse: this.state.exoRep[sid] || '',
+      corrige: !!corr,
+      verdict: corr ? (corr.juste ? 'Juste.' : 'À revoir.') : '',
+      retourClasse: 'retour ' + (corr && corr.juste ? 'juste' : 'fausse'),
+      attenduTxt: avecUnite(fmtNombre(att.valeur, att.decimales), att.unite),
+      etapes: corr ? this.etapesFormatees(OAD, att.etapes) : [],
+      aDernier: !!dernier && !corr,
+      dernierTxt: dernier
+        ? 'Dernier résultat enregistré : ' + (dernier.taux >= 1 ? 'juste' : 'à revoir') +
+          (dernier.date ? ', le ' + dateFr(dernier.date) : '') + '.'
+        : ''
+    }, this.sourceVals(m || {}, sec));
+  }
+
   // Fragment calculateur : entrées, résultats, formules ouvertes, tout formaté.
   valsCalc(OAD, calcId) {
     const C = OAD.CALCULATEURS[calcId];
@@ -1092,11 +1183,7 @@ class Component extends DCLogic {
           origine: en.origineDefaut
         };
       }),
-      etapes: r.etapes.map(et => ({
-        titre: et.titre, formule: et.formule,
-        substitution: OAD.substituer(et.gabarit, et.operandes.map(o => fmtNombre(o.valeur, o.decimales))),
-        resultat: avecUnite(fmtNombre(et.resultat.valeur, et.resultat.decimales), et.resultat.unite)
-      })),
+      etapes: this.etapesFormatees(OAD, r.etapes),
       resultats: r.resultats.map(x => ({ label: x.label, texte: avecUnite(fmtNombre(x.valeur, x.decimales), x.unite) })),
       // « S'applique à » seulement si le calculateur ne vaut pas pour toutes les technologies.
       aTechnos: Array.isArray(C.technologies) && !(C.technologies.length === 1 && C.technologies[0] === 'toutes'),
