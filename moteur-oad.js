@@ -936,6 +936,23 @@ function etatModule(p, module) {
   return b.total > 0 && b.reussies >= b.total ? 'maitrise' : 'consulte';
 }
 
+/* Où reprendre le parcours (bloc « Reprendre » du catalogue, révision v3) :
+   a) premier module non maîtrisé ayant au moins une section vue ; sinon
+   b) premier module non maîtrisé ; section = première non vue, sinon la
+   première. Modules de référence et modules sans section exclus.
+   → { moduleId, sectionId, entame } ou null si tout est maîtrisé. */
+function prochaineReprise(p, liste) {
+  const candidats = (Array.isArray(liste) ? liste : []).filter(m =>
+    m && !estModuleReference(m) && Array.isArray(m.sections) && m.sections.length > 0 &&
+    etatModule(p, m) !== 'maitrise');
+  const entame = candidats.find(m => avancement(p, m).vues > 0);
+  const m = entame || candidats[0];
+  if (!m) return null;
+  const vues = lireModuleProg(p, m.id).vues;
+  const s = m.sections.find(x => !vues.includes(x.id)) || m.sections[0];
+  return { moduleId: m.id, sectionId: s.id, entame: !!entame };
+}
+
 /* --- 7. Registre de contenu ------------------------------------------
    Le contenu vit hors du moteur (contenu/<id>.js), pour que des experts le
    rédigent sans toucher au code. */
@@ -1057,7 +1074,7 @@ const OAD = {
   TYPES_SECTION_EVALUES,
   validerModule, elementsChiffresSansSource, noterQuestion, noterQuiz, attenduExercice, corrigerExercice,
   VERSION_PROGRESSION, progressionVide, marquerVue, basculerEtape, basculerTache,
-  enregistrerQuiz, progressionSection, avancement, etatModule,
+  enregistrerQuiz, progressionSection, avancement, etatModule, prochaineReprise,
   SEUIL_MAITRISE, sectionsEvaluees, bilanEvaluation, estModuleReference, EDITION_CONTENU,
   // registre de contenu, routes
   modules, ordonnerModules, erreursContenu, listerModules, trouverModule, trouverSection,

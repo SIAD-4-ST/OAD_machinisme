@@ -1391,5 +1391,46 @@ test('pression P1 = pMin = 3 (bornes incluses), 150 → 180 L/ha : aucune alerte
   assert.deepStrictEqual(CALC.pressionPourVolume.compute({ P1: 3, V1: 150, V2: 180, b: 0.5, pMin: 3, pMax: 4.5 }).alertes, []);
 });
 
+section('§21 v3 — reprise du parcours');
+
+const repGlossaire = { id: 'rg', domaine: 'transversal', sections: [{ id: 'g1', type: 'fiche' }] };
+const repA = { id: 'ra', domaine: 'pulverisation', sections: [{ id: 'a1', type: 'fiche' }, { id: 'a2', type: 'fiche' }, { id: 'aq', type: 'quiz' }] };
+const repB = { id: 'rb', domaine: 'pulverisation', sections: [{ id: 'b1', type: 'fiche' }, { id: 'bq', type: 'quiz' }] };
+const repListe = [repGlossaire, repA, repB];
+const repMaitrise = (p, m, quizId) => OAD.enregistrerQuiz(voir(p, m, m.sections.map(s => s.id)), m.id, quizId, { taux: 1 }, 'd');
+test('reprise, progression vide : premier module hors référence, première section, non entamé', () => {
+  assert.deepStrictEqual(OAD.prochaineReprise(OAD.progressionVide(), repListe), { moduleId: 'ra', sectionId: 'a1', entame: false });
+  assert.deepStrictEqual(OAD.prochaineReprise(undefined, repListe), { moduleId: 'ra', sectionId: 'a1', entame: false });
+});
+test('reprise, module entamé : il passe avant le premier module non commencé', () => {
+  const p = voir(OAD.progressionVide(), repB, ['b1']);
+  assert.deepStrictEqual(OAD.prochaineReprise(p, repListe), { moduleId: 'rb', sectionId: 'bq', entame: true });
+});
+test('reprise, section courante déjà vue : première section non vue ; toutes vues → première section', () => {
+  const p = voir(OAD.progressionVide(), repA, ['a1', 'aq']);
+  assert.deepStrictEqual(OAD.prochaineReprise(p, repListe), { moduleId: 'ra', sectionId: 'a2', entame: true });
+  const tout = voir(OAD.progressionVide(), repA, ['a1', 'a2', 'aq']);   // consulté, quiz non réussi
+  assert.deepStrictEqual(OAD.prochaineReprise(tout, repListe), { moduleId: 'ra', sectionId: 'a1', entame: true });
+});
+test('reprise, module maîtrisé sauté ; tout maîtrisé → null (glossaire ignoré)', () => {
+  const pA = repMaitrise(OAD.progressionVide(), repA, 'aq');
+  assert.deepStrictEqual(OAD.prochaineReprise(pA, repListe), { moduleId: 'rb', sectionId: 'b1', entame: false });
+  assert.strictEqual(OAD.prochaineReprise(repMaitrise(pA, repB, 'bq'), repListe), null);
+  assert.strictEqual(OAD.prochaineReprise(OAD.progressionVide(), [repGlossaire]), null);
+  assert.strictEqual(OAD.prochaineReprise(OAD.progressionVide(), []), null);
+});
+test('rendu à blanc du catalogue, progression vide : bloc « Commencer » vers la première section du moteur', () => {
+  delete MAGASIN['formation-machines:progression:v1'];
+  const out = rendre(new Component({}), '#/');
+  const r = OAD.prochaineReprise(OAD.progressionVide(), MODULES);
+  const suivis = MODULES.filter(m => !OAD.estModuleReference(m));
+  assert.strictEqual(out.reprise.action, 'Commencer');
+  assert.strictEqual(out.reprise.surtitre, 'Pour commencer');
+  assert.strictEqual(out.reprise.lien, OAD.lien('module', r.moduleId, r.sectionId));
+  assert.strictEqual(out.reprise.titre, OAD.trouverModule(MODULES, r.moduleId).titre);
+  assert.strictEqual(out.reprise.bilanTxt, '0 sur ' + suivis.length + ' modules maîtrisés');
+  assert.ok(out.domainesCatalogue.every(d => /^\d+ modules?$/.test(d.nbTxt)));
+});
+
 console.log(`\n${passed} ok, ${failed} FAIL, ${skipped} skip`);
 if (failed > 0) process.exit(1);

@@ -53,32 +53,45 @@ h3 { font-size: 1.05rem; font-weight: 500; margin: 20px 0 8px; }
 .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 
 /* Surtitres, étiquettes, menus, boutons : police de signalétique en capitales. */
-.nav a, .section-type, .sommaire-titre, .perio-titre, .sommaire-type, .badge,
+.nav a, .section-type, .sommaire-titre, .perio-titre, .sommaire-type, .badge, .surtitre,
 .bouton-principal, .bouton-secondaire, .bouton-danger, .bouton-discret {
   font-family: var(--font-signal); font-weight: 700; text-transform: uppercase; letter-spacing: .08em; }
 
 /* Gouttière 16 px : aucune largeur fixe au-delà de l'écran (400 px utilisable). */
-.app { max-width: 1080px; margin: 0 auto; padding: 0 16px; min-height: 100%; display: flex; flex-direction: column; }
+.app { min-height: 100%; display: flex; flex-direction: column; }
+.page { flex: 1; width: 100%; max-width: 1200px; margin: 0 auto; padding: 0 var(--gutter); display: flex; flex-direction: column; }
 .principal { flex: 1; padding: 8px 0 32px; min-width: 0; }
 
-.entete { border-bottom: 1px solid var(--hairline); padding: 12px 0 0; }
-.entete-haut { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
-.marque { font-family: var(--font-display); font-weight: 300; font-size: 1.5rem; color: var(--ink); text-decoration: none; }
-.nav { display: flex; gap: 4px 22px; flex-wrap: wrap; margin-top: 8px; }
-.nav a { padding: 10px 0; min-height: 44px; display: inline-flex; align-items: center; font-size: 13px;
+/* En-tête collant. Une ligne dès 900 px ; en dessous, le menu passe sous le
+   titre et défile horizontalement au lieu de revenir à la ligne. */
+.entete { position: sticky; top: 0; z-index: 10; background: var(--surface); border-bottom: 1px solid var(--hairline); }
+.entete-int { max-width: 1200px; margin: 0 auto; padding: 0 var(--gutter); display: flex; align-items: center; gap: 0 24px; flex-wrap: wrap; }
+.marque { display: flex; align-items: center; min-height: 64px; margin-right: auto; font-family: var(--font-display);
+  font-weight: 300; font-size: 24px; line-height: 1.1; color: var(--ink); text-decoration: none; }
+.nav { display: flex; gap: 0 22px; flex-wrap: nowrap; overflow-x: auto; order: 3; flex: 1 0 100%; max-width: 100%; }
+.nav a { min-height: 64px; display: inline-flex; align-items: center; flex: none; font-size: 13px; letter-spacing: .1em;
   border-radius: var(--radius-none); color: var(--ink-muted); text-decoration: none; }
 .nav a:hover { color: var(--ink); }
 .nav a[aria-current] { color: var(--ink); box-shadow: inset 0 -2px 0 var(--accent); }
+.bouton-theme { flex: none; }
+@media (min-width: 900px) {
+  .entete-int { flex-wrap: nowrap; padding: 0 24px; }
+  .nav { order: 0; flex: 0 1 auto; }
+}
 
 .pied { border-top: 1px solid var(--hairline); padding: 12px 0 20px; color: var(--ink-muted); font-size: .9rem; }
 
 button { font: inherit; cursor: pointer; }
+/* Action principale et secondaire : pilules de 56 px ; petits boutons : 48 px. */
 .bouton-principal, .bouton-secondaire, .bouton-danger, .bouton-discret {
-  min-height: var(--control-h-sm); padding: 8px 24px; border-radius: var(--radius-pill); border: 1px solid transparent; font-size: 13px; }
+  display: inline-flex; align-items: center; justify-content: center; min-height: var(--control-h); padding: 8px 32px;
+  border-radius: var(--radius-pill); border: 1px solid transparent; font-size: 14px; text-decoration: none; }
 .bouton-principal { background: var(--accent); color: var(--on-accent); }
-.bouton-principal:hover { background: var(--accent-hover); }
+.bouton-principal:hover { background: var(--accent-hover); color: var(--on-accent); }
 .bouton-secondaire { background: transparent; color: var(--ink); border-color: var(--ink); }
+.bouton-secondaire:hover { color: var(--ink); background: var(--surface-alt); }
 .bouton-danger { background: transparent; color: var(--erreur); border-color: var(--erreur); }
+.bouton-petit, .bouton-danger { min-height: var(--control-h-sm); padding: 8px 24px; font-size: 13px; }
 .bouton-discret { background: transparent; color: var(--ink-muted); border-color: var(--control-border); font-size: 12px; min-height: 40px; padding: 6px 16px; }
 .bouton-discret:hover { color: var(--ink); border-color: var(--ink); }
 .actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 16px; }
@@ -90,18 +103,45 @@ button { font: inherit; cursor: pointer; }
 
 .chapo { color: var(--ink-muted); margin-top: 0; }
 .meta { color: var(--ink-muted); font-size: .92rem; display: flex; flex-wrap: wrap; gap: 4px 12px; align-items: center; margin: 4px 0; }
-.badge { display: inline-block; padding: 4px 10px; border-radius: var(--radius-pill); font-size: 11px; line-height: 1.2;
+.badge { display: inline-block; padding: 5px 10px; border-radius: var(--radius-pill); font-size: 11px; line-height: 1.2;
   border: 1px solid var(--control-border); background: var(--surface-alt); color: var(--ink); }
 .badge-brouillon, .badge-a-valider { background: var(--alerte-fond); border-color: var(--alerte-bord); }
 .badge-valide { background: var(--succes-fond); border-color: var(--succes); }
 .avertissement { background: var(--alerte-fond); border-left: 4px solid var(--alerte-bord); padding: 8px 12px; border-radius: var(--radius-none); }
 
-.groupe { margin: 20px 0; }
-.cartes { list-style: none; padding: 0; margin: 0; display: grid; gap: 12px; grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr)); }
-.carte { background: var(--surface); border: 1px solid var(--hairline); border-radius: var(--radius-none); padding: 16px; display: flex; flex-direction: column; gap: 6px; }
+.surtitre { font-size: 13px; letter-spacing: .1em; color: var(--ink-muted); margin: 0; }
+.surtitre-or { color: var(--gold-deep); }
+
+/* Catalogue : présentation à gauche, bloc « Reprendre » à droite. */
+.catalogue-tete { display: grid; gap: 32px 64px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 380px), 1fr));
+  align-items: end; padding: 32px 0 40px; border-bottom: 1px solid var(--hairline); }
+.catalogue-intro { min-width: 0; }
+.catalogue-intro h1 { font-size: clamp(2.4rem, 5vw, 3.4rem); line-height: 1.12; margin: 16px 0 20px; }
+.catalogue-intro .chapo { margin: 0; max-width: 52ch; font-size: 1.06rem; }
+.reprise { display: flex; flex-direction: column; gap: 10px; padding: 28px 28px 24px; min-width: 0;
+  background: var(--surface-alt); border-top: 3px solid var(--accent); }
+.reprise p { margin: 0; }
+.reprise-titre { font-family: var(--font-display); font-size: 1.8rem; line-height: 1.2; font-weight: 300; }
+.reprise-detail { color: var(--ink-muted); font-size: .95rem; }
+.reprise-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 24px; margin-top: 10px; }
+.reprise-bilan { font-size: .92rem; color: var(--ink-muted); }
+
+.groupe { margin: 48px 0 0; }
+.groupe-tete { display: flex; align-items: baseline; flex-wrap: wrap; gap: 4px 12px; margin: 0 0 18px; }
+.groupe-tete h2 { font-size: 2rem; line-height: 1.2; margin: 0; }
+.groupe-nb { color: var(--ink-muted); font-size: .9rem; }
+.cartes { list-style: none; padding: 0; margin: 0; display: grid; gap: 14px; grid-template-columns: repeat(auto-fill, minmax(min(100%, 320px), 1fr)); }
+.carte { background: var(--surface); border: 1px solid var(--hairline); border-top: 3px solid var(--accent); border-radius: var(--radius-none);
+  padding: 18px 20px 16px; display: flex; flex-direction: column; gap: 10px; transition: border-color var(--dur-fast); }
+.carte:hover, .carte:focus-within { border-color: var(--gold-deep); }
 .carte p { margin: 0; }
-.carte-lien { font-family: var(--font-display); font-size: 1.35rem; font-weight: 300; line-height: 1.25; text-decoration: none; }
-.carte-lien:hover { text-decoration: underline; }
+.carte .meta { font-size: .84rem; }
+.carte-lien { font-family: var(--font-display); font-size: 1.55rem; font-weight: 300; line-height: 1.25; text-decoration: none; }
+.carte-lien:hover { color: var(--ink); text-decoration: underline; }
+.carte-resume { color: var(--ink-muted); font-size: .95rem; line-height: 1.5; flex: 1; }
+.carte-pied { display: flex; flex-direction: column; gap: 6px; padding-top: 12px; margin-top: 4px; border-top: 1px solid var(--hairline); }
+.carte-pied .meta { justify-content: space-between; margin: 0; }
+.carte-pied b { color: var(--ink); }
 
 .jauge { height: 6px; border-radius: var(--radius-pill); background: var(--surface-alt); overflow: hidden; margin-top: 4px; }
 .jauge span { display: block; height: 100%; border-radius: var(--radius-pill); background: var(--accent); }
@@ -216,17 +256,18 @@ li > .source-element { margin: 0; }
 </helmet>
 <div class="app">
   <header class="entete">
-    <div class="entete-haut">
+    <div class="entete-int">
       <a class="marque" href="{{ lienCatalogue }}">Formation machines</a>
-      <button class="bouton-discret" onClick="{{ basculerTheme }}" aria-label="{{ themeAria }}">{{ themeLibelle }}</button>
+      <nav class="nav" aria-label="Navigation principale">
+        <a href="{{ lienCatalogue }}" aria-current="{{ navCatalogue }}">Modules</a>
+        <a href="{{ lienOutils }}" aria-current="{{ navOutils }}">Calculateurs</a>
+        <a href="{{ lienProgression }}" aria-current="{{ navProgression }}">Progression</a>
+        <a href="{{ lienGlossaire }}" aria-current="{{ navGlossaire }}">Glossaire</a>
+      </nav>
+      <button class="bouton-discret bouton-theme" onClick="{{ basculerTheme }}" aria-label="{{ themeAria }}">{{ themeLibelle }}</button>
     </div>
-    <nav class="nav" aria-label="Navigation principale">
-      <a href="{{ lienCatalogue }}" aria-current="{{ navCatalogue }}">Modules</a>
-      <a href="{{ lienOutils }}" aria-current="{{ navOutils }}">Calculateurs</a>
-      <a href="{{ lienProgression }}" aria-current="{{ navProgression }}">Progression</a>
-      <a href="{{ lienGlossaire }}" aria-current="{{ navGlossaire }}">Glossaire</a>
-    </nav>
   </header>
+  <div class="page">
 
   <sc-if value="{{ aErreurs }}" hint-placeholder-val="{{ false }}">
     <div class="bandeau-erreur" role="alert">
@@ -251,23 +292,44 @@ li > .source-element { margin: 0; }
 
     <!-- Catalogue -->
     <sc-if value="{{ estCatalogue }}" hint-placeholder-val="{{ true }}">
-      <h1>Modules de formation</h1>
-      <p class="chapo">Fiches, procédures, calculateurs et quiz pour régler et entretenir les machines. Fonctionne sans réseau.</p>
+      <div class="catalogue-tete">
+        <div class="catalogue-intro">
+          <p class="surtitre surtitre-or">Machinisme viticole</p>
+          <h1>Modules de formation</h1>
+          <p class="chapo">Fiches, procédures, calculateurs et quiz pour régler et entretenir les machines. Fonctionne sans réseau.</p>
+        </div>
+        <div class="reprise">
+          <p class="surtitre">{{ reprise.surtitre }}</p>
+          <p class="reprise-titre">{{ reprise.titre }}</p>
+          <p class="reprise-detail">{{ reprise.detail }}</p>
+          <div class="reprise-actions">
+            <a class="bouton-principal" href="{{ reprise.lien }}">{{ reprise.action }}</a>
+            <a class="reprise-bilan" href="{{ lienProgression }}">{{ reprise.bilanTxt }}</a>
+          </div>
+        </div>
+      </div>
       <sc-for list="{{ domainesCatalogue }}" as="dom" hint-placeholder-count="2">
         <section class="groupe" aria-labelledby="{{ dom.titreId }}">
-          <h2 id="{{ dom.titreId }}">{{ dom.libelle }}</h2>
+          <div class="groupe-tete">
+            <h2 id="{{ dom.titreId }}">{{ dom.libelle }}</h2>
+            <span class="groupe-nb">{{ dom.nbTxt }}</span>
+          </div>
           <ul class="cartes">
             <sc-for list="{{ dom.modules }}" as="carte" hint-placeholder-count="2">
               <li class="carte">
-                <a class="carte-lien" href="{{ carte.lien }}">{{ carte.titre }}</a>
-                <p>{{ carte.resume }}</p>
                 <p class="meta">
                   <span class="{{ carte.statutClasse }}">{{ carte.statutLibelle }}</span>
                   <span>{{ carte.dureeTxt }}</span>
-                  <span>{{ carte.etatLibelle }} · {{ carte.avancementTxt }}</span>
-                  <span>{{ carte.quizTxt }}</span>
                 </p>
-                <div class="jauge" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="{{ carte.pct }}" aria-label="{{ carte.jaugeLabel }}"><span style="width:{{ carte.pct }}%"></span></div>
+                <a class="carte-lien" href="{{ carte.lien }}">{{ carte.titre }}</a>
+                <p class="carte-resume">{{ carte.resume }}</p>
+                <div class="carte-pied">
+                  <p class="meta">
+                    <span><b>{{ carte.etatLibelle }}</b> · {{ carte.avancementTxt }}</span>
+                    <span>{{ carte.quizTxt }}</span>
+                  </p>
+                  <div class="jauge" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="{{ carte.pct }}" aria-label="{{ carte.jaugeLabel }}"><span style="width:{{ carte.pct }}%"></span></div>
+                </div>
               </li>
             </sc-for>
           </ul>
@@ -373,7 +435,7 @@ li > .source-element { margin: 0; }
                 </li>
               </sc-for>
             </ol>
-            <div class="actions"><button class="bouton-secondaire" onClick="{{ imprimer }}">Imprimer la procédure</button></div>
+            <div class="actions"><button class="bouton-secondaire bouton-petit" onClick="{{ imprimer }}">Imprimer la procédure</button></div>
           </sc-if>
 
           <!-- Entretien -->
@@ -391,7 +453,7 @@ li > .source-element { margin: 0; }
                 </sc-for>
               </ul>
             </sc-for>
-            <div class="actions"><button class="bouton-secondaire" onClick="{{ imprimer }}">Imprimer le plan d'entretien</button></div>
+            <div class="actions"><button class="bouton-secondaire bouton-petit" onClick="{{ imprimer }}">Imprimer le plan d'entretien</button></div>
           </sc-if>
 
           <!-- Calculateur : fragment unique, section de module ou page Calculateurs -->
@@ -434,7 +496,7 @@ li > .source-element { margin: 0; }
                 </li>
               </sc-for>
             </ol>
-            <div class="actions"><button class="bouton-secondaire" value="{{ calcCourant.id }}" onClick="{{ reinitialiserCalc }}">Revenir aux valeurs par défaut</button></div>
+            <div class="actions"><button class="bouton-secondaire bouton-petit" value="{{ calcCourant.id }}" onClick="{{ reinitialiserCalc }}">Revenir aux valeurs par défaut</button></div>
           </sc-if>
 
           <!-- Quiz -->
@@ -540,6 +602,7 @@ li > .source-element { margin: 0; }
     <p>Outil de formation. Les valeurs proposées dans les calculateurs sont des exemples : l'origine de chacune est indiquée sous son champ.</p>
     <sc-if value="{{ aEdition }}"><p>{{ editionTxt }}</p></sc-if>
   </footer>
+  </div>
 </div>
 </x-dc>
 <script type="text/x-dc" data-dc-script>
@@ -890,6 +953,7 @@ class Component extends DCLogic {
       estCatalogue: false, estModule: false, estOutils: false, estProgression: false, estInconnu: false,
       aGrille: false,
       domainesCatalogue: [],
+      reprise: { surtitre: '', titre: '', detail: '', action: '', lien: '#/', bilanTxt: '' },
       mod: { aChiffresSansSource: false, chiffresSansSourceTxt: '' }, sommaire: [],
       section: { aTechno: false, technoLibelle: '', aSourceEntete: false, sourceTxt: '' },
       estFiche: false, estProcedure: false, estEntretien: false, estCalculateur: false, estQuiz: false, estCas: false,
@@ -974,11 +1038,39 @@ class Component extends DCLogic {
     const OAD = ctx.OAD;
     return {
       estCatalogue: true,
-      domainesCatalogue: OAD.DOMAINES.filter(d => d !== 'transversal').map(d => ({
-        titreId: 'domaine-' + d,
-        libelle: OAD.DOMAINES_LIBELLES[d],
-        modules: OAD.listerModules(ctx.modules, { domaine: d }).map(m => this.carte(OAD, m, prog))
-      })).filter(g => g.modules.length > 0)
+      reprise: this.reprise(ctx, prog),
+      domainesCatalogue: OAD.DOMAINES.filter(d => d !== 'transversal').map(d => {
+        const modules = OAD.listerModules(ctx.modules, { domaine: d }).map(m => this.carte(OAD, m, prog));
+        return {
+          titreId: 'domaine-' + d,
+          libelle: OAD.DOMAINES_LIBELLES[d],
+          nbTxt: modules.length + ' module' + (modules.length > 1 ? 's' : ''),
+          modules
+        };
+      }).filter(g => g.modules.length > 0)
+    };
+  }
+
+  // Bloc « Reprendre » : le choix du module et de la section vient du moteur (prochaineReprise).
+  reprise(ctx, prog) {
+    const OAD = ctx.OAD;
+    const suivis = ctx.modules.filter(m => !OAD.estModuleReference(m));
+    const maitrises = suivis.filter(m => OAD.etatModule(prog, m) === 'maitrise').length;
+    const bilanTxt = maitrises + ' sur ' + suivis.length + ' module' + (suivis.length > 1 ? 's' : '') +
+      ' maîtrisé' + (suivis.length > 1 ? 's' : '');
+    const r = OAD.prochaineReprise(prog, ctx.modules);
+    if (!r) {
+      return { surtitre: 'Parcours terminé', titre: 'Tous les modules sont maîtrisés',
+        detail: 'Vous pouvez revoir un module ou refaire un quiz.', action: 'Voir ma progression',
+        lien: OAD.lien('progression'), bilanTxt };
+    }
+    const s = OAD.trouverSection(ctx.modules, r.moduleId, r.sectionId);
+    return {
+      surtitre: r.entame ? 'Reprendre là où vous en étiez' : 'Pour commencer',
+      titre: OAD.trouverModule(ctx.modules, r.moduleId).titre,
+      detail: 'Section suivante : ' + (s ? s.titre : ''),
+      action: r.entame ? 'Reprendre' : 'Commencer',
+      lien: OAD.lien('module', r.moduleId, r.sectionId), bilanTxt
     };
   }
 
