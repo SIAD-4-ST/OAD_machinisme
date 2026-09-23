@@ -124,7 +124,8 @@ test('LIMITE ASSUMÉE — débit de chantier théorique : ni demi-tours ni temps
 // ----------------------------------------------------------------------
 section('§2 Contenu et schéma');
 
-test('les 3 modules livrés sont conformes au schéma', () => {
+// Pourquoi : le catalogue s'étend à partir de B9 : nom sans le nombre.
+test('les modules livrés sont conformes au schéma', () => {
   assert.deepStrictEqual(OAD.erreursContenu(MODULES), []);
 });
 test('chaque fichier contenu/<id>.js porte le module de même id', () => {
@@ -198,9 +199,11 @@ test('chaque clé de DOMAINES, PERIODICITES, STATUTS et TYPES_SECTION a un libel
   OAD.TYPES_SECTION.forEach(k => assert.ok(OAD.TYPES_SECTION_LIBELLES[k], k));
   OAD.ETATS_MODULE.forEach(k => assert.ok(OAD.ETATS_MODULE_LIBELLES[k], k));
 });
+// Pourquoi : trois modules ajoutés après pulve-entretien, B9.
 test('modules() suit l\'ordre de contenu/index.js', () => {
   assert.deepStrictEqual(MODULES.map(m => m.id),
-    ['pulve-reglage-volume', 'pulve-entretien', 'sol-outil-interceps']);
+    ['pulve-reglage-volume', 'pulve-entretien', 'pulve-filtration', 'pulve-remise-en-route',
+      'pulve-couverture', 'sol-outil-interceps']);
 });
 test('navigateur : modules() lit window.OAD_CONTENU à l\'appel et dédoublonne par id', () => {
   const src = fs.readFileSync(path.join(RACINE, 'moteur-oad.js'), 'utf8');
@@ -942,8 +945,17 @@ const CAS_CHIFFRES = [
   // 150 L/ha à 6 km/h, passage à 7 km/h : 150 × 6 / 7 = 128,57 ≈ 129.
   { sectionId: 'cas-vitesse', nombre: 129, calcul: () => Math.round(OAD.volumeApresChangementVitesse(150, 6, 7)) },
   // Distracteur : l'erreur de sens (150 × 7 / 6 = 175).
-  { sectionId: 'cas-vitesse', nombre: 175, calcul: () => Math.round(OAD.volumeApresChangementVitesse(150, 7, 6)) }
+  { sectionId: 'cas-vitesse', nombre: 175, calcul: () => Math.round(OAD.volumeApresChangementVitesse(150, 7, 6)) },
+  // B9 : pas de formule ; les nombres doivent être ceux du tableau D-IDR du
+  // même module (passage tous les 3 rangs : feuilles, grappes).
+  { sectionId: 'cas-passage', nombre: 50, calcul: () => ecartTableauPassages('Tous les 3 rangs', 2) },
+  { sectionId: 'cas-passage', nombre: 60, calcul: () => ecartTableauPassages('Tous les 3 rangs', 3) }
 ];
+function ecartTableauPassages(passage, colonne) {
+  const t = MODULES.find(m => m.id === 'pulve-couverture').sections.find(s => s.id === 'passages')
+    .blocs.find(b => b.type === 'tableau');
+  return Math.abs(parseInt(t.lignes.find(l => l[0] === passage)[colonne].replace('−', '-'), 10));
+}
 const sectionsCas = () => [].concat(...MODULES.map(m => m.sections.filter(s => s.type === 'cas')));
 test('CAS_CHIFFRES : chaque nombre figure dans les options de son cas et vaut le calcul du moteur', () => {
   CAS_CHIFFRES.forEach(x => {
@@ -1157,6 +1169,45 @@ test('rendu à blanc des sections du module interceps', () => {
   const c = new Component({});
   INTERCEPS.sections.forEach(s => rendre(c, '#/module/sol-outil-interceps/' + s.id));
   assert.strictEqual(rendre(c, '#/module/sol-outil-interceps/types-outils').blocs.filter(b => b.estTableau).length, 1);
+});
+
+// ----------------------------------------------------------------------
+section('§16 B9 — nouveaux modules');
+
+const NOUVEAUX_B9 = ['pulve-filtration', 'pulve-remise-en-route', 'pulve-couverture'].map(id => MODULES.find(m => m.id === id));
+test('6 modules chargés dans l\'ordre déclaré ; les 3 nouveaux après pulve-entretien', () => {
+  assert.strictEqual(MODULES.length, 6);
+  const ids = MODULES.map(m => m.id);
+  assert.strictEqual(ids.indexOf('pulve-filtration'), ids.indexOf('pulve-entretien') + 1);
+});
+test('les 3 nouveaux modules : conformes, brouillon, aucun élément chiffré sans source', () => {
+  NOUVEAUX_B9.forEach(m => {
+    assert.ok(m, 'module manquant');
+    assert.deepStrictEqual(OAD.validerModule(m), [], m.id);
+    assert.deepStrictEqual(OAD.elementsChiffresSansSource(m).map(x => x.sectionId), [], m.id);
+    assert.strictEqual(m.statut, 'brouillon');
+    assert.strictEqual(m.valideur, null);
+  });
+});
+test('tableau de filtration : 5 lignes, 5 colonnes ; « Gris » → 80 mesh', () => {
+  const t = NOUVEAUX_B9[0].sections.find(s => s.id === 'principe').blocs.find(b => b.type === 'tableau');
+  assert.strictEqual(t.lignes.length, 5);
+  assert.strictEqual(t.entetes.length, 5);
+  assert.strictEqual(t.lignes.find(l => l[0] === 'Gris')[t.entetes.indexOf('Mesh')], '80');
+});
+test('statique : ni « EN 907 », ni « EN 1553 », ni « TVI », ni « soufre »', () => {
+  NOUVEAUX_B9.forEach(m => {
+    const t = textesModule(m);
+    ['EN 907', 'EN 1553', 'TVI', 'soufre'].forEach(x => assert.ok(!t.includes(x), m.id + ' : ' + x));
+  });
+});
+test('rendu à blanc de chaque section des 3 nouveaux modules', () => {
+  const c = new Component({});
+  NOUVEAUX_B9.forEach(m => m.sections.forEach(s => rendre(c, '#/module/' + m.id + '/' + s.id)));
+  const rosee = rendre(c, '#/module/pulve-couverture/rosee');
+  assert.strictEqual(rosee.blocs[1].lectureGraphique, true);
+  const cat = rendre(c, '#/').domainesCatalogue.find(g => g.libelle === 'Pulvérisation');
+  assert.strictEqual(cat.modules.length, 5);
 });
 
 console.log(`\n${passed} ok, ${failed} FAIL, ${skipped} skip`);

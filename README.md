@@ -73,6 +73,11 @@ refusé.
 Calculateurs (les calculateurs hors module) ; page Progression (tableau par
 module : sections consultées, quiz, quiz réussis, état ; effacement).
 
+**Catalogue.** Pulvérisation : régler le volume par hectare ; entretenir le
+pulvérisateur ; comprendre la filtration ; remettre le pulvérisateur en
+route ; contrôler la couverture. Travail du sol : régler et entretenir un
+outil interceps. Tous en `brouillon`.
+
 **Progression.** L'état d'un module est calculé, jamais stocké : *Non
 commencé*, *En cours*, *Consulté* (toutes les sections ouvertes), *Maîtrisé*
 (en plus, tous les quiz et exercices réussis à 100 %, tentatives illimitées).
@@ -338,6 +343,14 @@ contrôler une à une sur le document primaire.
 | Besoin hydraulique 6 à 15 L/min par moteur, environ 90 bar | `sol-outil-interceps` › hydraulique | F-BOI, F-BRA | | | |
 | Charrue sans palpeur : lame à environ 45° vers l'arrière | `sol-outil-interceps` › types-outils | F-DER | | | |
 | Outils d'ouverture : griffe 4 et 8 cm ; couteau ≈ 1 cm ; cœur 12–20 cm ; rasette 20–35 cm ; disques quelques mm, 1 à 2 passages par an | `sol-outil-interceps` › types-outils (tableau) | F-OUV | | | |
+| Tableau des filtres : couleurs anciennes / ISO 19732, mesh 16 / 32 / 50 / 80 / 100, mailles 1,1 / 0,6 / 0,3 / 0,18 / 0,14 mm, usages | `pulve-filtration` › principe, quiz | F-FIL | | | |
+| Filtres tube ou coupole de 80 mesh pour pièces en laiton oxydées | `pulve-filtration` › ou-filtrer | F-FIL | | | |
+| Ordre d'incorporation : correcteurs de dureté, poudres, liquides SL SC EW EC, adjuvants | `pulve-filtration` › ordre-incorporation | F-FIL | | | |
+| Cloche à air à environ ⅓ de la pression de travail | `pulve-remise-en-route` › apres-remontage | A-WEB | | | |
+| Filtre de cabine 1 fois par an ou 500 h ; filtres A2P3 au moins 2 fois par an ; gants nitrile ou fluoro-élastomère EN 374 | `pulve-remise-en-route` › eau-claire | A-WEB | | | |
+| Réorienter 2 à 4 fois au printemps ; plaque, piquet rouillé, carton, ardoise ; brins de pied | `pulve-couverture` › controler | A-LVC | | | |
+| Rosée : jet porté 150 L/ha, dépôt équivalent ; jet projeté 400 L/ha, −40 % et −55 % (**lecture graphique**) | `pulve-couverture` › rosee | D-IDR | | | |
+| Passages au chenillard (pleine végétation, vigueur moyenne, 5,1 km/h) : tous les 2 rangs 230 L/ha, −30 %, équivalent ; 3 rangs 150 L/ha, −50 %, −60 % ; 4 rangs 117 L/ha, −65 %, −70 % | `pulve-couverture` › passages, cas-passage | D-IDR | | | |
 
 ## 14. Consignes retirées, à reproposer au valideur
 
@@ -565,3 +578,30 @@ questions `q-profondeur` et `q-ouverture`. « Après 50 m » retiré (testé).
 Choix : les réglages communs, cités par F-BOI **et** F-BRA, portent le code
 F-BOI (un code par élément) ; la section 13 nomme les deux. `q-palpeur`
 réécrite sur l'âge de la vigne. `dureeMin` 25 → 30 min (6 → 7 sections).
+
+### B9 — contenu : filtration, remise en route, couverture (23/09/2026, porte G1)
+
+- **D-B9-1** : `pulve-filtration` (F-FIL) : principe, tableau des 5 filtres,
+  où filtrer, ordre d'incorporation, quiz de 3 questions.
+- **D-B9-2** : `pulve-remise-en-route` (A-WEB) : deux procédures (après
+  remontage ; cuve d'eau claire, pulvérisation enclenchée), cloche à air,
+  filtre de cabine, filtres A2P3, EPI. Normes EN 907 / EN 1553 du lave-mains
+  non reprises (état à vérifier, synthèse §7.2) — testé.
+- **D-B9-3** : `pulve-couverture` (A-LVC, D-IDR) : contrôle, rosée (valeurs du
+  jet projeté marquées « lecture graphique »), tableau des passages au
+  chenillard avec ses conditions d'essai, cas pratique « toutes les 3
+  routes ». Technologie `toutes`, technologie nommée dans chaque bloc.
+- **D-B9-4** : aucune consigne de buse anti-dérive, aucune valeur de poudrage
+  (testé : ni « TVI » ni « soufre »).
+
+Déclarés dans `contenu/index.js` et `<helmet>` après `pulve-entretien`.
+
+Choix et points à vérifier :
+- Date de D-IDR : la synthèse n'en donne pas ; « 2014 » est déduit du nom du
+  fichier (« Pulvé Web 2014 »), essais de 2013. À confirmer au document.
+- Exemple « sulfate d'ammonium » (correcteur de dureté) non repris : l'outil
+  ne cite pas de produit.
+- `pulve-remise-en-route` n'a ni quiz ni exercice : il plafonne à
+  « Consulté » (D-B6-3). Consignes EPI : relecture du valideur requise.
+- `cas-passage` : nombres (−50 %, −60 %) contrôlés par `CAS_CHIFFRES` contre
+  le tableau D-IDR du même module (pas de formule).
