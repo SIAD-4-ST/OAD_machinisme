@@ -319,6 +319,20 @@ contrôler une à une sur le document primaire.
 | Durée de mesure au niveau de cuve : 5 min (pneumatiques, jets portés), 2 min (jets projetés) | `debitCuve.duree` | F-VHA | | | |
 | 180 L/ha avec 3 hauteurs de buses → 120 L/ha avec 2 | `hauteursBuses.V1`, `.h1`, `.h2` | A-LVC | | | |
 | Intervention si écart d'un diffuseur > 10 % à la moyenne (strict : « supérieur à ») | `ECART_DIFFUSEUR_MAX`, calculateur `ecartDiffuseurs` | F-VHA | | | |
+| Formule Volume/ha = Débit × 600 / (Vitesse × Largeur) | `pulve-reglage-volume` › principes | F-VHA | | | |
+| Largeur : 7 × 1,10 m = 7,7 m ; chenillard 1, 2 ou 3 écartements | `pulve-reglage-volume` › principes, `exo-volume` | F-VHA | | | |
+| Mesure de vitesse « départ lancé » sur 50 m ; v = d × 3,6 / t | `pulve-reglage-volume` › mesure-vitesse, `exo-vitesse` (50 m en 35 s) | F-VHA | | | |
+| Table temps → vitesse sur 50 m : 27,5 s → 6,5 ; 30 → 6 ; 32,5 → 5,5 ; 35 → 5,1 ; **37 → 4,8** ; 40 → 4,5 ; 45 → 4 ; 60 s → 3 km/h | `pulve-reglage-volume` › table-vitesse | F-VHA | | | |
+| (note : 50 × 3,6 / 37 = 4,86, soit 4,9 à l'arrondi ; la source donne 4,8 — à vérifier au document primaire) | | | | | |
+| Débit par le niveau de cuve : 2 min (jets projetés, pendillards) ou 5 min (pneumatiques, jets portés) | `pulve-reglage-volume` › mesure-debit | F-VHA | | | |
+| Écart > 10 % à la moyenne : nettoyage, buse ou pastille, anti-gouttes | `pulve-reglage-volume` › controle-diffuseurs | F-VHA | | | |
+| Exercice : 9,6 L/min, 5 km/h, 7,7 m → 150 L/ha | `pulve-reglage-volume` › exo-volume | F-VHA (valeurs d'exemple de B1) | | | |
+| Buse usée : débit plus élevé ; comparer à une buse neuve de même type et taille | `pulve-reglage-volume` › controle-diffuseurs ; `pulve-entretien` › pourquoi | B20-1 | 26–38 | | |
+| Durée de vie des buses : 2 à 5 ans en moyenne | `pulve-entretien` › pourquoi | B20-1 | 26–38 | | |
+| Filtre d'aspiration à chaque remplissage ; refoulement après chaque traitement | `pulve-entretien` › plan-entretien, quiz | F-FIL | | | |
+| Filtre de cabine : 1 fois par an ou toutes les 500 h | `pulve-entretien` › plan-entretien | A-WEB | | | |
+| Filtres A2P3 : au moins 2 fois par an | `pulve-entretien` › plan-entretien | A-WEB | | | |
+| Contrôle de tous les débits et traque des fuites en remise en route | `pulve-entretien` › plan-entretien | A-WEB | | | |
 
 ## 14. Consignes retirées, à reproposer au valideur
 
@@ -327,6 +341,17 @@ sont retirées (pas reformulées) et attendent la décision du valideur.
 
 | Module | Consigne retirée | Raison | Décision du valideur |
 |---|---|---|---|
+| pulve-reglage-volume | « Refaire la mesure dans l'autre sens et retenir la moyenne des deux temps » (aller-retour de la mesure de vitesse) | Absente du corpus : F-VHA mesure « départ lancé » sur 50 m, sans aller-retour | |
+| pulve-reglage-volume | « Baliser une distance connue (par exemple 100 m) » | Remplacée par 50 m entre deux jalons (F-VHA) | |
+| pulve-reglage-volume | Introduction de la mesure de vitesse : « cuve à moitié pleine, dans le rapport de boîte et au régime utilisés pour traiter » | Absente du corpus | |
+| pulve-reglage-volume | « Recueillir chaque buse pendant une minute dans un récipient gradué » ; « comparer aux données du fabricant, tolérance indiquée » | Remplacées par la mesure au niveau de la cuve et l'écart de 10 % à la moyenne (F-VHA) | |
+| pulve-reglage-volume | « Le débit se mesure buse par buse, à la pression de travail, avec de l'eau claire » | Absente du corpus sous cette forme | |
+| pulve-reglage-volume | Explication de `q-pression` : débit « comme une puissance de la pression (racine carrée) » | Fondée sur l'exposant b, non vérifié dans le corpus ; remplacée par A-LVC / B20-1 | |
+| pulve-entretien | « Contrôler visuellement les fuites, raccords et flexibles » — **chaque jour** | Périodicité absente du corpus ; la traque des fuites est gardée en remise en route (A-WEB) | |
+| pulve-entretien | « Graisser les points prévus par la notice » — **chaque semaine** | Périodicité absente du corpus ; devenue « à la fréquence prévue par la notice » | |
+| pulve-entretien | « Faire réviser pompe, régulation et rampe » — **chaque année** | Absente du corpus | |
+| pulve-entretien | « Mesurer le débit de chaque buse et remplacer les buses hors tolérance » | Remplacée par le contrôle de tous les débits (A-WEB) et le contrôle diffuseur par diffuseur (F-VHA) | |
+| pulve-entretien | « Sécurité : moins de fuites et de contacts avec la bouillie » ; « Durée de vie : moins de corrosion et de pannes » | Absentes du corpus ; remplacées par l'usure et la durée de vie des buses (B20-1) | |
 
 ## 15. Édition du contenu
 
@@ -474,3 +499,39 @@ des ids de quiz, cas et exercices vérifiée aussi par `erreursContenu`
 
 Ajout : le résumé de la page Progression distingue modules maîtrisés et
 consultés (il comptait les modules « terminés »).
+
+### B7 — contenu : modules pulvérisation (23/09/2026, porte G1)
+
+- **D-B7-1** : sources `pulve-reglage-volume` F-VHA, A-LVC, B20-1, F-PRE ;
+  `pulve-entretien` F-VHA, F-FIL, A-WEB, B20-1 (références et dates du §0 de
+  la synthèse).
+- **D-B7-2** : consignes absentes du corpus retirées, listées en section 14.
+- **D-B7-3** : graissage « aux points et à la fréquence prévus par la notice
+  du constructeur », sans périodicité.
+- **D-B7-4** : alerte du contrôle technique périodique, sans périodicité ni
+  mention « plus de 5 ans ».
+- **D-B7-5** : aucune consigne de buse anti-dérive (G4).
+
+Contenu : largeur traitée et causes d'écart (F-VHA), mesure de vitesse sur
+50 m et table temps → vitesse, débit au niveau de la cuve, contrôle diffuseur
+par diffuseur ; calculateurs largeur, débit à la cuve, écart ; exercices
+`exo-vitesse` (5,1 km/h) et `exo-volume` (150 L/ha). Les deux modules
+restent en `brouillon` ; aucun élément chiffré sans source (testé).
+
+Écarts au prompt, à trancher par le valideur :
+- **Nettoyage des buses** (B20-1) : en ligne de fiche et non en tâche du plan
+  d'entretien, faute de périodicité dans le corpus (règle du `CLAUDE.md` :
+  aucune périodicité de mémoire).
+- **Table F-VHA** : la valeur 4,8 km/h pour 37 s est reprise telle quelle,
+  alors que le calcul donne 4,86 (4,9) ; signalée en section 13.
+- **`cas-vitesse`** : texte inchangé, mais `source: 'F-VHA'` ajouté à la
+  situation et aux options (la règle « chiffre ⇒ source » l'exige).
+- **`q-pression`** : explication fondée sur B20-1 (gouttes fines et dérive,
+  plage de pression, « le bon calibre à la bonne pression »), qui couvre aussi
+  le principe A-LVC ; un seul code par élément.
+- Conservés sans source car sans chiffre et cohérents avec le corpus :
+  rinçage de la cuve, vérification du manomètre, échéance du contrôle
+  technique, hivernage selon la notice, étape « équipements de protection » de
+  la mesure de débit, procédure de rinçage de fin de traitement (sécurité :
+  relecture du valideur requise).
+- `dureeMin` de `pulve-reglage-volume` : 30 → 50 min (9 → 16 sections).

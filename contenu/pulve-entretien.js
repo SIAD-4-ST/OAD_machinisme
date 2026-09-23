@@ -5,26 +5,34 @@
   id: 'pulve-entretien',
   titre: 'Entretenir le pulvérisateur',
   domaine: 'pulverisation',
-  // Brouillon : rédaction initiale du 23/09/2026, non relue par un valideur.
+  // Brouillon : rédaction initiale du 23/09/2026, corrigée le 23/09/2026 sur
+  // la synthèse du corpus (lot B, B7). Non relue par un valideur (porte G2) ;
+  // consignes de sécurité à relire avant publication.
   statut: 'brouillon',
   valideur: null,
-  resume: 'Les gestes d\'entretien qui gardent un pulvérisateur précis et sûr, de la sortie quotidienne à l\'hivernage.',
+  resume: 'Les gestes d\'entretien qui gardent un pulvérisateur précis et sûr, du remplissage à l\'hivernage.',
   public: 'Chauffeurs et chefs de culture',
   dureeMin: 20,
-  sources: [],
+  sources: [
+    { code: 'F-VHA', reference: 'Fiche Volume/hectare, CIVC', date: 'février 2014' },
+    { code: 'F-FIL', reference: 'Fiche Filtration, CIVC', date: 'février 2014' },
+    { code: 'A-WEB', reference: 'Article web du Vigneron Champenois (M. Liébart, M.-P. Tréfouël-Vacavant), mis à jour après 2022', date: '05/04/2014' },
+    { code: 'B20-1', reference: 'Choisir la bonne buse, partie 1, Le Vigneron Champenois (M. Liébart, S. Debuisson, A. Descôtes)', date: 'avril 2020', page: '26–38' }
+  ],
   sections: [
     {
       id: 'pourquoi',
       type: 'fiche',
       titre: 'Pourquoi entretenir',
       blocs: [
-        { type: 'paragraphe', texte: 'Un pulvérisateur mal entretenu dérègle le volume sans que le chauffeur s\'en aperçoive : buses usées ou bouchées, filtres encrassés, manomètre faux.' },
-        { type: 'liste', items: [
-          'Précision : le volume réellement épandu reste celui qui a été calculé.',
-          'Sécurité : moins de fuites et de contacts avec la bouillie.',
-          'Durée de vie : moins de corrosion et de pannes en pleine campagne.'
+        { type: 'paragraphe', texte: 'Un pulvérisateur mal entretenu dérègle le volume sans que le chauffeur s\'en aperçoive : buses ou pastilles usées, filtres bouchés, fuites, manomètre ou débitmètre défaillant.', source: 'F-VHA' },
+        { type: 'liste', source: 'B20-1', items: [
+          'Une buse usée débite plus, puis sa distribution se dégrade : il faut donc contrôler régulièrement les débits.',
+          'Durée de vie d\'une buse : 2 à 5 ans en moyenne, selon le produit, la pression et la fréquence d\'utilisation.',
+          'Nettoyer une buse sans instrument abrasif : brosse à poils souples ou nettoyeur à ultrasons.'
         ] },
-        { type: 'alerte', texte: 'Le pulvérisateur est soumis à un contrôle technique périodique obligatoire : vérifiez l\'échéance du vôtre en début de campagne.' }
+        { type: 'paragraphe', texte: 'Graisser les points et à la fréquence prévus par la notice du constructeur.' },
+        { type: 'alerte', texte: 'Le pulvérisateur est soumis à un contrôle technique périodique obligatoire : vérifiez l\'échéance du vôtre selon la réglementation en vigueur.' }
       ]
     },
     {
@@ -33,14 +41,14 @@
       titre: 'Plan d\'entretien',
       taches: [
         { id: 'rincage', texte: 'Rincer la cuve et le circuit.', periodicite: 'chaque-utilisation' },
-        { id: 'filtres', texte: 'Nettoyer les filtres d\'aspiration, de refoulement et de buses.', periodicite: 'chaque-utilisation' },
-        { id: 'fuites', texte: 'Contrôler visuellement les fuites, raccords et flexibles.', periodicite: 'quotidienne' },
-        { id: 'graissage', texte: 'Graisser les points prévus par la notice du constructeur.', periodicite: 'hebdomadaire' },
-        { id: 'manometre', texte: 'Vérifier le manomètre (aiguille à zéro au repos, lecture stable).', periodicite: 'debut-campagne' },
-        { id: 'debit-buses', texte: 'Mesurer le débit de chaque buse et remplacer les buses hors tolérance.', periodicite: 'debut-campagne' },
+        { id: 'filtre-aspiration', texte: 'Nettoyer le filtre d\'aspiration.', periodicite: 'chaque-utilisation', detail: 'à chaque remplissage', source: 'F-FIL' },
+        { id: 'filtre-refoulement', texte: 'Nettoyer le filtre de refoulement.', periodicite: 'chaque-utilisation', detail: 'après chaque traitement', source: 'F-FIL' },
+        { id: 'filtres-masque', texte: 'Renouveler les filtres A2P3 du masque.', periodicite: 'semestrielle', source: 'A-WEB' },
+        { id: 'debits-fuites', texte: 'Cuve remplie d\'eau claire, pulvérisation enclenchée : contrôler tous les débits (buse défectueuse, caillot) et traquer les fuites (cuves, tuyaux).', periodicite: 'debut-campagne', source: 'A-WEB' },
+        { id: 'manometre', texte: 'Vérifier le manomètre et le débitmètre.', periodicite: 'debut-campagne', source: 'F-VHA' },
         { id: 'controle', texte: 'Vérifier l\'échéance du contrôle technique obligatoire.', periodicite: 'debut-campagne' },
         { id: 'hivernage', texte: 'Vidanger, nettoyer et protéger le circuit du gel selon la notice.', periodicite: 'fin-campagne' },
-        { id: 'revision', texte: 'Faire réviser pompe, régulation et rampe.', periodicite: 'annuelle' }
+        { id: 'filtre-cabine', texte: 'Remplacer le filtre de la cabine du tracteur.', periodicite: 'annuelle', detail: 'ou toutes les 500 h', source: 'A-WEB' }
       ]
     },
     {
@@ -63,17 +71,19 @@
       questions: [
         {
           id: 'q-filtres',
-          enonce: 'Quand nettoyer les filtres ?',
-          choix: ['Après chaque utilisation', 'Une fois par campagne', 'Seulement en cas de panne'],
+          enonce: 'Quand nettoyer les filtres d\'aspiration et de refoulement ?',
+          choix: ['À chaque remplissage et après chaque traitement', 'Une fois par campagne', 'Seulement en cas de panne'],
           bonnes: [0],
-          explication: 'Un filtre encrassé fait baisser le débit dès le traitement suivant.'
+          explication: 'Le filtre d\'aspiration se nettoie à chaque remplissage, celui de refoulement après chaque traitement : le bouchage d\'une buse doit rester exceptionnel.',
+          source: 'F-FIL'
         },
         {
           id: 'q-derive',
           enonce: 'Quels défauts faussent le volume épandu sans signe visible ? (plusieurs réponses)',
           choix: ['Buses usées', 'Manomètre faux', 'Peinture écaillée'],
           bonnes: [0, 1],
-          explication: 'Une buse usée débite plus ; un manomètre faux fait régler une mauvaise pression.'
+          explication: 'Une buse usée débite plus ; un manomètre défaillant fait régler une mauvaise pression.',
+          source: 'F-VHA'
         }
       ]
     },
@@ -84,7 +94,7 @@
       situation: 'Pendant un traitement, vous constatez qu\'une buse ne pulvérise plus. Que faites-vous ?',
       options: [
         { texte: 'Je souffle dans la buse pour la déboucher.', correct: false, retour: 'Jamais : risque de contact direct avec la bouillie par la bouche.' },
-        { texte: 'J\'arrête, je coupe la pression et je remplace la buse par une buse de rechange identique.', correct: true, retour: 'Oui : la buse bouchée se nettoie ensuite à l\'eau avec une brosse souple, équipements de protection portés.' },
+        { texte: 'J\'arrête, je coupe la pression et je remplace la buse par une buse de rechange identique.', correct: true, retour: 'Oui : la buse bouchée se nettoie ensuite sans instrument abrasif, à la brosse à poils souples, équipements de protection portés.', source: 'B20-1' },
         { texte: 'Je termine la parcelle et je verrai après.', correct: false, retour: 'Non : le rang correspondant n\'est plus protégé et le volume est faussé.' }
       ]
     }

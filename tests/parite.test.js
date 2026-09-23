@@ -133,13 +133,12 @@ test('chaque fichier contenu/<id>.js porte le module de même id', () => {
     assert.strictEqual(require(path.join(RACINE, 'contenu', m.id + '.js')).id, m.id);
   });
 });
-// Pourquoi : type « exercice » ajouté en B5, utilisé par le contenu à partir
-// de B7 — d'ici là, les 6 types d'origine sont utilisés et aucun inconnu.
-test('les types de section d\'origine sont utilisés par le contenu, aucun type inconnu', () => {
+// Pourquoi : type « exercice » ajouté en B5 et utilisé par le contenu depuis
+// B7 : de nouveau, tous les types du vocabulaire sont utilisés.
+test('tous les types de section sont utilisés par le contenu', () => {
   const types = new Set();
   MODULES.forEach(m => m.sections.forEach(s => types.add(s.type)));
-  ['fiche', 'procedure', 'entretien', 'calculateur', 'quiz', 'cas'].forEach(t => assert.ok(types.has(t), t));
-  [...types].forEach(t => assert.ok(OAD.TYPES_SECTION.includes(t), t));
+  assert.deepStrictEqual([...types].sort(), OAD.TYPES_SECTION.slice().sort());
 });
 test('validerModule détecte les défauts d\'un module fabriqué', () => {
   const faux = {
@@ -563,7 +562,8 @@ test('procédure et entretien : cocher met à jour la progression', () => {
   rendre(c, h);
   c.basculerEtape(evt('on', { 'data-etape': 'baliser' }));
   const out = rendre(c, h);
-  assert.strictEqual(out.procedure.compteur, '1 / 5 étapes cochées');
+  // Pourquoi : aller-retour retiré de la mesure de vitesse (absent du corpus), B7.
+  assert.strictEqual(out.procedure.compteur, '1 / 4 étapes cochées');
   assert.strictEqual(out.procedure.etapes[0].fait, true);
   const h2 = '#/module/pulve-entretien/plan-entretien';
   rendre(c, h2);
@@ -1057,6 +1057,76 @@ test('tableau de progression : colonne « Quiz réussis »', () => {
   const t = rendre(new Component({}), '#/progression').tableauProgression;
   const thead = t.c.find(x => x && x.t === 'thead');
   assert.deepStrictEqual([].concat(...thead.c[0].c).map(th => th.c[0]), ['Module', 'Sections consultées', 'Quiz', 'Quiz réussis', 'État']);
+});
+
+// ----------------------------------------------------------------------
+section('§14 B7 — contenu pulvérisation');
+
+const PULVE = ['pulve-reglage-volume', 'pulve-entretien'].map(id => MODULES.find(m => m.id === id));
+// Tout le texte visible d'un module (valeurs des champs texte, récursivement).
+function textesModule(m) {
+  const t = [];
+  (function parcourir(x) {
+    if (typeof x === 'string') t.push(x);
+    else if (Array.isArray(x)) x.forEach(parcourir);
+    else if (x && typeof x === 'object') Object.keys(x).forEach(k => { if (k !== 'source' && k !== 'id' && k !== 'code') parcourir(x[k]); });
+  })(m.sections);
+  return t.join('\n');
+}
+// Codes de source cités par les éléments d'un module.
+function codesCites(m) {
+  const c = new Set();
+  (function parcourir(x) {
+    if (Array.isArray(x)) x.forEach(parcourir);
+    else if (x && typeof x === 'object') { if (typeof x.source === 'string') c.add(x.source); Object.values(x).forEach(parcourir); }
+  })(m.sections);
+  return [...c];
+}
+test('les deux modules pulvérisation sont conformes, aucun élément chiffré sans source', () => {
+  PULVE.forEach(m => {
+    assert.deepStrictEqual(OAD.validerModule(m), [], m.id);
+    assert.deepStrictEqual(OAD.elementsChiffresSansSource(m).map(x => x.sectionId), [], m.id);
+    assert.strictEqual(m.statut, 'brouillon');
+  });
+});
+test('statique : ni « racine carrée », ni « 100 m », ni « chaque semaine »', () => {
+  PULVE.forEach(m => {
+    const t = textesModule(m);
+    ['racine carrée', '100 m', 'chaque semaine'].forEach(x => assert.ok(!t.toLowerCase().includes(x), m.id + ' : ' + x));
+  });
+});
+test('exo-vitesse → 5,1 km/h ; exo-volume → 150 L/ha (0 décimale)', () => {
+  const s = id => PULVE[0].sections.find(x => x.id === id);
+  const v = OAD.attenduExercice(s('exo-vitesse')), w = OAD.attenduExercice(s('exo-volume'));
+  assert.strictEqual(v.decimales, 1);
+  assert.strictEqual(Math.round(v.valeur * 10) / 10, 5.1);
+  assert.strictEqual(w.decimales, 0);
+  assert.strictEqual(Math.round(w.valeur), 150);
+});
+test('codes de source : sous-ensemble de F-VHA, F-FIL, A-LVC, A-WEB, B20-1, F-PRE', () => {
+  const permis = ['F-VHA', 'F-FIL', 'A-LVC', 'A-WEB', 'B20-1', 'F-PRE'];
+  PULVE.forEach(m => {
+    m.sources.forEach(s => assert.ok(permis.includes(s.code), m.id + ' : ' + s.code));
+    codesCites(m).forEach(c => assert.ok(permis.includes(c), m.id + ' : ' + c));
+  });
+});
+test('rendu à blanc des nouvelles sections', () => {
+  const c = new Component({});
+  const r = id => rendre(c, '#/module/pulve-reglage-volume/' + id);
+  assert.strictEqual(r('table-vitesse').blocs[1].estTableau, true);
+  assert.strictEqual(r('calc-largeur').calcCourant.id, 'largeurTraitee');
+  assert.strictEqual(r('calc-debit-cuve').calcCourant.id, 'debitCuve');
+  assert.strictEqual(r('calc-ecart').calcCourant.aTableau, true);
+  assert.strictEqual(r('exo-vitesse').estExercice, true);
+  assert.strictEqual(r('exo-volume').exo.uniteTxt, '(L/ha)');
+  assert.strictEqual(r('controle-diffuseurs').procedure.etapes.length, 4);
+  assert.strictEqual(r('mesure-debit').procedure.etapes[3].aSource, true);
+  const e = rendre(c, '#/module/pulve-entretien/plan-entretien');
+  const libelles = e.entretien.groupes.map(g => g.libelle);
+  assert.ok(libelles.includes('Au moins deux fois par an'));
+  const cabine = [].concat(...e.entretien.groupes.map(g => g.taches)).find(t => t.id === 'filtre-cabine');
+  assert.strictEqual(cabine.detail, 'ou toutes les 500 h');
+  assert.strictEqual(rendre(c, '#/module/pulve-reglage-volume').mod.aChiffresSansSource, false);
 });
 
 console.log(`\n${passed} ok, ${failed} FAIL, ${skipped} skip`);
