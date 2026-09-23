@@ -1,0 +1,18 @@
+/* Charte Champagne.fr — couleurs. Copié de docs/maquette (révision v3).
+   Thème clair par défaut ; thème sombre via data-theme="sombre" sur <html>. */
+:root{
+--gold:#b69e64;--gold-deep:#917a42;--gold-soft:#c5af7e;--logo-ink:#1a171b;
+--white:#ffffff;--black:#000000;
+--black-50:#f2f2f2;--black-100:#e6e6e6;--black-200:#cccccc;--black-300:#b2b2b2;--black-400:#999999;--black-500:#808080;--black-700:#4d4d4d;--black-800:#333333;--black-850:#121212;--black-900:#1a1a1a;
+/* sémantique — thème clair (défaut) */
+--surface:var(--white);--surface-alt:var(--black-50);--surface-inverse:var(--black-900);
+--ink:var(--black);--ink-muted:var(--black-700);--hairline:var(--black-200);
+--accent:var(--gold);--accent-hover:var(--gold-deep);--on-accent:var(--black);
+--control-border:var(--black-200);--marquee-ink:var(--black-100);
+}
+[data-theme="sombre"]{
+--surface:var(--black-900);--surface-alt:var(--black-850);--surface-inverse:var(--white);
+--ink:var(--white);--ink-muted:var(--black-400);--hairline:var(--black-800);
+--accent:var(--gold);--accent-hover:var(--gold-deep);--on-accent:var(--black);
+--control-border:var(--black-800);--marquee-ink:var(--black-800);
+}

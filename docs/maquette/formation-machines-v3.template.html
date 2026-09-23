@@ -1,0 +1,1532 @@
+<!DOCTYPE html>
+<html><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="b2917812-9521-4e96-ae22-a2eb9115dfc8"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<meta name="color-scheme" content="light dark">
+<title>Formation machines</title>
+<style>/* Fontes de marque (Domaine, Gotham, CIVC) non fournies : substitution Google Fonts.
+   Domaine → Newsreader · Gotham → Montserrat · CIVC → Jost. Remplacer par les @font-face réels dès réception. */
+/* cyrillic */
+@font-face {
+  font-family: 'Jost';
+  font-style: normal;
+  font-weight: 300;
+  font-display: swap;
+  src: url("727bb98f-277f-448b-8cbd-e79bf41712e6") format('woff2');
+  unicode-range: U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116;
+}
+/* latin-ext */
+@font-face {
+  font-family: 'Jost';
+  font-style: normal;
+  font-weight: 300;
+  font-display: swap;
+  src: url("779af7c6-65c6-4672-b43b-ee64d1bd7525") format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+/* latin */
+@font-face {
+  font-family: 'Jost';
+  font-style: normal;
+  font-weight: 300;
+  font-display: swap;
+  src: url("b209082e-1017-4326-b889-54b016d1d2ac") format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+/* cyrillic */
+@font-face {
+  font-family: 'Jost';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("727bb98f-277f-448b-8cbd-e79bf41712e6") format('woff2');
+  unicode-range: U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116;
+}
+/* latin-ext */
+@font-face {
+  font-family: 'Jost';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("779af7c6-65c6-4672-b43b-ee64d1bd7525") format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+/* latin */
+@font-face {
+  font-family: 'Jost';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("b209082e-1017-4326-b889-54b016d1d2ac") format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+/* cyrillic */
+@font-face {
+  font-family: 'Jost';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url("727bb98f-277f-448b-8cbd-e79bf41712e6") format('woff2');
+  unicode-range: U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116;
+}
+/* latin-ext */
+@font-face {
+  font-family: 'Jost';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url("779af7c6-65c6-4672-b43b-ee64d1bd7525") format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+/* latin */
+@font-face {
+  font-family: 'Jost';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url("b209082e-1017-4326-b889-54b016d1d2ac") format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+/* cyrillic-ext */
+@font-face {
+  font-family: 'Montserrat';
+  font-style: normal;
+  font-weight: 300;
+  font-display: swap;
+  src: url("1165c265-4557-43fd-995e-76db70590324") format('woff2');
+  unicode-range: U+0460-052F, U+1C80-1C8A, U+20B4, U+2DE0-2DFF, U+A640-A69F, U+FE2E-FE2F;
+}
+/* cyrillic */
+@font-face {
+  font-family: 'Montserrat';
+  font-style: normal;
+  font-weight: 300;
+  font-display: swap;
+  src: url("b6c1e556-f061-494b-a841-4bde0826cbd8") format('woff2');
+  unicode-range: U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116;
+}
+/* vietnamese */
+@font-face {
+  font-family: 'Montserrat';
+  font-style: normal;
+  font-weight: 300;
+  font-display: swap;
+  src: url("870c7848-db1e-452e-8822-6156ab68802f") format('woff2');
+  unicode-range: U+0102-0103, U+0110-0111, U+0128-0129, U+0168-0169, U+01A0-01A1, U+01AF-01B0, U+0300-0301, U+0303-0304, U+0308-0309, U+0323, U+0329, U+1EA0-1EF9, U+20AB;
+}
+/* latin-ext */
+@font-face {
+  font-family: 'Montserrat';
+  font-style: normal;
+  font-weight: 300;
+  font-display: swap;
+  src: url("4765164e-d59e-42c9-be1d-2bf00741d6c0") format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+/* latin */
+@font-face {
+  font-family: 'Montserrat';
+  font-style: normal;
+  font-weight: 300;
+  font-display: swap;
+  src: url("b91dcf25-44b2-412e-862b-6edaf54bdbdd") format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+/* cyrillic-ext */
+@font-face {
+  font-family: 'Montserrat';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("1165c265-4557-43fd-995e-76db70590324") format('woff2');
+  unicode-range: U+0460-052F, U+1C80-1C8A, U+20B4, U+2DE0-2DFF, U+A640-A69F, U+FE2E-FE2F;
+}
+/* cyrillic */
+@font-face {
+  font-family: 'Montserrat';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("b6c1e556-f061-494b-a841-4bde0826cbd8") format('woff2');
+  unicode-range: U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116;
+}
+/* vietnamese */
+@font-face {
+  font-family: 'Montserrat';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("870c7848-db1e-452e-8822-6156ab68802f") format('woff2');
+  unicode-range: U+0102-0103, U+0110-0111, U+0128-0129, U+0168-0169, U+01A0-01A1, U+01AF-01B0, U+0300-0301, U+0303-0304, U+0308-0309, U+0323, U+0329, U+1EA0-1EF9, U+20AB;
+}
+/* latin-ext */
+@font-face {
+  font-family: 'Montserrat';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("4765164e-d59e-42c9-be1d-2bf00741d6c0") format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+/* latin */
+@font-face {
+  font-family: 'Montserrat';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("b91dcf25-44b2-412e-862b-6edaf54bdbdd") format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+/* cyrillic-ext */
+@font-face {
+  font-family: 'Montserrat';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url("1165c265-4557-43fd-995e-76db70590324") format('woff2');
+  unicode-range: U+0460-052F, U+1C80-1C8A, U+20B4, U+2DE0-2DFF, U+A640-A69F, U+FE2E-FE2F;
+}
+/* cyrillic */
+@font-face {
+  font-family: 'Montserrat';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url("b6c1e556-f061-494b-a841-4bde0826cbd8") format('woff2');
+  unicode-range: U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116;
+}
+/* vietnamese */
+@font-face {
+  font-family: 'Montserrat';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url("870c7848-db1e-452e-8822-6156ab68802f") format('woff2');
+  unicode-range: U+0102-0103, U+0110-0111, U+0128-0129, U+0168-0169, U+01A0-01A1, U+01AF-01B0, U+0300-0301, U+0303-0304, U+0308-0309, U+0323, U+0329, U+1EA0-1EF9, U+20AB;
+}
+/* latin-ext */
+@font-face {
+  font-family: 'Montserrat';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url("4765164e-d59e-42c9-be1d-2bf00741d6c0") format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+/* latin */
+@font-face {
+  font-family: 'Montserrat';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url("b91dcf25-44b2-412e-862b-6edaf54bdbdd") format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+/* cyrillic-ext */
+@font-face {
+  font-family: 'Montserrat';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url("1165c265-4557-43fd-995e-76db70590324") format('woff2');
+  unicode-range: U+0460-052F, U+1C80-1C8A, U+20B4, U+2DE0-2DFF, U+A640-A69F, U+FE2E-FE2F;
+}
+/* cyrillic */
+@font-face {
+  font-family: 'Montserrat';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url("b6c1e556-f061-494b-a841-4bde0826cbd8") format('woff2');
+  unicode-range: U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116;
+}
+/* vietnamese */
+@font-face {
+  font-family: 'Montserrat';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url("870c7848-db1e-452e-8822-6156ab68802f") format('woff2');
+  unicode-range: U+0102-0103, U+0110-0111, U+0128-0129, U+0168-0169, U+01A0-01A1, U+01AF-01B0, U+0300-0301, U+0303-0304, U+0308-0309, U+0323, U+0329, U+1EA0-1EF9, U+20AB;
+}
+/* latin-ext */
+@font-face {
+  font-family: 'Montserrat';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url("4765164e-d59e-42c9-be1d-2bf00741d6c0") format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+/* latin */
+@font-face {
+  font-family: 'Montserrat';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url("b91dcf25-44b2-412e-862b-6edaf54bdbdd") format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+/* vietnamese */
+@font-face {
+  font-family: 'Newsreader';
+  font-style: normal;
+  font-weight: 300;
+  font-display: swap;
+  src: url("d9aaac00-1ae9-4445-92f4-b62347ab8646") format('woff2');
+  unicode-range: U+0102-0103, U+0110-0111, U+0128-0129, U+0168-0169, U+01A0-01A1, U+01AF-01B0, U+0300-0301, U+0303-0304, U+0308-0309, U+0323, U+0329, U+1EA0-1EF9, U+20AB;
+}
+/* latin-ext */
+@font-face {
+  font-family: 'Newsreader';
+  font-style: normal;
+  font-weight: 300;
+  font-display: swap;
+  src: url("dcf17e2e-8e7e-4e6f-87dd-55dc249417e8") format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+/* latin */
+@font-face {
+  font-family: 'Newsreader';
+  font-style: normal;
+  font-weight: 300;
+  font-display: swap;
+  src: url("73a11f91-fd81-4b9d-b58a-baf8f5e7ac86") format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+/* vietnamese */
+@font-face {
+  font-family: 'Newsreader';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("d9aaac00-1ae9-4445-92f4-b62347ab8646") format('woff2');
+  unicode-range: U+0102-0103, U+0110-0111, U+0128-0129, U+0168-0169, U+01A0-01A1, U+01AF-01B0, U+0300-0301, U+0303-0304, U+0308-0309, U+0323, U+0329, U+1EA0-1EF9, U+20AB;
+}
+/* latin-ext */
+@font-face {
+  font-family: 'Newsreader';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("dcf17e2e-8e7e-4e6f-87dd-55dc249417e8") format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+/* latin */
+@font-face {
+  font-family: 'Newsreader';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("73a11f91-fd81-4b9d-b58a-baf8f5e7ac86") format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+:root{
+--font-domaine:"Domaine Display","Domaine","Newsreader",Georgia,serif;
+--font-gotham:"Gotham","Montserrat",Arial,sans-serif;
+--font-civc:"CIVC","civc","Jost",Arial,sans-serif;
+--font-display:var(--font-domaine);
+--font-body:var(--font-gotham);
+--font-signal:var(--font-civc);
+}
+
+:root{
+--gold:#b69e64;--gold-deep:#917a42;--gold-soft:#c5af7e;--logo-ink:#1a171b;
+--white:#ffffff;--black:#000000;
+--black-50:#f2f2f2;--black-100:#e6e6e6;--black-200:#cccccc;--black-300:#b2b2b2;--black-400:#999999;--black-500:#808080;--black-700:#4d4d4d;--black-800:#333333;--black-850:#121212;--black-900:#1a1a1a;
+/* sémantique — thème clair (défaut) */
+--surface:var(--white);--surface-alt:var(--black-50);--surface-inverse:var(--black-900);
+--ink:var(--black);--ink-muted:var(--black-700);--hairline:var(--black-200);
+--accent:var(--gold);--accent-hover:var(--gold-deep);--on-accent:var(--black);
+--control-border:var(--black-200);--marquee-ink:var(--black-100);
+}
+[data-theme="sombre"]{
+--surface:var(--black-900);--surface-alt:var(--black-850);--surface-inverse:var(--white);
+--ink:var(--white);--ink-muted:var(--black-400);--hairline:var(--black-800);
+--accent:var(--gold);--accent-hover:var(--gold-deep);--on-accent:var(--black);
+--control-border:var(--black-800);--marquee-ink:var(--black-800);
+}
+
+:root{
+--display-marquee-size:96px;--display-marquee-lh:96px;--display-marquee-wght:300;/* @kind other */
+--h1-size:54px;--h1-lh:72.9px;--h1-wght:300;
+--h2-size:40px;--h2-lh:60px;--h2-wght:300;
+--menu-link-size:40px;--menu-link-lh:80px;--menu-link-wght:300;/* @kind other */
+--card-title-size:24px;--card-title-lh:48px;--card-title-wght:300;/* @kind other */
+--eyebrow-size:14px;--eyebrow-lh:21px;--eyebrow-wght:700;/* @kind other */
+--menu-label-size:14px;--menu-label-lh:21px;--menu-label-wght:700;/* @kind other */
+--tile-label-size:20px;--tile-label-lh:30px;--tile-label-wght:400;/* @kind other */
+--footer-heading-size:18px;--footer-heading-lh:27px;--footer-heading-wght:300;/* @kind other */
+--link-caps-size:14px;--link-caps-lh:16px;--link-caps-wght:700;/* @kind other */
+--tag-size:12px;--tag-lh:12px;--tag-wght:700;/* @kind other */
+--meta-size:12px;--meta-lh:12px;--meta-wght:400;/* @kind other */
+--body-size:16px;--body-lh:32px;--body-wght:300;/* @kind other */
+--button-size:16px;--button-lh:24px;--button-wght:400;/* @kind other */
+--link-strong-size:14px;--link-strong-lh:28px;--link-strong-wght:500;/* @kind other */
+--footer-link-size:14px;--footer-link-lh:36px;--footer-link-wght:400;/* @kind other */
+--legal-size:12px;--legal-lh:15.96px;--legal-wght:400;/* @kind other */
+}
+
+:root{
+--space-2:8px;--space-btn-y:15px;--space-4:16px;--space-6:24px;--space-32:128px;--space-44:176px;
+--measure-title:672px;
+--radius-none:0px;--radius-pill:9999px;
+--control-h:56px;--control-h-sm:48px;--border-w:1px;--cursor-d:60px;
+--gutter:var(--space-4);--section-y:var(--space-32);--section-y-first:var(--space-44);
+}
+
+/* Durées/courbes non fournies par la source : valeurs proposées, à confirmer. */
+:root{--ease-out:cubic-bezier(.19,1,.22,1);--ease-inout:cubic-bezier(.65,0,.35,1);--dur-fast:200ms;--dur-base:400ms;--dur-slow:700ms;}
+
+.cc-h1{font-family:var(--font-display);font-size:var(--h1-size);line-height:var(--h1-lh);font-weight:var(--h1-wght);margin:0}
+.cc-h2{font-family:var(--font-display);font-size:var(--h2-size);line-height:var(--h2-lh);font-weight:var(--h2-wght);margin:0}
+.cc-card-title{font-family:var(--font-display);font-size:var(--card-title-size);line-height:var(--card-title-lh);font-weight:var(--card-title-wght);margin:0}
+.cc-eyebrow{font-family:var(--font-signal);font-size:var(--eyebrow-size);line-height:var(--eyebrow-lh);font-weight:var(--eyebrow-wght)}
+.cc-body{font-family:var(--font-body);font-size:var(--body-size);line-height:var(--body-lh);font-weight:var(--body-wght)}
+.cc-meta{font-family:var(--font-signal);font-size:var(--meta-size);line-height:var(--meta-lh);font-weight:var(--meta-wght)}
+a{color:inherit;text-decoration:none}a:hover{color:var(--accent)}
+
+</style>
+<style>
+:root { --accent-soft: color-mix(in srgb, var(--gold) 16%, var(--surface)); --alerte-fond: #f7f0df; --alerte-bord: #917a42; --erreur: #a4262c; --erreur-fond: #f9e9e9; --succes: #2e6b3f; --succes-fond: #e8f1ea; --focus: var(--ink); color-scheme: light; }
+[data-theme="sombre"] { --alerte-fond: #2c2718; --alerte-bord: #c5af7e; --erreur: #ff8f86; --erreur-fond: #3a1d1c; --succes: #8fcf9f; --succes-fond: #1a2e20; color-scheme: dark; }
+*, *::before, *::after { box-sizing: border-box; }
+html, body { background: var(--surface); color: var(--ink); }
+body { margin: 0; font-family: var(--font-body); font-size: 16px; line-height: 1.7; font-weight: 300; -webkit-font-smoothing: antialiased; }
+b, strong { font-weight: 500; }
+a { color: var(--ink); text-decoration: underline; text-underline-offset: 3px; }
+a:hover { color: var(--gold-deep); }
+button { font: inherit; cursor: pointer; }
+button:disabled { cursor: default; }
+:focus-visible { outline: 2px solid var(--focus); outline-offset: 3px; }
+@media print { [data-noprint] { display: none !important; } html, body { background: #fff; color: #000; } }
+</style>
+<script src="4f295120-55a4-4c88-80be-78928ff5b78c"></script>
+<script src="4b75f4c6-6ed0-4acf-9bb9-aa07eb5c968b"></script>
+<script src="47770d19-a208-433e-870c-5f03a70cdac0"></script>
+<script src="4a1ebc8e-62f4-4b72-861f-e0b09fe0489e"></script>
+<script src="8e8ed193-8892-43a2-a22d-f660a8f93ce0"></script>
+<script src="1f5d37fb-4ec6-40c8-bb03-39581c61c3f3"></script>
+<script src="aecf7b42-e2a4-4ad5-837a-887371839fbe"></script>
+<script src="a466bfc5-2114-4955-8a48-873685244fe2"></script>
+<script src="525c889f-bfb8-4026-a34e-5b9bf8ee433c"></script>
+<script src="1dfd8cc2-1fd4-47d8-8c22-3c6fb4069c98"></script>
+<script src="d588e51a-ba90-43d5-b319-633a946409b0"></script>
+
+</helmet>
+<div style="min-height: 100vh; display: flex; flex-direction: column;">
+  <header data-noprint="" style="background: var(--surface); border-bottom: 1px solid var(--hairline); position: sticky; top: 0; z-index: 10;">
+    <div style="max-width: 1200px; margin: 0 auto; padding: 0 24px; display: flex; align-items: center; gap: 0 24px; flex-wrap: wrap;">
+      <a href="{{ lienCatalogue }}" style="display: flex; align-items: center; min-height: 64px; color: var(--ink); text-decoration: none; margin-right: auto; font-family: var(--font-display); font-size: 24px; line-height: 1.1; font-weight: 300;">Formation machines</a>
+      <nav aria-label="Navigation principale" style="display: flex; gap: 0 22px; flex-wrap: nowrap; overflow-x: auto; max-width: 100%;">
+        <sc-for list="{{ navItems }}" as="nv" hint-placeholder-count="4">
+          <a href="{{ nv.lien }}" aria-current="{{ nv.courant }}" style="display: inline-flex; align-items: center; min-height: 64px; font-family: var(--font-signal); font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: .1em; text-decoration: none; color: {{ nv.couleur }}; box-shadow: inset 0 -2px 0 {{ nv.fond }};" style-hover="color: var(--ink);">{{ nv.libelle }}</a>
+        </sc-for>
+      </nav>
+      <button sc-camel-on-click="{{ basculerTheme }}" aria-label="{{ themeAria }}" style="min-height: 40px; padding: 6px 16px; border-radius: 9999px; border: 1px solid var(--control-border); background: transparent; color: var(--ink-muted); font-family: var(--font-signal); font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: .08em;" style-hover="color: var(--ink); border-color: var(--ink);">{{ themeLibelle }}</button>
+    </div>
+  </header>
+
+  <div style="flex: 1; width: 100%; max-width: 1200px; margin: 0 auto; padding: 0 20px;">
+    <sc-if value="{{ aErreurs }}" hint-placeholder-val="{{ false }}">
+      <div role="alert" style="background: var(--erreur-fond); border: 1px solid var(--erreur); border-radius: 0; padding: 12px 18px; margin: 20px 0 0;">
+        <p style="margin: 0;"><b>Contenu à corriger.</b> Les éléments suivants ne respectent pas le format attendu :</p>
+        <ul style="margin: 6px 0 0; padding-left: 20px;">
+          <sc-for list="{{ erreursListe }}" as="err" hint-placeholder-count="2"><li>{{ err }}</li></sc-for>
+        </ul>
+      </div>
+    </sc-if>
+
+    <main id="principal" style="padding: 28px 0 56px; min-width: 0;">
+      <sc-if value="{{ enChargement }}" hint-placeholder-val="{{ false }}">
+        <p role="status" style="color: var(--ink-muted); padding: 24px 0;">Chargement des modules…</p>
+      </sc-if>
+      <sc-if value="{{ echecChargement }}" hint-placeholder-val="{{ false }}">
+        <div role="alert" style="background: var(--erreur-fond); border: 1px solid var(--erreur); border-radius: 0; padding: 12px 18px;">
+          <p style="margin: 0;"><b>Les modules n'ont pas pu être chargés.</b> Vérifiez que le dossier de l'outil est complet (fichiers moteur-oad.js et contenu/), puis rechargez la page.</p>
+        </div>
+      </sc-if>
+
+      <!-- Catalogue -->
+      <sc-if value="{{ estCatalogue }}" hint-placeholder-val="{{ true }}">
+        
+        <div style="display: grid; gap: 32px 64px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 380px), 1fr)); align-items: end; padding: 40px 0 48px; border-bottom: 1px solid var(--hairline);">
+          <div style="min-width: 0;">
+            <p style="margin: 0 0 16px; font-family: var(--font-signal); font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: .1em; color: var(--gold-deep);">Machinisme viticole</p>
+            <h1 style="font-family: var(--font-display); font-size: clamp(2.4rem, 5vw, 3.4rem); line-height: 1.12; font-weight: 300; margin: 0 0 20px; text-wrap: balance;">Modules de formation</h1>
+            <p style="color: var(--ink-muted); margin: 0; max-width: 52ch; font-size: 1.06rem; text-wrap: pretty;">Fiches, procédures, calculateurs et quiz pour régler et entretenir les machines. Fonctionne sans réseau.</p>
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 10px; padding: 28px 28px 24px; background: var(--surface-alt); border-top: 3px solid var(--accent); min-width: 0;">
+            <p style="margin: 0; font-family: var(--font-signal); font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: .1em; color: var(--ink-muted);">{{ reprise.eyebrow }}</p>
+            <p style="margin: 0; font-family: var(--font-display); font-size: 1.8rem; line-height: 1.2; font-weight: 300; text-wrap: balance;">{{ reprise.titre }}</p>
+            <p style="margin: 0; color: var(--ink-muted); font-size: .95rem;">{{ reprise.detail }}</p>
+            <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 12px 24px; margin-top: 10px;">
+              <a href="{{ reprise.lien }}" style="display: inline-flex; align-items: center; min-height: 56px; padding: 8px 32px; border-radius: 9999px; font-family: var(--font-signal); font-size: 14px; text-transform: uppercase; letter-spacing: .08em; font-weight: 700; background: var(--accent); color: var(--on-accent); text-decoration: none;" style-hover="background: var(--accent-hover); color: var(--on-accent);">{{ reprise.action }}</a>
+              <a href="{{ lienProgression }}" style="font-size: .92rem; color: var(--ink-muted);">{{ bilan.maitrises }} {{ bilan.surTxt }}</a>
+            </div>
+          </div>
+        </div>
+        <sc-for list="{{ domainesCatalogue }}" as="dom" hint-placeholder-count="2">
+          <section aria-labelledby="{{ dom.titreId }}" style="margin: 56px 0 0;">
+            
+            <div style="display: flex; align-items: baseline; gap: 12px; margin: 0 0 18px;">
+              <h2 id="{{ dom.titreId }}" style="font-family: var(--font-display); font-size: 2rem; line-height: 1.2; margin: 0; font-weight: 300;">{{ dom.libelle }}</h2>
+              <span style="color: var(--ink-muted); font-size: .9rem;">{{ dom.nbTxt }}</span>
+            </div>
+            <ul style="list-style: none; padding: 0; margin: 0; display: grid; gap: 14px; grid-template-columns: repeat(auto-fill, minmax(min(100%, 320px), 1fr));">
+              <sc-for list="{{ dom.modules }}" as="carte" hint-placeholder-count="3">
+                <li style="display: flex; flex-direction: column;">
+                  
+                  <a href="{{ carte.lien }}" aria-label="{{ carte.titre }}" style="flex: 1; display: flex; flex-direction: column; gap: 10px; padding: 18px 20px 16px; border-radius: 0; background: var(--surface); border: 1px solid var(--hairline); border-top: 3px solid var(--accent); color: var(--ink); text-decoration: none; transition: border-color .15s, transform .15s;" style-hover="border-color: var(--gold-deep); transform: translateY(-1px);">
+                    <span style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap; font-size: .82rem; color: var(--ink-muted);">
+                      <span style="padding: 5px 10px; border-radius: 9999px; font-family: var(--font-signal); font-weight: 700; font-size: 11px; line-height: 1; text-transform: uppercase; letter-spacing: .08em; border: 1px solid {{ carte.statutBord }}; background: {{ carte.statutFond }}; color: var(--ink);">{{ carte.statutLibelle }}</span>
+                      <span>{{ carte.dureeTxt }}</span>
+                    </span>
+                    <span style="font-family: var(--font-display); font-size: 1.55rem; font-weight: 300; line-height: 1.25;">{{ carte.titre }}</span>
+                    <span style="color: var(--ink-muted); font-size: .95rem; line-height: 1.5; flex: 1; text-wrap: pretty;">{{ carte.resume }}</span>
+                    <span style="display: flex; flex-direction: column; gap: 6px; padding-top: 12px; margin-top: 4px; border-top: 1px solid var(--hairline);">
+                      <span style="display: flex; justify-content: space-between; gap: 8px; font-size: .84rem; color: var(--ink-muted); flex-wrap: wrap;">
+                        <span><b style="color: var(--ink); font-weight: 500;">{{ carte.etatLibelle }}</b> · {{ carte.avancementTxt }}</span>
+                        <span>{{ carte.quizTxt }}</span>
+                      </span>
+                      <span role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="{{ carte.pct }}" aria-label="{{ carte.jaugeLabel }}" style="display: block; height: 6px; border-radius: 999px; background: var(--surface-alt); overflow: hidden;"><span style="display: block; height: 100%; border-radius: 999px; background: var(--accent); width: {{ carte.pct }}%;"></span></span>
+                    </span>
+                  </a>
+                </li>
+              </sc-for>
+            </ul>
+          </section>
+        </sc-for>
+      </sc-if>
+
+      <!-- Module inconnu -->
+      <sc-if value="{{ estInconnu }}" hint-placeholder-val="{{ false }}">
+        <h1 style="font-family: var(--font-display); font-size: 2rem; letter-spacing: -0.02em; margin: 12px 0;">Module introuvable</h1>
+        <p>Ce lien ne correspond à aucun module du catalogue. <a href="{{ lienCatalogue }}">Revenir aux modules</a></p>
+      </sc-if>
+
+      <!-- En-tête de module -->
+      <sc-if value="{{ estModule }}" hint-placeholder-val="{{ false }}">
+        <div style="display: grid; gap: 24px 48px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 360px), 1fr)); align-items: center;">
+        <div style="min-width: 0;">
+        <p data-noprint="" style="font-size: .9rem; color: var(--ink-muted); margin: 0 0 10px; display: flex; gap: 8px; align-items: center;"><a href="{{ lienCatalogue }}" style="color: var(--ink-muted);">Modules</a><span aria-hidden="true">/</span><span>{{ mod.domaineLibelle }}</span></p>
+        <h1 style="font-family: var(--font-display); font-size: clamp(1.7rem, 3.4vw, 2.3rem); line-height: 1.15; letter-spacing: -0.02em; margin: 0 0 12px; font-weight: 300; text-wrap: balance;">{{ mod.titre }}</h1>
+        <div style="display: flex; flex-wrap: wrap; gap: 8px; align-items: center; font-size: .88rem; color: var(--ink-muted);">
+          <span style="padding: 5px 10px; border-radius: 9999px; font-family: var(--font-signal); font-weight: 700; font-size: 11px; line-height: 1; text-transform: uppercase; letter-spacing: .08em; border: 1px solid {{ mod.statutBord }}; background: {{ mod.statutFond }}; color: var(--ink);">{{ mod.statutLibelle }}</span>
+          <span>{{ mod.public }}</span>
+          <span aria-hidden="true">·</span>
+          <span>{{ mod.dureeTxt }}</span>
+        </div>
+        <sc-if value="{{ mod.nonValide }}" hint-placeholder-val="{{ true }}">
+          <p style="margin: 16px 0 0; padding: 10px 14px; border-radius: 0; background: var(--alerte-fond); border: 1px solid var(--alerte-bord); font-size: .9rem; line-height: 1.5;">Contenu en cours de rédaction, pas encore validé par un expert. {{ mod.sourcesTxt }}<sc-if value="{{ mod.aChiffresSansSource }}"> {{ mod.chiffresSansSourceTxt }}</sc-if></p>
+        </sc-if>
+        </div>
+        <div style="position: relative; width: 100%; aspect-ratio: 3 / 2; background: var(--surface-alt);">
+          <image-slot id="img-entete-{{ mod.id }}" shape="rect" placeholder="Photo principale du module"></image-slot>
+        </div>
+        </div>
+      </sc-if>
+
+      <!-- Page Calculateurs -->
+      <sc-if value="{{ estOutils }}" hint-placeholder-val="{{ false }}">
+        <h1 style="font-family: var(--font-display); font-size: clamp(1.9rem, 4vw, 2.6rem); line-height: 1.1; letter-spacing: -0.025em; margin: 12px 0 10px; font-weight: 300;">Calculateurs</h1>
+        <p style="color: var(--ink-muted); margin: 0; font-size: 1.06rem;">Chaque résultat montre sa formule et les valeurs utilisées.</p>
+      </sc-if>
+
+      <!-- Grille : contenu puis sommaire dans le DOM, sommaire à gauche sur grand écran -->
+      <sc-if value="{{ aGrille }}" hint-placeholder-val="{{ false }}">
+        <div style="display: flex; flex-direction: row-reverse; flex-wrap: wrap; gap: 24px; margin-top: 28px; align-items: flex-start;">
+          <article aria-labelledby="titre-contenu" style="flex: 999 1 520px; min-width: 0; background: var(--surface); border: 1px solid var(--hairline); border-radius: 0; padding: clamp(18px, 3.5vw, 36px);">
+            <sc-if value="{{ estModule }}">
+              <p style="margin: 0 0 8px; display: flex; flex-wrap: wrap; gap: 8px; align-items: center; font-size: .78rem; font-weight: 700; text-transform: uppercase; letter-spacing: .1em; font-family: var(--font-signal); color: var(--gold-deep);">
+                <span>{{ section.typeLibelle }}</span><span style="color: var(--ink-muted); font-weight: 500;">{{ section.position }}</span>
+                <sc-if value="{{ section.aTechno }}"><span style="text-transform: none; letter-spacing: 0; padding: 2px 9px; border-radius: 999px; background: var(--surface-alt); border: 1px solid var(--control-border); color: var(--ink); font-size: .78rem;">{{ section.technoLibelle }}</span></sc-if>
+              </p>
+              <h2 id="titre-contenu" style="font-family: var(--font-display); font-size: clamp(1.8rem, 3vw, 2.4rem); line-height: 1.2; margin: 0 0 16px; font-weight: 300; text-wrap: balance;">{{ section.titre }}</h2>
+              <div style="position: relative; width: 100%; aspect-ratio: 16 / 7; margin: 4px 0 20px; background: var(--surface-alt);">
+                <image-slot id="img-section-{{ section.cle }}" shape="rect" placeholder="Photo ou schéma illustrant cette section"></image-slot>
+              </div>
+              <sc-if value="{{ section.aIntro }}"><p style="color: var(--ink-muted); font-size: 1.05rem; margin: 0 0 12px; max-width: 68ch; text-wrap: pretty;">{{ section.intro }}</p></sc-if>
+              <sc-if value="{{ section.aSourceEntete }}"><p style="font-size: .8rem; color: var(--ink-muted); margin: 0 0 12px;">{{ section.sourceTxt }}</p></sc-if>
+            </sc-if>
+            <sc-if value="{{ estOutils }}">
+              <h2 id="titre-contenu" style="font-family: var(--font-display); font-size: clamp(1.8rem, 3vw, 2.4rem); line-height: 1.2; margin: 0 0 16px; font-weight: 300;">{{ outilsTitre }}</h2>
+              <sc-if value="{{ outilsMessage }}"><p style="color: var(--ink-muted);">{{ outilsMessage }}</p></sc-if>
+            </sc-if>
+
+            <!-- Fiche -->
+            <sc-if value="{{ estFiche }}">
+              <div style="display: flex; flex-direction: column; gap: 4px; max-width: 72ch; margin-top: 8px;">
+                <sc-for list="{{ blocs }}" as="bl" hint-placeholder-count="3">
+                  <sc-if value="{{ bl.estParagraphe }}"><p style="margin: 8px 0; text-wrap: pretty;">{{ bl.texte }}</p></sc-if>
+                  <sc-if value="{{ bl.estFormule }}"><p style="font-family: ui-monospace, 'Cascadia Mono', Consolas, monospace; font-size: .95rem; background: var(--surface-alt); padding: 12px 16px; border-radius: 0; margin: 8px 0; overflow-wrap: anywhere;">{{ bl.texte }}</p></sc-if>
+                  <sc-if value="{{ bl.estAlerte }}"><p style="margin: 10px 0; padding: 12px 16px; border-radius: 0; background: var(--alerte-fond); border: 1px solid var(--alerte-bord);"><b>Attention :</b> {{ bl.texte }}</p></sc-if>
+                  <sc-if value="{{ bl.estListe }}">
+                    <ul style="margin: 6px 0; padding-left: 22px; display: flex; flex-direction: column; gap: 6px;"><sc-for list="{{ bl.items }}" as="item"><li style="padding-left: 4px;">{{ item.texte }}<sc-if value="{{ item.lectureGraphique }}"><span style="display: block; font-size: .8rem; color: var(--ink-muted);">Valeur lue sur un graphique de la source.</span></sc-if><sc-if value="{{ item.aSource }}"><span style="display: block; font-size: .8rem; color: var(--ink-muted);">{{ item.sourceTxt }}</span></sc-if></li></sc-for></ul>
+                  </sc-if>
+                  <sc-if value="{{ bl.estTableau }}"><div style="overflow-x: auto; max-width: 100%; margin: 10px 0; border: 1px solid var(--hairline); border-radius: 0;">{{ bl.tableau }}</div></sc-if>
+                  <sc-if value="{{ bl.lectureGraphique }}"><p style="font-size: .8rem; color: var(--ink-muted); margin: 0 0 8px;">Valeur lue sur un graphique de la source.</p></sc-if>
+                  <sc-if value="{{ bl.aSource }}"><p style="font-size: .8rem; color: var(--ink-muted); margin: 0 0 8px;">{{ bl.sourceTxt }}</p></sc-if>
+                </sc-for>
+              </div>
+            </sc-if>
+
+            <!-- Procédure -->
+            <sc-if value="{{ estProcedure }}">
+              <div style="display: flex; align-items: center; gap: 12px; margin: 16px 0 8px;">
+                <p aria-live="polite" style="margin: 0; color: var(--ink-muted); font-size: .92rem; font-variant-numeric: tabular-nums;">{{ procedure.compteur }}</p>
+                <span style="flex: 1; height: 4px; border-radius: 999px; background: var(--surface-alt); overflow: hidden; display: block;"><span style="display: block; height: 100%; background: var(--accent); width: {{ procedure.pct }}%;"></span></span>
+              </div>
+              <ol style="list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 6px;">
+                <sc-for list="{{ procedure.etapes }}" as="et" hint-placeholder-count="4">
+                  <li style="display: grid; grid-template-columns: 28px 1fr; gap: 2px 12px; padding: 12px 14px; border-radius: 0; border: 1px solid var(--hairline); background: {{ et.fond }};">
+                    <input type="checkbox" id="{{ et.inputId }}" checked="{{ et.fait }}" sc-camel-on-change="{{ basculerEtape }}" data-etape="{{ et.id }}" style="width: 22px; height: 22px; margin: 2px 0 0; accent-color: var(--gold-deep); cursor: pointer;">
+                    <label for="{{ et.inputId }}" style="cursor: pointer; color: {{ et.couleur }}; text-decoration: {{ et.deco }};"><b style="font-variant-numeric: tabular-nums; margin-right: 4px;">{{ et.num }}.</b> {{ et.texte }}</label>
+                    <sc-if value="{{ et.aDetail }}"><p style="grid-column: 2; margin: 0; font-size: .9rem; color: var(--ink-muted);">{{ et.detail }}</p></sc-if>
+                    <sc-if value="{{ et.aSource }}"><p style="grid-column: 2; margin: 0; font-size: .8rem; color: var(--ink-muted);">{{ et.sourceTxt }}</p></sc-if>
+                  </li>
+                </sc-for>
+              </ol>
+              <div data-noprint="" style="display: flex; gap: 8px; flex-wrap: wrap; margin-top: 20px;"><button sc-camel-on-click="{{ imprimer }}" style="min-height: 48px; padding: 8px 26px; border-radius: 9999px; font-family: var(--font-signal); font-size: 13px; text-transform: uppercase; letter-spacing: .08em; border: 1px solid var(--ink); background: transparent; color: var(--ink); font-weight: 700;" style-hover="background: var(--surface-alt);">Imprimer la procédure</button></div>
+            </sc-if>
+
+            <!-- Entretien -->
+            <sc-if value="{{ estEntretien }}">
+              <div style="display: flex; align-items: center; gap: 12px; margin: 16px 0 4px;">
+                <p aria-live="polite" style="margin: 0; color: var(--ink-muted); font-size: .92rem; font-variant-numeric: tabular-nums;">{{ entretien.compteur }}</p>
+                <span style="flex: 1; height: 4px; border-radius: 999px; background: var(--surface-alt); overflow: hidden; display: block;"><span style="display: block; height: 100%; background: var(--accent); width: {{ entretien.pct }}%;"></span></span>
+              </div>
+              <sc-for list="{{ entretien.groupes }}" as="gr" hint-placeholder-count="3">
+                <h3 style="font-size: .8rem; font-weight: 700; text-transform: uppercase; letter-spacing: .1em; font-family: var(--font-signal); color: var(--ink-muted); margin: 22px 0 8px;">{{ gr.libelle }}</h3>
+                <ul style="list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 6px;">
+                  <sc-for list="{{ gr.taches }}" as="ta" hint-placeholder-count="2">
+                    <li style="display: grid; grid-template-columns: 28px 1fr; gap: 2px 12px; padding: 12px 14px; border-radius: 0; border: 1px solid var(--hairline); background: {{ ta.fond }};">
+                      <input type="checkbox" id="{{ ta.inputId }}" checked="{{ ta.fait }}" sc-camel-on-change="{{ basculerTache }}" data-tache="{{ ta.id }}" style="width: 22px; height: 22px; margin: 2px 0 0; accent-color: var(--gold-deep); cursor: pointer;">
+                      <label for="{{ ta.inputId }}" style="cursor: pointer; color: {{ ta.couleur }}; text-decoration: {{ ta.deco }};">{{ ta.texte }}<sc-if value="{{ ta.aDetail }}"><span style="color: var(--ink-muted);"> ({{ ta.detail }})</span></sc-if></label>
+                      <sc-if value="{{ ta.aSource }}"><p style="grid-column: 2; margin: 0; font-size: .8rem; color: var(--ink-muted);">{{ ta.sourceTxt }}</p></sc-if>
+                    </li>
+                  </sc-for>
+                </ul>
+              </sc-for>
+              <div data-noprint="" style="display: flex; gap: 8px; flex-wrap: wrap; margin-top: 20px;"><button sc-camel-on-click="{{ imprimer }}" style="min-height: 48px; padding: 8px 26px; border-radius: 9999px; font-family: var(--font-signal); font-size: 13px; text-transform: uppercase; letter-spacing: .08em; border: 1px solid var(--ink); background: transparent; color: var(--ink); font-weight: 700;" style-hover="background: var(--surface-alt);">Imprimer le plan d'entretien</button></div>
+            </sc-if>
+
+            <!-- Calculateur -->
+            <sc-if value="{{ aCalc }}">
+              <p style="color: var(--ink-muted); margin: 0 0 6px; max-width: 70ch;">{{ calcCourant.description }}</p>
+              <sc-if value="{{ calcCourant.aTechnos }}"><p style="font-size: .88rem; color: var(--ink-muted); margin: 0 0 6px;">{{ calcCourant.technosTxt }}</p></sc-if>
+              <div style="display: grid; gap: 16px; grid-template-columns: repeat(auto-fill, minmax(min(100%, 230px), 1fr)); margin-top: 20px;">
+                <sc-for list="{{ calcCourant.entrees }}" as="en" hint-placeholder-count="3">
+                  <div style="grid-column: {{ en.colonne }}; display: flex; flex-direction: column; gap: 4px;">
+                    <label for="{{ en.inputId }}" style="font-weight: 500; font-size: .95rem;">{{ en.label }} <span style="font-weight: 400; color: var(--ink-muted);">{{ en.uniteTxt }}</span></label>
+                    <sc-if value="{{ en.estListe }}">
+                      <p id="{{ en.consigneId }}" style="font-size: .85rem; color: var(--ink-muted); margin: 0;">Séparez les valeurs par un point-virgule.</p>
+                      <input id="{{ en.inputId }}" type="text" inputmode="text" autocomplete="off" value="{{ en.valeur }}" sc-camel-on-input="{{ onSaisie }}" data-calc="{{ en.calc }}" data-entree="{{ en.id }}" aria-describedby="{{ en.decritPar }}" style="width: 100%; min-height: 48px; font: inherit; font-size: 1.05rem; font-variant-numeric: tabular-nums; padding: 8px 12px; border: 1px solid var(--control-border); border-radius: 0; background: var(--surface); color: var(--ink);" style-focus="border-color: var(--gold-deep); background: var(--surface);">
+                    </sc-if>
+                    <sc-if value="{{ en.estNombre }}">
+                      <input id="{{ en.inputId }}" type="text" inputmode="decimal" autocomplete="off" value="{{ en.valeur }}" sc-camel-on-input="{{ onSaisie }}" data-calc="{{ en.calc }}" data-entree="{{ en.id }}" aria-describedby="{{ en.origineId }}" style="width: 100%; min-height: 48px; font: inherit; font-size: 1.15rem; font-weight: 500; font-variant-numeric: tabular-nums; padding: 8px 12px; border: 1px solid var(--control-border); border-radius: 0; background: var(--surface); color: var(--ink);" style-focus="border-color: var(--gold-deep); background: var(--surface);">
+                    </sc-if>
+                    <p id="{{ en.origineId }}" style="font-size: .78rem; line-height: 1.45; color: var(--ink-muted); margin: 2px 0 0;">Par défaut : {{ en.defautTxt }}. {{ en.origine }}</p>
+                  </div>
+                </sc-for>
+              </div>
+              <div aria-live="polite" style="margin: 24px 0 8px; padding: 6px 20px; border-radius: 0; background: var(--accent-soft);">
+                <sc-for list="{{ calcCourant.resultats }}" as="res" hint-placeholder-count="1">
+                  <p style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: baseline; gap: 4px 16px; margin: 0; padding: 12px 0; border-bottom: 1px solid var(--hairline);"><span>{{ res.label }}</span> <strong style="font-size: 1.6rem; line-height: 1.2; letter-spacing: -0.02em; font-variant-numeric: tabular-nums;">{{ res.texte }}</strong></p>
+                </sc-for>
+                <sc-if value="{{ calcCourant.aAlertes }}">
+                  <ul style="margin: 12px 0; padding: 10px 14px 10px 30px; background: var(--alerte-fond); border: 1px solid var(--alerte-bord); border-radius: 0; font-size: .92rem;"><sc-for list="{{ calcCourant.alertes }}" as="al"><li>{{ al }}</li></sc-for></ul>
+                </sc-if>
+              </div>
+              <sc-if value="{{ calcCourant.aTableau }}">
+                <div style="overflow-x: auto; max-width: 100%; margin: 16px 0; border: 1px solid var(--hairline); border-radius: 0;">{{ calcCourant.tableau }}</div>
+              </sc-if>
+              <h3 style="font-size: .8rem; font-weight: 700; text-transform: uppercase; letter-spacing: .1em; font-family: var(--font-signal); color: var(--ink-muted); margin: 28px 0 12px;">Détail du calcul</h3>
+              <ol style="list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 14px;">
+                <sc-for list="{{ calcCourant.etapes }}" as="fe" hint-placeholder-count="1">
+                  <li style="display: grid; grid-template-columns: 28px minmax(0, 1fr); gap: 4px 12px;">
+                    <span aria-hidden="true" style="width: 26px; height: 26px; border-radius: 999px; background: var(--surface-alt); border: 1px solid var(--control-border); display: flex; align-items: center; justify-content: center; font-size: .78rem; font-weight: 700;">{{ fe.num }}</span>
+                    <div style="min-width: 0; display: flex; flex-direction: column; gap: 6px;">
+                      <p style="margin: 2px 0 0; font-weight: 500;">{{ fe.titre }}</p>
+                      <div style="font-family: ui-monospace, 'Cascadia Mono', Consolas, monospace; font-size: .9rem; background: var(--surface-alt); padding: 10px 14px; border-radius: 0; overflow-wrap: anywhere; display: flex; flex-direction: column; gap: 4px;">
+                        <span>{{ fe.formule }}</span>
+                        <span style="color: var(--ink-muted);">= {{ fe.substitution }} = <b style="color: var(--ink);">{{ fe.resultat }}</b></span>
+                      </div>
+                    </div>
+                  </li>
+                </sc-for>
+              </ol>
+              <div data-noprint="" style="display: flex; gap: 8px; flex-wrap: wrap; margin-top: 24px;"><button value="{{ calcCourant.id }}" sc-camel-on-click="{{ reinitialiserCalc }}" style="min-height: 48px; padding: 8px 26px; border-radius: 9999px; font-family: var(--font-signal); font-size: 13px; text-transform: uppercase; letter-spacing: .08em; border: 1px solid var(--ink); background: transparent; color: var(--ink); font-weight: 700;" style-hover="background: var(--surface-alt);">Revenir aux valeurs par défaut</button></div>
+            </sc-if>
+
+            <!-- Quiz -->
+            <sc-if value="{{ estQuiz }}">
+              <div style="display: flex; flex-direction: column; gap: 16px; margin-top: 16px;">
+                <sc-for list="{{ quiz.questions }}" as="qu" hint-placeholder-count="2">
+                  <fieldset style="border: 1px solid var(--hairline); border-radius: 0; margin: 0; padding: 16px 18px 18px; min-width: 0;">
+                    <legend style="font-weight: 500; padding: 0 6px; font-size: 1.02rem;">{{ qu.num }}. {{ qu.enonce }}</legend>
+                    <sc-if value="{{ qu.multiple }}"><p style="font-size: .85rem; color: var(--ink-muted); margin: 0 0 4px;">Plusieurs réponses possibles.</p></sc-if>
+                    <div style="display: flex; flex-direction: column; gap: 8px; margin-top: 8px;">
+                      <sc-for list="{{ qu.choix }}" as="ch" hint-placeholder-count="3">
+                        <button type="button" aria-pressed="{{ ch.presse }}" value="{{ ch.valeur }}" sc-camel-on-click="{{ onChoix }}" disabled="{{ quiz.verrouille }}" style="display: flex; align-items: center; gap: 12px; text-align: left; min-height: 48px; padding: 10px 14px; border-radius: 0; border: 2px solid {{ ch.bord }}; background: {{ ch.fond }}; color: var(--ink); opacity: 1;">
+                          <span aria-hidden="true" style="flex: none; width: 26px; height: 26px; border-radius: {{ qu.rayonMarque }}; display: flex; align-items: center; justify-content: center; font-size: .78rem; font-weight: 700; border: 2px solid {{ ch.bord }}; background: {{ ch.marqueFond }}; color: {{ ch.marqueCouleur }};">{{ ch.marque }}</span>
+                          <span>{{ ch.texte }}</span>
+                        </button>
+                      </sc-for>
+                    </div>
+                    <sc-if value="{{ quiz.corrige }}"><p style="margin: 12px 0 0; padding: 10px 14px; border-radius: 0; background: {{ qu.correctionFond }};">{{ qu.correction }}</p></sc-if>
+                    <sc-if value="{{ qu.aSource }}"><p style="font-size: .8rem; color: var(--ink-muted); margin: 8px 0 0;">{{ qu.sourceTxt }}</p></sc-if>
+                  </fieldset>
+                </sc-for>
+              </div>
+              <div aria-live="polite">
+                <sc-if value="{{ quiz.corrige }}"><p style="font-size: 1.3rem; font-weight: 300; letter-spacing: -0.01em; margin: 20px 0 0;">{{ quiz.scoreTxt }}</p></sc-if>
+                <sc-if value="{{ quiz.aDernier }}"><p style="color: var(--ink-muted); font-size: .9rem; margin: 16px 0 0;">{{ quiz.dernierTxt }}</p></sc-if>
+              </div>
+              <div data-noprint="" style="display: flex; gap: 8px; flex-wrap: wrap; margin-top: 18px;">
+                <sc-if value="{{ quiz.nonCorrige }}"><button value="{{ quiz.sid }}" sc-camel-on-click="{{ validerQuiz }}" style="min-height: 56px; padding: 8px 32px; border-radius: 9999px; font-family: var(--font-signal); font-size: 14px; text-transform: uppercase; letter-spacing: .08em; border: 1px solid transparent; background: var(--accent); color: var(--on-accent); font-weight: 700;" style-hover="background: var(--accent-hover);">Valider mes réponses</button></sc-if>
+                <sc-if value="{{ quiz.corrige }}"><button value="{{ quiz.sid }}" sc-camel-on-click="{{ recommencerQuiz }}" style="min-height: 56px; padding: 8px 32px; border-radius: 9999px; font-family: var(--font-signal); font-size: 14px; text-transform: uppercase; letter-spacing: .08em; border: 1px solid var(--ink); background: transparent; color: var(--ink); font-weight: 700;" style-hover="background: var(--surface-alt);">Recommencer</button></sc-if>
+              </div>
+            </sc-if>
+
+            <!-- Cas pratique -->
+            <sc-if value="{{ estCas }}">
+              <div style="margin: 16px 0 0; padding: 16px 18px; border-radius: 0; background: var(--surface-alt);">
+                <p style="font-size: 1.06rem; margin: 0; text-wrap: pretty;">{{ cas.situation }}</p>
+                <sc-if value="{{ cas.aSource }}"><p style="font-size: .8rem; color: var(--ink-muted); margin: 8px 0 0;">{{ cas.sourceTxt }}</p></sc-if>
+              </div>
+              <div style="display: flex; flex-direction: column; gap: 8px; margin-top: 16px;">
+                <sc-for list="{{ cas.options }}" as="op" hint-placeholder-count="3">
+                  <button type="button" aria-pressed="{{ op.presse }}" value="{{ op.valeur }}" sc-camel-on-click="{{ choisirCas }}" style="display: flex; align-items: center; gap: 12px; text-align: left; min-height: 48px; padding: 10px 14px; border-radius: 0; border: 2px solid {{ op.bord }}; background: {{ op.fond }}; color: var(--ink);">
+                    <span aria-hidden="true" style="flex: none; width: 26px; height: 26px; border-radius: 999px; display: flex; align-items: center; justify-content: center; font-size: .78rem; font-weight: 700; border: 2px solid {{ op.bord }}; background: {{ op.marqueFond }}; color: {{ op.marqueCouleur }};">{{ op.marque }}</span>
+                    <span>{{ op.texte }}</span>
+                  </button>
+                </sc-for>
+              </div>
+              <div aria-live="polite">
+                <sc-if value="{{ cas.aRetour }}"><p style="margin: 14px 0 0; padding: 12px 16px; border-radius: 0; background: {{ cas.retourFond }};"><b>{{ cas.verdict }}</b> {{ cas.retour }}</p></sc-if>
+                <sc-if value="{{ cas.aSourceRetour }}"><p style="font-size: .8rem; color: var(--ink-muted); margin: 8px 0 0;">{{ cas.sourceRetourTxt }}</p></sc-if>
+              </div>
+            </sc-if>
+
+            <!-- Glossaire -->
+            <sc-if value="{{ estDefinitions }}">
+              <dl style="margin: 12px 0 0; display: flex; flex-direction: column;">
+                <sc-for list="{{ definitions }}" as="de" hint-placeholder-count="3">
+                  <dt id="{{ de.ancre }}" style="font-weight: 700; margin-top: 18px; padding-top: 16px; border-top: 1px solid var(--hairline);">{{ de.terme }}</dt>
+                  <dd style="margin: 4px 0 0; color: var(--ink-muted); max-width: 70ch;">{{ de.definition }}<sc-if value="{{ de.aSource }}"><span style="display: block; font-size: .8rem; margin-top: 4px;">{{ de.sourceTxt }}</span></sc-if></dd>
+                </sc-for>
+              </dl>
+            </sc-if>
+
+            <!-- Exercice -->
+            <sc-if value="{{ estExercice }}">
+              <div style="margin: 16px 0 0; padding: 16px 18px; border-radius: 0; background: var(--surface-alt);">
+                <p style="font-size: 1.06rem; margin: 0; text-wrap: pretty;">{{ exo.enonce }}</p>
+                <sc-if value="{{ exo.aSource }}"><p style="font-size: .8rem; color: var(--ink-muted); margin: 8px 0 0;">{{ exo.sourceTxt }}</p></sc-if>
+              </div>
+              <div style="max-width: 320px; margin: 18px 0; display: flex; flex-direction: column; gap: 4px;">
+                <label for="{{ exo.inputId }}" style="font-weight: 500;">Votre réponse <span style="font-weight: 400; color: var(--ink-muted);">{{ exo.uniteTxt }}</span></label>
+                <input id="{{ exo.inputId }}" type="text" inputmode="decimal" autocomplete="off" value="{{ exo.reponse }}" sc-camel-on-input="{{ onReponseExo }}" data-exo="{{ exo.sid }}" disabled="{{ exo.corrige }}" style="width: 100%; min-height: 48px; font: inherit; font-size: 1.15rem; font-weight: 500; font-variant-numeric: tabular-nums; padding: 8px 12px; border: 1px solid var(--control-border); border-radius: 0; background: var(--surface); color: var(--ink);" style-focus="border-color: var(--gold-deep); background: var(--surface);">
+              </div>
+              <div aria-live="polite">
+                <sc-if value="{{ exo.corrige }}">
+                  <p style="margin: 0 0 16px; padding: 12px 16px; border-radius: 0; background: {{ exo.retourFond }};"><b>{{ exo.verdict }}</b> Valeur attendue : {{ exo.attenduTxt }}.</p>
+                  <ol style="list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 14px;">
+                    <sc-for list="{{ exo.etapes }}" as="xe" hint-placeholder-count="1">
+                      <li style="display: grid; grid-template-columns: 28px minmax(0, 1fr); gap: 4px 12px;">
+                        <span aria-hidden="true" style="width: 26px; height: 26px; border-radius: 999px; background: var(--surface-alt); border: 1px solid var(--control-border); display: flex; align-items: center; justify-content: center; font-size: .78rem; font-weight: 700;">{{ xe.num }}</span>
+                        <div style="min-width: 0; display: flex; flex-direction: column; gap: 6px;">
+                          <p style="margin: 2px 0 0; font-weight: 500;">{{ xe.titre }}</p>
+                          <div style="font-family: ui-monospace, 'Cascadia Mono', Consolas, monospace; font-size: .9rem; background: var(--surface-alt); padding: 10px 14px; border-radius: 0; overflow-wrap: anywhere; display: flex; flex-direction: column; gap: 4px;">
+                            <span>{{ xe.formule }}</span>
+                            <span style="color: var(--ink-muted);">= {{ xe.substitution }} = <b style="color: var(--ink);">{{ xe.resultat }}</b></span>
+                          </div>
+                        </div>
+                      </li>
+                    </sc-for>
+                  </ol>
+                </sc-if>
+                <sc-if value="{{ exo.aDernier }}"><p style="color: var(--ink-muted); font-size: .9rem;">{{ exo.dernierTxt }}</p></sc-if>
+              </div>
+              <div data-noprint="" style="display: flex; gap: 8px; flex-wrap: wrap; margin-top: 18px;">
+                <sc-if value="{{ exo.nonCorrige }}"><button value="{{ exo.sid }}" sc-camel-on-click="{{ verifierExo }}" style="min-height: 56px; padding: 8px 32px; border-radius: 9999px; font-family: var(--font-signal); font-size: 14px; text-transform: uppercase; letter-spacing: .08em; border: 1px solid transparent; background: var(--accent); color: var(--on-accent); font-weight: 700;" style-hover="background: var(--accent-hover);">Vérifier</button></sc-if>
+                <sc-if value="{{ exo.corrige }}"><button value="{{ exo.sid }}" sc-camel-on-click="{{ recommencerExo }}" style="min-height: 56px; padding: 8px 32px; border-radius: 9999px; font-family: var(--font-signal); font-size: 14px; text-transform: uppercase; letter-spacing: .08em; border: 1px solid var(--ink); background: transparent; color: var(--ink); font-weight: 700;" style-hover="background: var(--surface-alt);">Recommencer</button></sc-if>
+              </div>
+            </sc-if>
+
+            <sc-if value="{{ estModule }}">
+              <nav data-noprint="" aria-label="Sections voisines" style="display: flex; gap: 12px; flex-wrap: wrap; margin-top: 36px; padding-top: 20px; border-top: 1px solid var(--hairline);">
+                <sc-if value="{{ aPrec }}"><a href="{{ prec.lien }}" style="flex: 1 1 220px; display: flex; flex-direction: column; gap: 2px; padding: 12px 16px; border-radius: 0; border: 1px solid var(--hairline); text-decoration: none; color: var(--ink);" style-hover="border-color: var(--gold-deep);"><span style="font-size: .78rem; color: var(--ink-muted);">← Précédent</span><span style="font-weight: 500;">{{ prec.titre }}</span></a></sc-if>
+                <sc-if value="{{ aSuiv }}"><a href="{{ suiv.lien }}" style="flex: 1 1 220px; display: flex; flex-direction: column; gap: 2px; padding: 12px 16px; border-radius: 0; background: var(--accent); text-decoration: none; color: var(--on-accent); text-align: right; margin-left: auto;" style-hover="background: var(--accent-hover);"><span style="font-size: .78rem; opacity: .85;">Suivant →</span><span style="font-weight: 500;">{{ suiv.titre }}</span></a></sc-if>
+              </nav>
+            </sc-if>
+          </article>
+
+          <sc-if value="{{ estModule }}">
+            <nav data-noprint="" aria-label="Sommaire du module" style="flex: 1 1 260px; position: sticky; top: 84px; background: var(--surface); border: 1px solid var(--hairline); border-radius: 0; padding: 18px 12px 12px;">
+              <div style="padding: 0 8px 12px;">
+                <h2 style="font-size: .8rem; font-weight: 700; text-transform: uppercase; letter-spacing: .1em; font-family: var(--font-signal); color: var(--ink-muted); margin: 0 0 8px;">Sommaire</h2>
+                <p style="margin: 0 0 6px; font-size: .88rem; color: var(--ink-muted);">{{ mod.avancementTxt }}</p>
+                <div role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="{{ mod.pct }}" aria-label="{{ mod.jaugeLabel }}" style="height: 6px; border-radius: 999px; background: var(--surface-alt); overflow: hidden;"><span style="display: block; height: 100%; background: var(--accent); border-radius: 999px; width: {{ mod.pct }}%;"></span></div>
+              </div>
+              <ol style="list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 2px;">
+                <sc-for list="{{ sommaire }}" as="it" hint-placeholder-count="5">
+                  <li>
+                    <a href="{{ it.lien }}" aria-current="{{ it.courant }}" style="display: grid; grid-template-columns: 24px 1fr; gap: 0 10px; align-items: start; padding: 8px; min-height: 44px; border-radius: 0; color: var(--ink); text-decoration: none; background: {{ it.fond }};" style-hover="background: var(--surface-alt);">
+                      <span aria-hidden="true" style="width: 24px; height: 24px; border-radius: 999px; display: flex; align-items: center; justify-content: center; font-size: .72rem; font-weight: 700; margin-top: 1px; border: 1.5px solid {{ it.pastilleBord }}; background: {{ it.pastilleFond }}; color: {{ it.pastilleCouleur }};">{{ it.pastille }}</span>
+                      <span style="display: flex; flex-direction: column; min-width: 0;">
+                        <span style="font-size: .72rem; color: var(--ink-muted); text-transform: uppercase; letter-spacing: .05em;">{{ it.typeLibelle }}</span>
+                        <span style="font-size: .92rem; line-height: 1.35; font-weight: {{ it.poids }};">{{ it.titre }}</span>
+                      </span>
+                      <sc-if value="{{ it.vu }}"><span style="position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0);">(consultée)</span></sc-if>
+                    </a>
+                  </li>
+                </sc-for>
+              </ol>
+            </nav>
+          </sc-if>
+          <sc-if value="{{ estOutils }}">
+            <nav data-noprint="" aria-label="Liste des calculateurs" style="flex: 1 1 260px; position: sticky; top: 84px; background: var(--surface); border: 1px solid var(--hairline); border-radius: 0; padding: 18px 12px 12px;">
+              <h2 style="font-size: .8rem; font-weight: 700; text-transform: uppercase; letter-spacing: .1em; font-family: var(--font-signal); color: var(--ink-muted); margin: 0 8px 10px;">Calculateurs</h2>
+              <ul style="list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 2px;">
+                <sc-for list="{{ outilsListe }}" as="ou" hint-placeholder-count="5">
+                  <li><a href="{{ ou.lien }}" aria-current="{{ ou.courant }}" style="display: flex; align-items: center; padding: 8px 10px; min-height: 44px; border-radius: 0; text-decoration: none; font-size: .94rem; line-height: 1.35; color: var(--ink); background: {{ ou.fond }}; font-weight: {{ ou.poids }};" style-hover="background: var(--surface-alt);">{{ ou.titre }}</a></li>
+                </sc-for>
+              </ul>
+            </nav>
+          </sc-if>
+        </div>
+      </sc-if>
+
+      <!-- Progression -->
+      <sc-if value="{{ estProgression }}" hint-placeholder-val="{{ false }}">
+        <h1 style="font-family: var(--font-display); font-size: clamp(1.9rem, 4vw, 2.6rem); line-height: 1.1; letter-spacing: -0.025em; margin: 12px 0 10px; font-weight: 300;">Ma progression</h1>
+        <p style="color: var(--ink-muted); margin: 0 0 24px; font-size: 1.06rem;">{{ progResume }}</p>
+        <div style="overflow-x: auto; max-width: 100%; background: var(--surface); border: 1px solid var(--hairline); border-radius: 0; box-shadow: var(--ombre);">{{ tableauProgression }}</div>
+        <div style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; margin-top: 20px;">
+          <p style="color: var(--ink-muted); font-size: .9rem; margin: 0;">La progression est enregistrée sur cet appareil uniquement, dans ce navigateur.</p>
+          <button sc-camel-on-click="{{ effacerProgression }}" style="min-height: 48px; padding: 8px 26px; border-radius: 9999px; font-family: var(--font-signal); font-size: 13px; text-transform: uppercase; letter-spacing: .08em; border: 1px solid var(--erreur); background: var(--surface); color: var(--erreur); font-weight: 500;" style-hover="background: var(--erreur-fond);">Effacer ma progression</button>
+        </div>
+      </sc-if>
+    </main>
+  </div>
+
+  <footer data-noprint="" style="border-top: 1px solid var(--hairline); background: var(--surface);">
+    <div style="max-width: 1200px; margin: 0 auto; padding: 16px 20px 22px; color: var(--ink-muted); font-size: .85rem; display: flex; flex-wrap: wrap; gap: 4px 24px; justify-content: space-between;">
+      <p style="margin: 0; max-width: 70ch;">Outil de formation. Les valeurs proposées dans les calculateurs sont des exemples : l'origine de chacune est indiquée sous son champ.</p>
+      <sc-if value="{{ aEdition }}"><p style="margin: 0;">{{ editionTxt }}</p></sc-if>
+    </div>
+  </footer>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script="">
+const CLE_PROGRESSION = 'formation-machines:progression:v1';
+const VERSION_PROGRESSION = 1;
+const CLE_THEME = 'formation-machines:theme:v1';
+const THEMES = ['auto', 'clair', 'sombre'];
+const THEMES_LIBELLES = { auto: 'automatique', clair: 'clair', sombre: 'sombre' };
+const STATUT_STYLES = {
+  brouillon: ['var(--alerte-fond)', 'var(--alerte-bord)'],
+  'a-valider': ['var(--alerte-fond)', 'var(--alerte-bord)'],
+  valide: ['var(--succes-fond)', 'var(--succes)']
+};
+const LETTRES = 'ABCDEFGHIJ';
+const S_TH = { border: 0, borderBottom: '1px solid var(--hairline)', padding: '12px 14px', textAlign: 'left', verticalAlign: 'top' };
+const S_TD = Object.assign({}, S_TH);
+const S_THEAD = Object.assign({}, S_TH, { background: 'var(--surface-alt)', fontSize: '.82rem', fontWeight: 650, color: 'var(--ink-muted)', whiteSpace: 'nowrap' });
+const S_TABLE = { borderCollapse: 'collapse', width: '100%', fontSize: '.94rem' };
+const S_CAPTION = { textAlign: 'left', fontWeight: 650, padding: '12px 14px' };
+
+function lireProgression() {
+  try {
+    const brut = window.localStorage.getItem(CLE_PROGRESSION);
+    if (!brut) return null;
+    const o = JSON.parse(brut);
+    return (o && o.version === VERSION_PROGRESSION && o.modules && typeof o.modules === 'object') ? o : null;
+  } catch (e) { return null; }
+}
+function ecrireProgression(p) { try { window.localStorage.setItem(CLE_PROGRESSION, JSON.stringify(p)); } catch (e) {} }
+function effacerProgressionStockee() { try { window.localStorage.removeItem(CLE_PROGRESSION); } catch (e) {} }
+function lireTheme() {
+  try { const t = window.localStorage.getItem(CLE_THEME); return THEMES.includes(t) ? t : 'auto'; }
+  catch (e) { return 'auto'; }
+}
+function ecrireTheme(t) { try { window.localStorage.setItem(CLE_THEME, t); } catch (e) {} }
+function lireHash() { try { return (window.location && window.location.hash) || ''; } catch (e) { return ''; } }
+function ordreContenu() {
+  try {
+    const vus = [];
+    Array.from(document.querySelectorAll('script[src*="contenu/"]')).forEach(s => {
+      const id = (s.getAttribute('src') || '').replace(/^.*contenu\//, '').replace(/\.js$/, '');
+      if (!vus.includes(id)) vus.push(id);
+    });
+    return vus;
+  } catch (e) { return []; }
+}
+function moteurPret() {
+  if (!window.OAD) return false;
+  const attendus = ordreContenu().length;
+  return attendus === 0 || window.OAD.modules().length >= attendus;
+}
+
+const ESPACE = '\u00a0';
+function fmtNombre(x, decimales) {
+  if (typeof x !== 'number' || !Number.isFinite(x)) return '—';
+  const d = Number.isInteger(decimales) ? decimales : 2;
+  const txt = Math.abs(x).toLocaleString('fr-FR', { maximumFractionDigits: d });
+  return (x < 0 && txt !== '0' ? '−' : '') + txt;
+}
+function avecUnite(txt, unite) { return unite ? txt + ESPACE + unite : txt; }
+function pourcent(taux) { return fmtNombre(Math.round((Number(taux) || 0) * 100), 0) + ESPACE + '%'; }
+function dateFr(iso) {
+  const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(iso || ''));
+  return m ? m[3] + '/' + m[2] + '/' + m[1] : '';
+}
+function texteSaisie(n) { return String(n).replace('.', ','); }
+function versNombre(txt) {
+  const s = String(txt == null ? '' : txt).replace(/[\s\u00a0\u202f]/g, '').replace(',', '.');
+  return s === '' ? NaN : Number(s);
+}
+function versListe(txt) {
+  return String(txt == null ? '' : txt).split(';').filter(m => m.trim() !== '').map(versNombre);
+}
+function texteListe(tab) {
+  return (Array.isArray(tab) ? tab : []).map(n => Number(n).toFixed(2).replace('.', ',')).join(' ; ');
+}
+function pourcentSigne(fraction, decimales) {
+  const x = Number(fraction) * 100;
+  if (!Number.isFinite(x)) return '—';
+  return (x > 0 ? '+' : '') + fmtNombre(x, decimales) + ESPACE + '%';
+}
+function valeurDe(e) { const t = e && (e.currentTarget || e.target); return t ? String(t.value) : ''; }
+function attributDe(e, nom) { const t = e && (e.currentTarget || e.target); return t && t.getAttribute ? t.getAttribute(nom) : null; }
+function statutStyle(s) { const x = STATUT_STYLES[s] || ['var(--surface-alt)', 'var(--control-border)']; return { fond: x[0], bord: x[1] }; }
+function styleCoche(fait) {
+  return { fond: fait ? 'var(--surface-alt)' : 'var(--surface)', couleur: fait ? 'var(--ink-muted)' : 'var(--ink)', deco: fait ? 'line-through' : 'none' };
+}
+// État visuel d'un choix : neutre, pris, bonne, fausse.
+function styleChoix(etat, lettre) {
+  if (etat === 'bonne') return { bord: 'var(--succes)', fond: 'var(--succes-fond)', marqueFond: 'var(--succes)', marqueCouleur: 'var(--surface)', marque: '✓' };
+  if (etat === 'fausse') return { bord: 'var(--erreur)', fond: 'var(--erreur-fond)', marqueFond: 'var(--erreur)', marqueCouleur: 'var(--surface)', marque: '✕' };
+  if (etat === 'pris') return { bord: 'var(--accent)', fond: 'var(--accent-soft)', marqueFond: 'var(--accent)', marqueCouleur: 'var(--on-accent)', marque: lettre };
+  return { bord: 'var(--control-border)', fond: 'var(--surface)', marqueFond: 'transparent', marqueCouleur: 'var(--ink-muted)', marque: lettre };
+}
+
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    const OAD = window.OAD || null;
+    this.state = {
+      pret: moteurPret(), echec: false,
+      route: OAD ? OAD.lireRoute(lireHash()) : null,
+      ordre: ordreContenu(), prog: lireProgression(), theme: lireTheme(),
+      saisies: {}, quizRep: {}, quizScore: {}, casChoix: {}, exoRep: {}, exoCorr: {}
+    };
+    this.__essais = 0;
+    this.__minuteur = null;
+    this.__derniereRoute = null;
+    this.__dernierProg = this.state.prog ? JSON.stringify(this.state.prog) : null;
+
+    this.onHash = () => { if (window.OAD) this.setState({ route: window.OAD.lireRoute(lireHash()) }); };
+    this.attendreMoteur = () => {
+      this.__minuteur = null;
+      if (moteurPret()) {
+        this.setState({ pret: true, ordre: ordreContenu(), route: window.OAD.lireRoute(lireHash()) });
+        return;
+      }
+      this.__essais += 1;
+      if (this.__essais > 200) {
+        if (window.OAD) this.setState({ pret: true, ordre: ordreContenu(), route: window.OAD.lireRoute(lireHash()) });
+        else this.setState({ echec: true });
+        return;
+      }
+      this.__minuteur = setTimeout(this.attendreMoteur, 50);
+    };
+    this.onSaisie = (e) => {
+      const calc = attributDe(e, 'data-calc'), entree = attributDe(e, 'data-entree'), val = valeurDe(e);
+      if (!calc || !entree) return;
+      this.setState(s => ({ saisies: { ...s.saisies, [calc]: { ...(s.saisies[calc] || {}), [entree]: val } } }));
+    };
+    this.reinitialiserCalc = (e) => {
+      const id = valeurDe(e);
+      this.setState(s => { const n = { ...s.saisies }; delete n[id]; return { saisies: n }; });
+    };
+    this.onChoix = (e) => {
+      const [sid, qid, k] = valeurDe(e).split('|');
+      const idx = Number(k);
+      const section = this.sectionCourante();
+      if (!section || section.id !== sid) return;
+      const q = (section.questions || []).find(x => x.id === qid);
+      if (!q || !Number.isInteger(idx)) return;
+      const multiple = q.bonnes.length > 1;
+      this.setState(s => {
+        if (s.quizScore[sid]) return {};
+        const rep = { ...(s.quizRep[sid] || {}) };
+        const cur = rep[qid] || [];
+        rep[qid] = multiple ? (cur.includes(idx) ? cur.filter(x => x !== idx) : [...cur, idx]) : [idx];
+        return { quizRep: { ...s.quizRep, [sid]: rep } };
+      });
+    };
+    this.validerQuiz = (e) => {
+      const sid = valeurDe(e);
+      const ctx = this.contexte();
+      if (!ctx || !ctx.module || !ctx.section || ctx.section.id !== sid) return;
+      const exo = ctx.section.type === 'exercice';
+      const corr = exo ? ctx.OAD.corrigerExercice(ctx.section, versNombre(this.state.exoRep[sid])) : null;
+      const score = exo
+        ? { taux: corr.juste ? 1 : 0, bonnes: corr.juste ? 1 : 0, total: 1 }
+        : ctx.OAD.noterQuiz(ctx.section, this.state.quizRep[sid] || {});
+      const dateISO = new Date().toISOString();
+      this.setState(s => Object.assign(exo
+        ? { exoCorr: { ...s.exoCorr, [sid]: corr } }
+        : { quizScore: { ...s.quizScore, [sid]: score } },
+        { prog: ctx.OAD.enregistrerQuiz(this.progression(s), ctx.module.id, sid, score, dateISO) }));
+    };
+    this.recommencerQuiz = (e) => {
+      const sid = valeurDe(e);
+      this.setState(s => { const rep = { ...s.quizRep }, sc = { ...s.quizScore }; delete rep[sid]; delete sc[sid]; return { quizRep: rep, quizScore: sc }; });
+    };
+    this.onReponseExo = (e) => {
+      const sid = attributDe(e, 'data-exo'), val = valeurDe(e);
+      if (!sid) return;
+      this.setState(s => (s.exoCorr[sid] ? {} : { exoRep: { ...s.exoRep, [sid]: val } }));
+    };
+    this.verifierExo = (e) => this.validerQuiz(e);
+    this.recommencerExo = (e) => {
+      const sid = valeurDe(e);
+      this.setState(s => { const rep = { ...s.exoRep }, corr = { ...s.exoCorr }; delete rep[sid]; delete corr[sid]; return { exoRep: rep, exoCorr: corr }; });
+    };
+    this.choisirCas = (e) => {
+      const [sid, k] = valeurDe(e).split('|');
+      const idx = Number(k);
+      if (!sid || !Number.isInteger(idx)) return;
+      this.setState(s => ({ casChoix: { ...s.casChoix, [sid]: idx } }));
+    };
+    this.basculerEtape = (e) => {
+      const id = attributDe(e, 'data-etape');
+      const ctx = this.contexte();
+      if (!id || !ctx || !ctx.module || !ctx.section) return;
+      this.setState(s => ({ prog: ctx.OAD.basculerEtape(this.progression(s), ctx.module.id, ctx.section.id, id) }));
+    };
+    this.basculerTache = (e) => {
+      const id = attributDe(e, 'data-tache');
+      const ctx = this.contexte();
+      if (!id || !ctx || !ctx.module || !ctx.section) return;
+      this.setState(s => ({ prog: ctx.OAD.basculerTache(this.progression(s), ctx.module.id, ctx.section.id, id) }));
+    };
+    this.effacerProgression = () => {
+      if (!window.OAD) return;
+      if (typeof window.confirm === 'function' && !window.confirm('Effacer toute la progression enregistrée sur cet appareil ?')) return;
+      effacerProgressionStockee();
+      this.__dernierProg = null;
+      this.setState({ prog: window.OAD.progressionVide(), quizRep: {}, quizScore: {}, casChoix: {}, exoRep: {}, exoCorr: {} });
+    };
+    this.basculerTheme = () => {
+      this.setState(s => { const t = THEMES[(THEMES.indexOf(s.theme) + 1) % THEMES.length]; ecrireTheme(t); return { theme: t }; });
+    };
+    this.imprimer = () => { try { window.print(); } catch (e) {} };
+  }
+
+  componentDidMount() {
+    window.addEventListener('hashchange', this.onHash);
+    this.appliquerTheme();
+    if (this.state.pret) this.apresRendu(); else this.attendreMoteur();
+  }
+  componentDidUpdate() { this.appliquerTheme(); this.apresRendu(); }
+  componentWillUnmount() {
+    window.removeEventListener('hashchange', this.onHash);
+    if (this.__minuteur) clearTimeout(this.__minuteur);
+  }
+  appliquerTheme() {
+    try {
+      const el = document.documentElement;
+      const t = this.state.theme;
+      const sombre = t === 'sombre' || (t === 'auto' && !!window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches);
+      el.setAttribute('data-theme', sombre ? 'sombre' : 'clair');
+    } catch (e) {}
+  }
+  apresRendu() {
+    if (!window.OAD || !this.state.pret) return;
+    const ctx = this.contexte();
+    const cle = JSON.stringify(ctx.route);
+    if (cle !== this.__derniereRoute) {
+      this.__derniereRoute = cle;
+      try { window.scrollTo(0, 0); } catch (e) {}
+      if (ctx.module && ctx.section) {
+        const p = this.progression(this.state);
+        const n = ctx.OAD.marquerVue(p, ctx.module.id, ctx.section.id);
+        if (n !== p) { this.setState({ prog: n }); return; }
+      }
+    }
+    if (this.state.prog) {
+      const inst = JSON.stringify(this.state.prog);
+      if (inst !== this.__dernierProg) { this.__dernierProg = inst; ecrireProgression(this.state.prog); }
+    }
+  }
+  progression(s) { return (s && s.prog) || window.OAD.progressionVide(); }
+  contexte() {
+    const OAD = window.OAD;
+    if (!OAD) return null;
+    const modules = OAD.ordonnerModules(OAD.modules(), this.state.ordre);
+    const route = this.state.route || OAD.lireRoute('');
+    let module = null, section = null;
+    if (route.vue === 'module') {
+      module = OAD.trouverModule(modules, route.moduleId);
+      if (module) section = (route.sectionId && OAD.trouverSection(modules, module.id, route.sectionId)) || (module.sections && module.sections[0]) || null;
+    }
+    return { OAD, modules, route, module, section };
+  }
+  sectionCourante() { const c = this.contexte(); return c ? c.section : null; }
+
+  navItems(courants, liens) {
+    return [['Modules', 'catalogue'], ['Calculateurs', 'outils'], ['Progression', 'progression'], ['Glossaire', 'glossaire']].map(([libelle, k]) => {
+      const c = courants[k];
+      const actif = c === 'page';
+      return {
+        libelle, lien: liens[k], courant: c,
+        fond: actif || c ? 'var(--accent)' : 'transparent',
+        couleur: actif || c ? 'var(--ink)' : 'var(--ink-muted)'
+      };
+    });
+  }
+
+  valeursVides() {
+    const t = this.state.theme;
+    const liens = { catalogue: '#/', outils: '#/outils', progression: '#/progression', glossaire: '#/module/glossaire' };
+    return {
+      enChargement: true, echecChargement: false,
+      lienCatalogue: liens.catalogue, lienProgression: liens.progression,
+      navItems: this.navItems({}, liens),
+      themeLibelle: { auto: '◐ Auto', clair: '○ Clair', sombre: '● Sombre' }[t],
+      themeAria: 'Changer de thème (actuel : ' + THEMES_LIBELLES[t] + ')',
+      aErreurs: false, erreursListe: [],
+      estCatalogue: false, estModule: false, estOutils: false, estProgression: false, estInconnu: false,
+      aGrille: false, domainesCatalogue: [], reprise: {}, bilan: { maitrises: 0, surTxt: '', pct: 0 },
+      mod: { aChiffresSansSource: false, chiffresSansSourceTxt: '' }, sommaire: [],
+      section: { aTechno: false, technoLibelle: '', aSourceEntete: false, sourceTxt: '' },
+      estFiche: false, estProcedure: false, estEntretien: false, estCalculateur: false, estQuiz: false, estCas: false,
+      estExercice: false, estDefinitions: false, definitions: [],
+      exo: { sid: '', enonce: '', aSource: false, sourceTxt: '', inputId: '', uniteTxt: '', reponse: '', corrige: false, nonCorrige: true,
+        verdict: '', retourFond: '', attenduTxt: '', etapes: [], aDernier: false, dernierTxt: '' },
+      blocs: [], procedure: { etapes: [], pct: 0 }, entretien: { groupes: [], pct: 0 },
+      quiz: { questions: [], nonCorrige: true },
+      cas: { options: [], aSource: false, sourceTxt: '', aSourceRetour: false, sourceRetourTxt: '' },
+      aPrec: false, aSuiv: false, prec: {}, suiv: {},
+      outilsListe: [], outilsTitre: '', outilsMessage: '',
+      aCalc: false, calcCourant: { entrees: [], etapes: [], resultats: [], alertes: [], technosTxt: '', aTechnos: false, tableau: null, aTableau: false },
+      progResume: '', tableauProgression: null,
+      aEdition: false, editionTxt: '',
+      basculerTheme: this.basculerTheme, onSaisie: this.onSaisie, reinitialiserCalc: this.reinitialiserCalc,
+      onChoix: this.onChoix, validerQuiz: this.validerQuiz, recommencerQuiz: this.recommencerQuiz,
+      choisirCas: this.choisirCas, basculerEtape: this.basculerEtape, basculerTache: this.basculerTache,
+      onReponseExo: this.onReponseExo, verifierExo: this.verifierExo, recommencerExo: this.recommencerExo,
+      effacerProgression: this.effacerProgression, imprimer: this.imprimer
+    };
+  }
+
+  renderVals() {
+    const out = this.valeursVides();
+    if (!window.OAD || !this.state.pret) {
+      out.enChargement = !this.state.echec;
+      out.echecChargement = !!this.state.echec;
+      return out;
+    }
+    const ctx = this.contexte();
+    const OAD = ctx.OAD;
+    const prog = this.progression(this.state);
+    const vue = ctx.route.vue;
+    out.enChargement = false;
+    out.editionTxt = OAD.EDITION_CONTENU ? 'Édition du contenu : ' + dateFr(OAD.EDITION_CONTENU) : '';
+    out.aEdition = !!out.editionTxt;
+    const liens = { catalogue: OAD.lien(), outils: OAD.lien('outils'), progression: OAD.lien('progression'), glossaire: OAD.lien('module', 'glossaire') };
+    out.lienCatalogue = liens.catalogue;
+    out.lienProgression = liens.progression;
+    const glossaire = vue === 'module' && OAD.estModuleReference(ctx.module);
+    out.navItems = this.navItems({
+      glossaire: glossaire ? 'page' : null,
+      catalogue: vue === 'catalogue' ? 'page' : (vue === 'module' && !glossaire ? 'true' : null),
+      outils: vue === 'outils' ? 'page' : null,
+      progression: vue === 'progression' ? 'page' : null
+    }, liens);
+    const erreurs = OAD.erreursContenu(ctx.modules);
+    if (ctx.modules.length === 0) erreurs.push('aucun module chargé');
+    out.aErreurs = erreurs.length > 0;
+    out.erreursListe = erreurs;
+    if (vue === 'module') Object.assign(out, this.valsModule(ctx, prog));
+    else if (vue === 'outils') Object.assign(out, this.valsOutils(ctx));
+    else if (vue === 'progression') Object.assign(out, this.valsProgression(ctx, prog));
+    else Object.assign(out, this.valsCatalogue(ctx, prog));
+    return out;
+  }
+
+  quizTxt(OAD, m, prog) {
+    const b = OAD.bilanEvaluation(prog, m);
+    return b.total ? 'Quiz réussis : ' + b.reussies + ' / ' + b.total : 'Pas de quiz dans ce module';
+  }
+  carte(OAD, m, prog) {
+    const a = OAD.avancement(prog, m);
+    const pct = Math.round(a.taux * 100);
+    const st = statutStyle(m.statut);
+    return {
+      quizTxt: this.quizTxt(OAD, m, prog),
+      id: m.id, titre: m.titre, resume: m.resume, lien: OAD.lien('module', m.id),
+      statutLibelle: OAD.STATUTS_LIBELLES[m.statut] || m.statut,
+      statutFond: st.fond, statutBord: st.bord,
+      dureeTxt: m.dureeMin ? 'Environ ' + fmtNombre(m.dureeMin, 0) + ESPACE + 'min' : '',
+      etatLibelle: OAD.ETATS_MODULE_LIBELLES[OAD.etatModule(prog, m)],
+      avancementTxt: a.vues + ' / ' + a.total + ' sections',
+      pct, jaugeLabel: 'Sections consultées : ' + a.vues + ' sur ' + a.total
+    };
+  }
+  valsCatalogue(ctx, prog) {
+    const OAD = ctx.OAD;
+    const suivis = ctx.modules.filter(m => !OAD.estModuleReference(m));
+    const maitrises = suivis.filter(m => OAD.etatModule(prog, m) === 'maitrise').length;
+    return {
+      estCatalogue: true, reprise: this.reprise(OAD, suivis, prog),
+      bilan: {
+        maitrises,
+        surTxt: 'sur ' + suivis.length + ' module' + (suivis.length > 1 ? 's' : '') + ' maîtrisé' + (maitrises > 1 ? 's' : ''),
+        pct: suivis.length ? Math.round(maitrises / suivis.length * 100) : 0
+      },
+      domainesCatalogue: OAD.DOMAINES.filter(d => d !== 'transversal').map(d => {
+        const modules = OAD.listerModules(ctx.modules, { domaine: d }).map(m => this.carte(OAD, m, prog));
+        return {
+          titreId: 'domaine-' + d, libelle: OAD.DOMAINES_LIBELLES[d], modules,
+          nbTxt: modules.length + ' module' + (modules.length > 1 ? 's' : '')
+        };
+      }).filter(g => g.modules.length > 0)
+    };
+  }
+  reprise(OAD, suivis, prog) {
+    const entame = suivis.find(m => OAD.etatModule(prog, m) !== 'maitrise' && OAD.avancement(prog, m).vues > 0);
+    const m = entame || suivis.find(x => OAD.etatModule(prog, x) !== 'maitrise');
+    if (!m) return { eyebrow: 'Parcours terminé', titre: 'Tous les modules sont maîtrisés', detail: 'Vous pouvez revoir un module ou refaire un quiz.', action: 'Voir ma progression', lien: OAD.lien('progression') };
+    const s = m.sections.find(x => !OAD.progressionSection(prog, m.id, x.id).vue) || m.sections[0];
+    return { eyebrow: entame ? 'Reprendre là où vous en étiez' : 'Pour commencer', titre: m.titre, detail: 'Section suivante : ' + s.titre, action: entame ? 'Reprendre' : 'Commencer', lien: OAD.lien('module', m.id, s.id) };
+  }
+  sourceTxt(m, code) {
+    const s = code && Array.isArray(m.sources) ? m.sources.find(x => x && x.code === code) : null;
+    return s ? 'Source : ' + s.reference + ' (' + s.date + (s.page ? ', p. ' + s.page : '') + ')' : '';
+  }
+  sourceVals(m, el) { const t = this.sourceTxt(m, el && el.source); return { aSource: !!t, sourceTxt: t }; }
+
+  tableauBloc(bloc) {
+    const e = React.createElement;
+    return e('table', { style: S_TABLE },
+      e('thead', null, e('tr', null, bloc.entetes.map((t, k) => e('th', { key: k, scope: 'col', style: S_THEAD }, t)))),
+      e('tbody', null, bloc.lignes.map((l, i) => e('tr', { key: i }, l.map((c, k) => e('td', { key: k, style: S_TD }, c))))));
+  }
+
+  valsModule(ctx, prog) {
+    const OAD = ctx.OAD, m = ctx.module, sec = ctx.section;
+    if (!m || !sec) return { estInconnu: true };
+    const carte = this.carte(OAD, m, prog);
+    const sansSource = OAD.elementsChiffresSansSource(m).length;
+    const srcSection = this.sourceVals(m, sec);
+    const ps = OAD.progressionSection(prog, m.id, sec.id);
+    const i = m.sections.indexOf(sec), n = m.sections.length;
+    const voisin = s => s ? { lien: OAD.lien('module', m.id, s.id), titre: s.titre } : {};
+    const out = {
+      estModule: true, aGrille: true,
+      mod: {
+        id: m.id, titre: m.titre, domaineLibelle: OAD.DOMAINES_LIBELLES[m.domaine] || m.domaine,
+        statutLibelle: carte.statutLibelle, statutFond: carte.statutFond, statutBord: carte.statutBord,
+        public: m.public || '', dureeTxt: carte.dureeTxt,
+        nonValide: m.statut !== 'valide',
+        aChiffresSansSource: sansSource > 0,
+        chiffresSansSourceTxt: sansSource + ' élément' + (sansSource > 1 ? 's' : '') + ' chiffré' + (sansSource > 1 ? 's' : '') + ' sans source.',
+        sourcesTxt: (m.sources && m.sources.length)
+          ? 'Sources : ' + m.sources.map(s => s.reference + ' (' + s.date + ')').join(' ; ') + '.'
+          : 'Aucune source renseignée.',
+        avancementTxt: carte.avancementTxt + ' consultées',
+        pct: carte.pct, jaugeLabel: carte.jaugeLabel
+      },
+      sommaire: m.sections.map((s, k) => {
+        const courant = s.id === sec.id;
+        const vu = OAD.progressionSection(prog, m.id, s.id).vue;
+        return {
+          titre: s.titre, lien: OAD.lien('module', m.id, s.id),
+          typeLibelle: OAD.TYPES_SECTION_LIBELLES[s.type] || s.type,
+          courant: courant ? 'page' : null, vu,
+          fond: courant ? 'var(--accent-soft)' : 'transparent',
+          poids: courant ? 650 : 450,
+          pastille: vu && !courant ? '✓' : String(k + 1),
+          pastilleFond: courant ? 'var(--accent)' : (vu ? 'var(--succes-fond)' : 'transparent'),
+          pastilleBord: courant ? 'var(--accent)' : (vu ? 'var(--succes)' : 'var(--control-border)'),
+          pastilleCouleur: courant ? 'var(--on-accent)' : (vu ? 'var(--succes)' : 'var(--ink-muted)')
+        };
+      }),
+      section: {
+        cle: m.id + '-' + sec.id, titre: sec.titre, typeLibelle: OAD.TYPES_SECTION_LIBELLES[sec.type] || sec.type,
+        position: 'section ' + (i + 1) + ' sur ' + n,
+        intro: sec.intro || '', aIntro: !!sec.intro,
+        aTechno: !!sec.technologie && sec.technologie !== 'toutes',
+        technoLibelle: OAD.TECHNOLOGIES_LIBELLES[sec.technologie] || '',
+        aSourceEntete: srcSection.aSource && sec.type !== 'cas' && sec.type !== 'exercice',
+        sourceTxt: srcSection.sourceTxt
+      },
+      estFiche: sec.type === 'fiche', estProcedure: sec.type === 'procedure',
+      estEntretien: sec.type === 'entretien', estCalculateur: sec.type === 'calculateur',
+      estQuiz: sec.type === 'quiz', estCas: sec.type === 'cas', estExercice: sec.type === 'exercice',
+      estDefinitions: sec.type === 'definitions',
+      aPrec: i > 0, aSuiv: i < n - 1,
+      prec: voisin(m.sections[i - 1]), suiv: voisin(m.sections[i + 1])
+    };
+    if (sec.type === 'fiche') {
+      out.blocs = sec.blocs.map(b => Object.assign({
+        texte: b.texte || '',
+        items: (b.items || []).map(it => {
+          const o = (it && typeof it === 'object') ? it : { texte: it };
+          return Object.assign({ texte: o.texte, lectureGraphique: !!o.lectureGraphique }, this.sourceVals(m, o));
+        }),
+        estParagraphe: b.type === 'paragraphe', estListe: b.type === 'liste',
+        estAlerte: b.type === 'alerte', estFormule: b.type === 'formule', estTableau: b.type === 'tableau',
+        tableau: b.type === 'tableau' ? this.tableauBloc(b) : null,
+        lectureGraphique: !!b.lectureGraphique
+      }, this.sourceVals(m, b)));
+    } else if (sec.type === 'procedure') {
+      const faits = ps.etapes;
+      const nb = sec.etapes.filter(e => faits.includes(e.id)).length;
+      out.procedure = {
+        compteur: nb + ' / ' + sec.etapes.length + ' étapes cochées',
+        pct: sec.etapes.length ? Math.round(nb / sec.etapes.length * 100) : 0,
+        etapes: sec.etapes.map((e, k) => Object.assign({
+          id: e.id, num: k + 1, texte: e.texte, detail: e.detail || '', aDetail: !!e.detail,
+          inputId: 'etape-' + sec.id + '-' + e.id, fait: faits.includes(e.id)
+        }, styleCoche(faits.includes(e.id)), this.sourceVals(m, e)))
+      };
+    } else if (sec.type === 'entretien') {
+      const faits = ps.taches;
+      const nb = sec.taches.filter(t => faits.includes(t.id)).length;
+      out.entretien = {
+        compteur: nb + ' / ' + sec.taches.length + ' tâches cochées',
+        pct: sec.taches.length ? Math.round(nb / sec.taches.length * 100) : 0,
+        groupes: OAD.PERIODICITES.map(p => ({
+          libelle: OAD.PERIODICITES_LIBELLES[p],
+          taches: sec.taches.filter(t => t.periodicite === p).map(t => Object.assign({
+            id: t.id, texte: t.texte, detail: t.detail || '', aDetail: !!t.detail,
+            inputId: 'tache-' + sec.id + '-' + t.id, fait: faits.includes(t.id)
+          }, styleCoche(faits.includes(t.id)), this.sourceVals(m, t)))
+        })).filter(g => g.taches.length > 0)
+      };
+    } else if (sec.type === 'calculateur') {
+      const c = this.valsCalc(OAD, sec.calculateur);
+      out.aCalc = !!c;
+      if (c) out.calcCourant = c;
+    } else if (sec.type === 'quiz') {
+      out.quiz = this.valsQuiz(sec, ps, m);
+    } else if (sec.type === 'cas') {
+      out.cas = this.valsCas(sec, m);
+    } else if (sec.type === 'exercice') {
+      out.exo = this.valsExo(OAD, sec, ps, m);
+    } else if (sec.type === 'definitions') {
+      out.definitions = sec.entrees.map(d => Object.assign({ terme: d.terme, definition: d.definition, ancre: 'terme-' + d.id }, this.sourceVals(m, d)));
+    }
+    return out;
+  }
+
+  valsQuiz(sec, ps, m) {
+    const sid = sec.id;
+    const rep = this.state.quizRep[sid] || {};
+    const score = this.state.quizScore[sid] || null;
+    const corrige = !!score;
+    const details = score ? score.details : [];
+    const dernier = ps.quiz;
+    return {
+      sid, corrige, nonCorrige: !corrige, verrouille: corrige,
+      questions: sec.questions.map((q, i) => {
+        const choisis = rep[q.id] || [];
+        const d = details.find(x => x.qid === q.id);
+        const juste = !!(d && d.juste);
+        const multiple = q.bonnes.length > 1;
+        return Object.assign({
+          num: i + 1, enonce: q.enonce, multiple, rayonMarque: multiple ? '0' : '999px',
+          choix: q.choix.map((c, k) => {
+            const pris = choisis.includes(k), bonne = q.bonnes.includes(k);
+            let etat = pris ? 'pris' : 'neutre';
+            if (corrige && bonne) etat = 'bonne';
+            if (corrige && pris && !bonne) etat = 'fausse';
+            return Object.assign({ texte: c, valeur: sid + '|' + q.id + '|' + k, presse: pris ? 'true' : 'false' }, styleChoix(etat, LETTRES[k] || String(k + 1)));
+          }),
+          correction: (juste ? 'Juste. ' : 'À revoir. ') + (q.explication || ''),
+          correctionFond: juste ? 'var(--succes-fond)' : 'var(--erreur-fond)'
+        }, this.sourceVals(m || {}, q));
+      }),
+      scoreTxt: corrige ? 'Score : ' + score.bonnes + ' / ' + score.total + ' (' + pourcent(score.taux) + ')' : '',
+      aDernier: !!dernier && !corrige,
+      dernierTxt: dernier
+        ? 'Dernier résultat enregistré : ' + (dernier.bonnes === null ? '' : dernier.bonnes + ' / ' + dernier.total + ', ') +
+          pourcent(dernier.taux) + (dernier.date ? ', le ' + dateFr(dernier.date) : '') + '.'
+        : ''
+    };
+  }
+
+  valsCas(sec, m) {
+    const sid = sec.id;
+    const choix = this.state.casChoix[sid];
+    const opt = Number.isInteger(choix) ? sec.options[choix] : null;
+    const srcSituation = this.sourceVals(m || {}, sec), srcRetour = this.sourceVals(m || {}, opt);
+    return {
+      aSource: srcSituation.aSource, sourceTxt: srcSituation.sourceTxt,
+      aSourceRetour: srcRetour.aSource, sourceRetourTxt: srcRetour.sourceTxt,
+      situation: sec.situation,
+      options: sec.options.map((o, k) => {
+        const pris = k === choix;
+        const etat = pris ? (o.correct ? 'bonne' : 'fausse') : 'neutre';
+        return Object.assign({ texte: o.texte, valeur: sid + '|' + k, presse: pris ? 'true' : 'false' }, styleChoix(etat, LETTRES[k] || String(k + 1)));
+      }),
+      aRetour: !!opt,
+      verdict: opt ? (opt.correct ? 'Bonne réponse.' : 'Pas tout à fait.') : '',
+      retour: opt ? opt.retour : '',
+      retourFond: opt && opt.correct ? 'var(--succes-fond)' : 'var(--erreur-fond)'
+    };
+  }
+
+  texteAlerte(OAD, a) {
+    if (typeof a === 'string') return a;
+    return OAD.substituer(a && a.gabarit, ((a && a.operandes) || []).map(o => fmtNombre(o.valeur, o.decimales)));
+  }
+  etapesFormatees(OAD, etapes) {
+    return etapes.map((et, k) => ({
+      num: k + 1, titre: et.titre, formule: et.formule,
+      substitution: OAD.substituer(et.gabarit, et.operandes.map(o => fmtNombre(o.valeur, o.decimales))),
+      resultat: avecUnite(fmtNombre(et.resultat.valeur, et.resultat.decimales), et.resultat.unite)
+    }));
+  }
+  valsExo(OAD, sec, ps, m) {
+    const sid = sec.id;
+    const corr = this.state.exoCorr[sid] || null;
+    const att = OAD.attenduExercice(sec);
+    const dernier = ps.quiz;
+    return Object.assign({
+      sid, enonce: sec.enonce, inputId: 'exo-' + sid,
+      uniteTxt: att.unite ? '(' + att.unite + ')' : '',
+      reponse: this.state.exoRep[sid] || '',
+      corrige: !!corr, nonCorrige: !corr,
+      verdict: corr ? (corr.juste ? 'Juste.' : 'À revoir.') : '',
+      retourFond: corr && corr.juste ? 'var(--succes-fond)' : 'var(--erreur-fond)',
+      attenduTxt: avecUnite(fmtNombre(att.valeur, att.decimales), att.unite),
+      etapes: corr ? this.etapesFormatees(OAD, att.etapes) : [],
+      aDernier: !!dernier && !corr,
+      dernierTxt: dernier ? 'Dernier résultat enregistré : ' + (dernier.taux >= 1 ? 'juste' : 'à revoir') + (dernier.date ? ', le ' + dateFr(dernier.date) : '') + '.' : ''
+    }, this.sourceVals(m || {}, sec));
+  }
+
+  valsCalc(OAD, calcId) {
+    const C = OAD.CALCULATEURS[calcId];
+    if (!C) return null;
+    const saisie = this.state.saisies[calcId] || {};
+    const textes = {}, nombres = {};
+    C.entrees.forEach(en => {
+      const liste = en.type === 'liste';
+      const t = saisie[en.id] !== undefined ? saisie[en.id] : (liste ? texteListe(en.defaut) : texteSaisie(en.defaut));
+      textes[en.id] = t;
+      nombres[en.id] = liste ? versListe(t) : versNombre(t);
+    });
+    const r = C.compute(nombres);
+    return {
+      id: C.id, titre: C.titre, description: C.description,
+      entrees: C.entrees.map(en => {
+        const liste = en.type === 'liste';
+        const origineId = 'origine-' + C.id + '-' + en.id, consigneId = 'consigne-' + C.id + '-' + en.id;
+        return {
+          id: en.id, calc: C.id, label: en.label,
+          estListe: liste, estNombre: !liste, colonne: liste ? '1 / -1' : 'auto',
+          inputId: 'calc-' + C.id + '-' + en.id, origineId, consigneId,
+          decritPar: consigneId + ' ' + origineId,
+          uniteTxt: en.unite ? '(' + en.unite + ')' : '',
+          valeur: textes[en.id],
+          defautTxt: avecUnite(liste ? texteListe(en.defaut) : fmtNombre(en.defaut, 3), en.unite),
+          origine: en.origineDefaut
+        };
+      }),
+      etapes: this.etapesFormatees(OAD, r.etapes),
+      resultats: r.resultats.map(x => ({ label: x.label, texte: avecUnite(fmtNombre(x.valeur, x.decimales), x.unite) })),
+      aTechnos: Array.isArray(C.technologies) && !(C.technologies.length === 1 && C.technologies[0] === 'toutes'),
+      technosTxt: 'S\'applique à : ' + (C.technologies || []).map(t => OAD.TECHNOLOGIES_LIBELLES[t] || t).join(', '),
+      tableau: Array.isArray(r.detail) && r.detail.length ? this.tableauEcarts(r.detail) : null,
+      aTableau: Array.isArray(r.detail) && r.detail.length > 0,
+      alertes: r.alertes.map(a => this.texteAlerte(OAD, a)), aAlertes: r.alertes.length > 0
+    };
+  }
+
+  tableauEcarts(detail) {
+    const e = React.createElement;
+    const hors = Object.assign({}, S_TD, { fontWeight: 700, color: 'var(--erreur)', background: 'var(--erreur-fond)' });
+    return e('table', { style: S_TABLE },
+      e('caption', { style: S_CAPTION }, 'Écart de chaque diffuseur à la moyenne'),
+      e('thead', null, e('tr', null, ['Diffuseur', 'Débit (L/min)', 'Écart à la moyenne'].map(t => e('th', { key: t, scope: 'col', style: S_THEAD }, t)))),
+      e('tbody', null, detail.map(x => {
+        const st = x.horsSeuil ? hors : S_TD;
+        return e('tr', { key: x.rang },
+          e('th', { scope: 'row', style: st }, 'n° ' + x.rang),
+          e('td', { style: Object.assign({}, st, { fontVariantNumeric: 'tabular-nums' }) }, fmtNombre(x.debit, 2)),
+          e('td', { style: st }, x.bouche ? 'débit nul — bouché, à contrôler' : pourcentSigne(x.ecart, 2) + (x.horsSeuil ? ' — à contrôler' : '')));
+      })));
+  }
+
+  valsOutils(ctx) {
+    const OAD = ctx.OAD, id = ctx.route.calcId;
+    const calcs = Object.keys(OAD.CALCULATEURS).map(k => OAD.CALCULATEURS[k]);
+    const c = id ? this.valsCalc(OAD, id) : null;
+    return {
+      estOutils: true, aGrille: true,
+      outilsListe: calcs.map(x => {
+        const courant = x.id === id;
+        return { titre: x.titre, lien: OAD.lien('outils', x.id), courant: courant ? 'page' : null, fond: courant ? 'var(--accent-soft)' : 'transparent', poids: courant ? 650 : 450 };
+      }),
+      aCalc: !!c,
+      calcCourant: c || this.valeursVides().calcCourant,
+      outilsTitre: c ? c.titre : (id ? 'Calculateur introuvable' : 'Choisir un calculateur'),
+      outilsMessage: c ? '' : (id ? 'Ce lien ne correspond à aucun calculateur. Choisissez-en un dans la liste.' : 'Choisissez un calculateur dans la liste.')
+    };
+  }
+
+  valsProgression(ctx, prog) {
+    const OAD = ctx.OAD;
+    ctx = Object.assign({}, ctx, { modules: ctx.modules.filter(m => !OAD.estModuleReference(m)) });
+    const n = etat => ctx.modules.filter(m => OAD.etatModule(prog, m) === etat).length;
+    const pl = (k, mot) => k + ' ' + mot + (k > 1 ? 's' : '');
+    return {
+      estProgression: true,
+      progResume: pl(n('maitrise'), 'module maîtrisé') + ', ' + pl(n('consulte'), 'consulté') + ' sans être maîtrisé, sur ' + ctx.modules.length + '.',
+      tableauProgression: this.tableauProgression(ctx, prog)
+    };
+  }
+
+  tableauProgression(ctx, prog) {
+    const e = React.createElement, OAD = ctx.OAD;
+    const ETAT_FOND = { maitrise: 'var(--succes-fond)', consulte: 'var(--accent-soft)', 'en-cours': 'var(--alerte-fond)' };
+    const lignes = ctx.modules.map(m => {
+      const a = OAD.avancement(prog, m);
+      const etat = OAD.etatModule(prog, m);
+      const quiz = m.sections.filter(s => s.type === 'quiz').map(s => {
+        const q = OAD.progressionSection(prog, m.id, s.id).quiz;
+        if (!q) return s.titre + ' : non fait';
+        return s.titre + ' : ' + (q.bonnes === null ? '' : q.bonnes + ' / ' + q.total + ', ') + pourcent(q.taux) + (q.date ? ', le ' + dateFr(q.date) : '');
+      });
+      return e('tr', { key: m.id },
+        e('th', { scope: 'row', style: Object.assign({}, S_TD, { fontWeight: 600 }) }, e('a', { href: OAD.lien('module', m.id) }, m.titre)),
+        e('td', { style: Object.assign({}, S_TD, { fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap' }) }, a.vues + ' / ' + a.total),
+        e('td', { style: Object.assign({}, S_TD, { color: 'var(--ink-muted)', fontSize: '.9rem' }) }, quiz.length ? quiz.map((t, i) => e('div', { key: i }, t)) : '—'),
+        e('td', { style: Object.assign({}, S_TD, { fontVariantNumeric: 'tabular-nums' }) }, this.quizTxt(OAD, m, prog).replace(/^Quiz réussis : /, '')),
+        e('td', { style: S_TD }, e('span', { style: { display: 'inline-block', padding: '2px 10px', borderRadius: '999px', fontSize: '.82rem', fontWeight: 600, whiteSpace: 'nowrap', background: ETAT_FOND[etat] || 'var(--surface-alt)' } }, OAD.ETATS_MODULE_LIBELLES[etat])));
+    });
+    return e('table', { style: S_TABLE },
+      e('caption', { style: S_CAPTION }, 'Avancement par module'),
+      e('thead', null, e('tr', null, ['Module', 'Sections consultées', 'Quiz', 'Quiz réussis', 'État'].map(t => e('th', { key: t, scope: 'col', style: S_THEAD }, t)))),
+      e('tbody', null, lignes));
+  }
+}
+</script>
+
+
+</body></html>

@@ -1,0 +1,8 @@
+/* Charte Champagne.fr — espacements, formes, contrôles. Copié de docs/maquette (révision v3). */
+:root{
+--space-2:8px;--space-btn-y:15px;--space-4:16px;--space-6:24px;--space-32:128px;--space-44:176px;
+--measure-title:672px;
+--radius-none:0px;--radius-pill:9999px;
+--control-h:56px;--control-h-sm:48px;--border-w:1px;--cursor-d:60px;
+--gutter:var(--space-4);--section-y:var(--space-32);--section-y-first:var(--space-44);
+}

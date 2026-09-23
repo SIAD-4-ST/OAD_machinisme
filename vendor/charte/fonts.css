@@ -1,0 +1,11 @@
+/* Charte Champagne.fr — polices. Hors ligne : aucun appel à Google Fonts.
+   Les fichiers des polices de marque (Domaine Display, Gotham, CIVC) ne sont pas
+   dans le dépôt : seules les piles de repli sont définies. Dès réception des
+   fichiers, les déposer dans vendor/charte/ et ajouter ici leurs @font-face
+   (src: url("…") locale uniquement). Une police installée sur le poste est
+   utilisée si elle porte le même nom. */
+:root{
+--font-display:"Domaine Display",Georgia,serif;
+--font-body:"Gotham","Montserrat",Arial,sans-serif;
+--font-signal:"CIVC","Jost",Arial,sans-serif;
+}

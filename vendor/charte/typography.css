@@ -1,0 +1,20 @@
+/* Charte Champagne.fr — typographie. Copié de docs/maquette (révision v3). */
+:root{
+--display-marquee-size:96px;--display-marquee-lh:96px;--display-marquee-wght:300;
+--h1-size:54px;--h1-lh:72.9px;--h1-wght:300;
+--h2-size:40px;--h2-lh:60px;--h2-wght:300;
+--menu-link-size:40px;--menu-link-lh:80px;--menu-link-wght:300;
+--card-title-size:24px;--card-title-lh:48px;--card-title-wght:300;
+--eyebrow-size:14px;--eyebrow-lh:21px;--eyebrow-wght:700;
+--menu-label-size:14px;--menu-label-lh:21px;--menu-label-wght:700;
+--tile-label-size:20px;--tile-label-lh:30px;--tile-label-wght:400;
+--footer-heading-size:18px;--footer-heading-lh:27px;--footer-heading-wght:300;
+--link-caps-size:14px;--link-caps-lh:16px;--link-caps-wght:700;
+--tag-size:12px;--tag-lh:12px;--tag-wght:700;
+--meta-size:12px;--meta-lh:12px;--meta-wght:400;
+--body-size:16px;--body-lh:32px;--body-wght:300;
+--button-size:16px;--button-lh:24px;--button-wght:400;
+--link-strong-size:14px;--link-strong-lh:28px;--link-strong-wght:500;
+--footer-link-size:14px;--footer-link-lh:36px;--footer-link-wght:400;
+--legal-size:12px;--legal-lh:15.96px;--legal-wght:400;
+}
