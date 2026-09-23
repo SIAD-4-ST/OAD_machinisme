@@ -74,10 +74,15 @@ h3 { font-size: 1.05rem; font-weight: 500; margin: 20px 0 8px; }
 .nav a:hover { color: var(--ink); }
 .nav a[aria-current] { color: var(--ink); box-shadow: inset 0 -2px 0 var(--accent); }
 .bouton-theme { flex: none; }
+/* Sous 900 px, le menu défile : un contour décalé vers l'extérieur serait rogné. */
+.nav a:focus-visible { outline-offset: -4px; }
 @media (min-width: 900px) {
   .entete-int { flex-wrap: nowrap; padding: 0 24px; }
-  .nav { order: 0; flex: 0 1 auto; }
+  .nav { order: 0; flex: 0 1 auto; overflow: visible; }
+  .nav a:focus-visible { outline-offset: 3px; }
 }
+/* Ancres (glossaire) : ne pas passer sous l'en-tête collant. */
+[id] { scroll-margin-top: 88px; }
 
 .pied { border-top: 1px solid var(--hairline); padding: 12px 0 20px; color: var(--ink-muted); font-size: .9rem; }
 
@@ -151,22 +156,37 @@ button { font: inherit; cursor: pointer; }
 .grille { display: flex; flex-direction: column; gap: 16px; margin-top: 12px; }
 .grille > .sommaire { order: 2; }
 .grille > .contenu { order: 1; }
+/* En-tête collant : 64 px sur une ligne (dès 900 px), environ 128 px sur deux. */
 @media (min-width: 800px) {
-  .grille { display: grid; grid-template-columns: 270px minmax(0, 1fr); align-items: start; }
-  .grille > .sommaire { order: 0; position: sticky; top: 8px; }
+  .grille { display: grid; grid-template-columns: 290px minmax(0, 1fr); gap: 24px; align-items: start; }
+  .grille > .sommaire { order: 0; position: sticky; top: 144px; max-height: calc(100vh - 160px); overflow-y: auto; }
 }
-.sommaire { background: var(--surface); border: 1px solid var(--hairline); border-radius: var(--radius-none); padding: 12px; }
-.sommaire-titre { font-size: 13px; color: var(--ink-muted); margin: 0 0 4px; }
-.sommaire ol { list-style: none; padding: 0; margin: 8px 0 0; }
-.sommaire a { display: flex; gap: 8px; align-items: baseline; padding: 8px; min-height: 44px; border-radius: var(--radius-none);
-  color: var(--ink); text-decoration: none; }
-.sommaire a:hover { background: var(--surface-alt); }
+@media (min-width: 900px) {
+  .grille > .sommaire { top: 88px; max-height: calc(100vh - 104px); }
+}
+.sommaire { background: var(--surface); border: 1px solid var(--hairline); border-radius: var(--radius-none); padding: 18px 12px 12px; }
+.sommaire > .sommaire-titre, .sommaire > .meta, .sommaire > .jauge { margin-left: 8px; margin-right: 8px; }
+.sommaire-titre { font-size: 13px; letter-spacing: .1em; color: var(--ink-muted); margin: 0 0 8px; }
+.sommaire ol, .outils-liste { list-style: none; padding: 0; margin: 12px 0 0; display: flex; flex-direction: column; gap: 2px; }
+.sommaire a { display: grid; grid-template-columns: 26px minmax(0, 1fr); gap: 0 10px; align-items: start; padding: 8px; min-height: 44px;
+  border-radius: var(--radius-none); color: var(--ink); text-decoration: none; font-size: .92rem; line-height: 1.35; }
+.outils-liste a { display: flex; align-items: center; }
+.sommaire a:hover { background: var(--surface-alt); color: var(--ink); }
 .sommaire a[aria-current] { background: var(--accent-soft); font-weight: 500; }
-.sommaire-type { font-size: 11px; color: var(--ink-muted); min-width: 6.5em; }
-.sommaire .vu { margin-left: auto; color: var(--succes); }
+.sommaire-texte { display: flex; flex-direction: column; min-width: 0; }
+.sommaire-type { font-size: 11px; letter-spacing: .06em; color: var(--ink-muted); font-weight: 700; }
 
-.contenu { background: var(--surface); border: 1px solid var(--hairline); border-radius: var(--radius-none); padding: 16px; min-width: 0; }
-.section-type { font-size: 13px; color: var(--gold-deep); margin: 0; }
+/* Pastille numérotée : sommaire et étapes de calcul. */
+.pastille { flex: none; width: 26px; height: 26px; border-radius: var(--radius-pill); display: inline-flex; align-items: center;
+  justify-content: center; font-size: .78rem; font-weight: 700; line-height: 1; font-variant-numeric: tabular-nums;
+  border: 1.5px solid var(--control-border); background: var(--surface); color: var(--ink-muted); }
+.sommaire a[aria-current] .pastille { border-color: var(--accent); background: var(--accent); color: var(--on-accent); }
+.pastille-vue, .sommaire a[aria-current] .pastille-vue { border-color: var(--succes); background: var(--succes-fond); color: var(--succes); }
+
+.contenu { background: var(--surface); border: 1px solid var(--hairline); border-radius: var(--radius-none); padding: clamp(18px, 3.5vw, 36px); min-width: 0; }
+.section-type { font-size: 13px; letter-spacing: .1em; color: var(--gold-deep); margin: 0 0 8px; display: flex; flex-wrap: wrap; gap: 4px 8px; align-items: center; }
+.section-position { color: var(--ink-muted); }
+.titre-contenu { font-size: clamp(1.8rem, 3vw, 2.4rem); line-height: 1.2; margin: 0 0 16px; }
 .intro { color: var(--ink-muted); }
 .formule { font-family: ui-monospace, "Cascadia Mono", Consolas, monospace; background: var(--surface-alt);
   padding: 8px 12px; border-radius: var(--radius-none); margin: 4px 0; overflow-wrap: anywhere; }
@@ -197,35 +217,56 @@ li > .source-element { margin: 0; }
 .champ input:focus { border-color: var(--gold-deep); }
 .unite { font-weight: 300; color: var(--ink-muted); }
 .origine { font-size: .8rem; color: var(--ink-muted); margin: 4px 0 0; }
-.sorties { margin: 16px 0; padding: 12px 16px; border-radius: var(--radius-none); background: var(--accent-soft); }
-.resultat { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 4px 12px; margin: 4px 0; }
-.resultat strong { font-size: 1.35rem; font-variant-numeric: tabular-nums; }
-.alertes { margin: 8px 0 0; padding: 8px 12px 8px 28px; background: var(--alerte-fond); border-radius: var(--radius-none); }
-.etapes-calc { padding-left: 20px; }
-.etapes-calc li { margin-bottom: 12px; }
-.formule-titre { margin: 0; font-weight: 500; }
+.sorties { margin: 24px 0 8px; padding: 6px 20px; border-radius: var(--radius-none); background: var(--accent-soft); }
+.resultat { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: baseline; gap: 4px 16px; margin: 0;
+  padding: 12px 0; border-bottom: 1px solid var(--hairline); }
+.resultat:last-of-type { border-bottom: 0; }
+.resultat strong { font-size: 1.6rem; line-height: 1.2; font-weight: 500; font-variant-numeric: tabular-nums; }
+.alertes { margin: 12px 0; padding: 10px 14px 10px 30px; background: var(--alerte-fond); border: 1px solid var(--alerte-bord); border-radius: var(--radius-none); }
+.surtitre-bloc { margin: 28px 0 12px; }
+.etapes-calc { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 14px; }
+.etapes-calc li { display: grid; grid-template-columns: 26px minmax(0, 1fr); gap: 4px 12px; }
+.etapes-calc .pastille { background: var(--surface-alt); color: var(--ink); border-width: 1px; }
+.etape-corps { min-width: 0; }
+.etape-corps .formule { font-size: .9rem; }
+.formule-titre { margin: 2px 0 6px; font-weight: 500; }
 
-.question { border: 1px solid var(--hairline); border-radius: var(--radius-none); margin: 0 0 16px; padding: 8px 16px 16px; min-width: 0; }
+.question { border: 1px solid var(--hairline); border-radius: var(--radius-none); margin: 0 0 16px; padding: 16px 18px 18px; min-width: 0; }
 .question legend { font-weight: 500; padding: 0 4px; }
 .consigne { font-size: .9rem; color: var(--ink-muted); margin: 4px 0; }
 .choix { display: flex; flex-direction: column; gap: 8px; margin-top: 8px; }
-.choix-bouton { text-align: left; min-height: 44px; padding: 8px 12px; border-radius: var(--radius-none);
-  border: 2px solid var(--control-border); background: var(--surface); color: var(--ink); }
+.choix-bouton { display: flex; align-items: center; gap: 12px; text-align: left; min-height: 48px; padding: 10px 14px;
+  border-radius: var(--radius-none); border: 2px solid var(--control-border); background: var(--surface); color: var(--ink); }
+.choix-bouton:hover:not(:disabled) { border-color: var(--gold-deep); }
 .choix-bouton.pris { border-color: var(--accent); background: var(--accent-soft); }
 .choix-bouton.bonne { border-color: var(--succes); background: var(--succes-fond); }
 .choix-bouton.fausse { border-color: var(--erreur); background: var(--erreur-fond); }
+/* Marque A, B, C… : ronde (une réponse), carrée (plusieurs) ; ✓ ou ✕ à la correction. */
+.marque { flex: none; width: 26px; height: 26px; border-radius: var(--radius-pill); display: inline-flex; align-items: center;
+  justify-content: center; font-size: .78rem; font-weight: 700; line-height: 1; border: 2px solid var(--control-border); color: var(--ink-muted); }
+.marque-carree { border-radius: var(--radius-none); }
+.pris .marque { border-color: var(--accent); background: var(--accent); color: var(--on-accent); }
+.bonne .marque { border-color: var(--succes); background: var(--succes); color: var(--surface); }
+.fausse .marque { border-color: var(--erreur); background: var(--erreur); color: var(--surface); }
 .choix-bouton:disabled { cursor: default; opacity: 1; }
 .correction { margin: 8px 0 0; padding: 8px 12px; border-radius: var(--radius-none); }
 .correction.juste, .retour.juste { background: var(--succes-fond); }
 .correction.fausse, .retour.fausse { background: var(--erreur-fond); }
-.score { font-size: 1.2rem; font-weight: 500; }
+.score { font-size: 1.3rem; font-weight: 500; font-variant-numeric: tabular-nums; }
 .situation { font-size: 1.05rem; }
 .retour { padding: 8px 12px; border-radius: var(--radius-none); }
 
-.suite { display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-top: 24px;
-  padding-top: 12px; border-top: 1px solid var(--hairline); }
-.suite a { min-height: 44px; display: inline-flex; align-items: center; }
-.suite .suivant { margin-left: auto; text-align: right; }
+/* Précédent : bloc à filet ; Suivant : bloc or. */
+.suite { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 36px; padding-top: 20px; border-top: 1px solid var(--hairline); }
+.suite a { flex: 1 1 220px; display: flex; flex-direction: column; gap: 2px; padding: 12px 16px; min-height: 56px;
+  border-radius: var(--radius-none); text-decoration: none; }
+.suite .precedent { border: 1px solid var(--hairline); color: var(--ink); }
+.suite .precedent:hover { border-color: var(--gold-deep); color: var(--ink); }
+.suite .suivant { margin-left: auto; text-align: right; background: var(--accent); color: var(--on-accent); }
+.suite .suivant:hover { background: var(--accent-hover); color: var(--on-accent); }
+.suite-sens { font-family: var(--font-signal); font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: .08em; }
+.suite .precedent .suite-sens { color: var(--ink-muted); }
+.suite-titre { font-weight: 500; }
 
 .outils-liste { list-style: none; padding: 0; margin: 8px 0 0; }
 
@@ -375,9 +416,9 @@ li > .source-element { margin: 0; }
               <sc-for list="{{ sommaire }}" as="it" hint-placeholder-count="5">
                 <li>
                   <a href="{{ it.lien }}" aria-current="{{ it.courant }}">
-                    <span class="sommaire-type">{{ it.typeLibelle }}</span>
-                    <span>{{ it.titre }}</span>
-                    <sc-if value="{{ it.vu }}"><span class="vu" aria-hidden="true">✓</span><span class="sr">(consultée)</span></sc-if>
+                    <span class="{{ it.pastilleClasse }}" aria-hidden="true">{{ it.pastille }}</span>
+                    <span class="sommaire-texte"><span class="sommaire-type">{{ it.typeLibelle }}</span><span>{{ it.titre }}</span></span>
+                    <sc-if value="{{ it.vu }}"><span class="sr">(consultée)</span></sc-if>
                   </a>
                 </li>
               </sc-for>
@@ -397,13 +438,13 @@ li > .source-element { margin: 0; }
 
         <article class="contenu" aria-labelledby="titre-contenu">
           <sc-if value="{{ estModule }}">
-            <p class="section-type">{{ section.typeLibelle }} · {{ section.position }}<sc-if value="{{ section.aTechno }}"> <span class="badge badge-techno">{{ section.technoLibelle }}</span></sc-if></p>
-            <h2 id="titre-contenu">{{ section.titre }}</h2>
+            <p class="section-type"><span>{{ section.typeLibelle }}</span> <span class="section-position">{{ section.position }}</span><sc-if value="{{ section.aTechno }}"> <span class="badge badge-techno">{{ section.technoLibelle }}</span></sc-if></p>
+            <h2 class="titre-contenu" id="titre-contenu">{{ section.titre }}</h2>
             <sc-if value="{{ section.aIntro }}"><p class="intro">{{ section.intro }}</p></sc-if>
             <sc-if value="{{ section.aSourceEntete }}"><p class="source-element">{{ section.sourceTxt }}</p></sc-if>
           </sc-if>
           <sc-if value="{{ estOutils }}">
-            <h2 id="titre-contenu">{{ outilsTitre }}</h2>
+            <h2 class="titre-contenu" id="titre-contenu">{{ outilsTitre }}</h2>
             <sc-if value="{{ outilsMessage }}"><p class="intro">{{ outilsMessage }}</p></sc-if>
           </sc-if>
 
@@ -486,13 +527,16 @@ li > .source-element { margin: 0; }
             <sc-if value="{{ calcCourant.aTableau }}">
               <div class="tableau-conteneur">{{ calcCourant.tableau }}</div>
             </sc-if>
-            <h3>Détail du calcul</h3>
+            <h3 class="surtitre surtitre-bloc">Détail du calcul</h3>
             <ol class="etapes-calc">
               <sc-for list="{{ calcCourant.etapes }}" as="fe" hint-placeholder-count="1">
                 <li>
-                  <p class="formule-titre">{{ fe.titre }}</p>
-                  <p class="formule">{{ fe.formule }}</p>
-                  <p class="formule">= {{ fe.substitution }} = {{ fe.resultat }}</p>
+                  <span class="pastille" aria-hidden="true">{{ fe.num }}</span>
+                  <div class="etape-corps">
+                    <p class="formule-titre">{{ fe.titre }}</p>
+                    <p class="formule">{{ fe.formule }}</p>
+                    <p class="formule">= {{ fe.substitution }} = <b>{{ fe.resultat }}</b></p>
+                  </div>
                 </li>
               </sc-for>
             </ol>
@@ -507,7 +551,7 @@ li > .source-element { margin: 0; }
                 <sc-if value="{{ qu.multiple }}"><p class="consigne">Plusieurs réponses possibles.</p></sc-if>
                 <div class="choix">
                   <sc-for list="{{ qu.choix }}" as="ch" hint-placeholder-count="3">
-                    <button type="button" class="{{ ch.classe }}" aria-pressed="{{ ch.presse }}" value="{{ ch.valeur }}" onClick="{{ onChoix }}" disabled="{{ quiz.verrouille }}">{{ ch.texte }}</button>
+                    <button type="button" class="{{ ch.classe }}" aria-pressed="{{ ch.presse }}" value="{{ ch.valeur }}" onClick="{{ onChoix }}" disabled="{{ quiz.verrouille }}"><span class="{{ qu.marqueClasse }}" aria-hidden="true">{{ ch.marque }}</span><span>{{ ch.texte }}</span></button>
                   </sc-for>
                 </div>
                 <sc-if value="{{ quiz.corrige }}"><p class="{{ qu.correctionClasse }}">{{ qu.correction }}</p></sc-if>
@@ -530,7 +574,7 @@ li > .source-element { margin: 0; }
             <sc-if value="{{ cas.aSource }}"><p class="source-element">{{ cas.sourceTxt }}</p></sc-if>
             <div class="choix">
               <sc-for list="{{ cas.options }}" as="op" hint-placeholder-count="3">
-                <button type="button" class="{{ op.classe }}" aria-pressed="{{ op.presse }}" value="{{ op.valeur }}" onClick="{{ choisirCas }}">{{ op.texte }}</button>
+                <button type="button" class="{{ op.classe }}" aria-pressed="{{ op.presse }}" value="{{ op.valeur }}" onClick="{{ choisirCas }}"><span class="marque" aria-hidden="true">{{ op.marque }}</span><span>{{ op.texte }}</span></button>
               </sc-for>
             </div>
             <div aria-live="polite">
@@ -563,9 +607,12 @@ li > .source-element { margin: 0; }
                 <ol class="etapes-calc">
                   <sc-for list="{{ exo.etapes }}" as="xe" hint-placeholder-count="1">
                     <li>
-                      <p class="formule-titre">{{ xe.titre }}</p>
-                      <p class="formule">{{ xe.formule }}</p>
-                      <p class="formule">= {{ xe.substitution }} = {{ xe.resultat }}</p>
+                      <span class="pastille" aria-hidden="true">{{ xe.num }}</span>
+                      <div class="etape-corps">
+                        <p class="formule-titre">{{ xe.titre }}</p>
+                        <p class="formule">{{ xe.formule }}</p>
+                        <p class="formule">= {{ xe.substitution }} = <b>{{ xe.resultat }}</b></p>
+                      </div>
                     </li>
                   </sc-for>
                 </ol>
@@ -580,8 +627,8 @@ li > .source-element { margin: 0; }
 
           <sc-if value="{{ estModule }}">
             <nav class="suite" aria-label="Sections voisines">
-              <sc-if value="{{ aPrec }}"><a href="{{ prec.lien }}">← {{ prec.titre }}</a></sc-if>
-              <sc-if value="{{ aSuiv }}"><a class="suivant" href="{{ suiv.lien }}">{{ suiv.titre }} →</a></sc-if>
+              <sc-if value="{{ aPrec }}"><a class="precedent" href="{{ prec.lien }}"><span class="suite-sens">← Précédent</span><span class="suite-titre">{{ prec.titre }}</span></a></sc-if>
+              <sc-if value="{{ aSuiv }}"><a class="suivant" href="{{ suiv.lien }}"><span class="suite-sens">Suivant →</span><span class="suite-titre">{{ suiv.titre }}</span></a></sc-if>
             </nav>
           </sc-if>
         </article>
@@ -679,6 +726,9 @@ function fmtNombre(x, decimales) {
   const txt = Math.abs(x).toLocaleString('fr-FR', { maximumFractionDigits: d });
   return (x < 0 && txt !== '0' ? '−' : '') + txt;
 }
+// Repère d'un choix de quiz ou de cas pratique : A, B, C…
+const LETTRES = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+function lettre(k) { return LETTRES[k] || String(k + 1); }
 function avecUnite(txt, unite) { return unite ? txt + ESPACE + unite : txt; }
 function pourcent(taux) { return fmtNombre(Math.round((Number(taux) || 0) * 100), 0) + ESPACE + '%'; }
 // Date ISO → jj/mm/aaaa, sans relire l'horloge.
@@ -1118,12 +1168,15 @@ class Component extends DCLogic {
         avancementTxt: carte.avancementTxt + ' consultées',
         pct: carte.pct, jaugeLabel: carte.jaugeLabel
       },
-      sommaire: m.sections.map(s => ({
-        titre: s.titre, lien: OAD.lien('module', m.id, s.id),
-        typeLibelle: OAD.TYPES_SECTION_LIBELLES[s.type] || s.type,
-        courant: s.id === sec.id ? 'page' : null,
-        vu: OAD.progressionSection(prog, m.id, s.id).vue
-      })),
+      sommaire: m.sections.map((s, k) => {
+        const vu = OAD.progressionSection(prog, m.id, s.id).vue;
+        return {
+          titre: s.titre, lien: OAD.lien('module', m.id, s.id),
+          typeLibelle: OAD.TYPES_SECTION_LIBELLES[s.type] || s.type,
+          courant: s.id === sec.id ? 'page' : null,
+          vu, pastille: vu ? '✓' : String(k + 1), pastilleClasse: 'pastille' + (vu ? ' pastille-vue' : '')
+        };
+      }),
       section: {
         titre: sec.titre, typeLibelle: OAD.TYPES_SECTION_LIBELLES[sec.type] || sec.type,
         position: 'section ' + (i + 1) + ' sur ' + n,
@@ -1212,12 +1265,15 @@ class Component extends DCLogic {
         const juste = !!(d && d.juste);
         return Object.assign({
           num: i + 1, enonce: q.enonce, multiple: q.bonnes.length > 1,
+          // Marque ronde : une seule réponse ; carrée : plusieurs.
+          marqueClasse: 'marque' + (q.bonnes.length > 1 ? ' marque-carree' : ''),
           choix: q.choix.map((c, k) => {
             const pris = choisis.includes(k), bonne = q.bonnes.includes(k);
             let classe = 'choix-bouton' + (pris ? ' pris' : '');
-            if (corrige && bonne) classe += ' bonne';
-            if (corrige && pris && !bonne) classe += ' fausse';
-            return { texte: c, valeur: sid + '|' + q.id + '|' + k, presse: pris ? 'true' : 'false', classe };
+            let marque = lettre(k);
+            if (corrige && bonne) { classe += ' bonne'; marque = '✓'; }
+            if (corrige && pris && !bonne) { classe += ' fausse'; marque = '✕'; }
+            return { texte: c, valeur: sid + '|' + q.id + '|' + k, presse: pris ? 'true' : 'false', classe, marque };
           }),
           correction: (juste ? 'Juste. ' : 'À revoir. ') + (q.explication || ''),
           correctionClasse: 'correction ' + (juste ? 'juste' : 'fausse')
@@ -1247,7 +1303,8 @@ class Component extends DCLogic {
         const pris = k === choix;
         return {
           texte: o.texte, valeur: sid + '|' + k, presse: pris ? 'true' : 'false',
-          classe: 'choix-bouton' + (pris ? ' pris' + (o.correct ? ' bonne' : ' fausse') : '')
+          classe: 'choix-bouton' + (pris ? ' pris' + (o.correct ? ' bonne' : ' fausse') : ''),
+          marque: pris ? (o.correct ? '✓' : '✕') : lettre(k)
         };
       }),
       aRetour: !!opt,
@@ -1265,8 +1322,8 @@ class Component extends DCLogic {
 
   // Étapes de calcul du moteur → formule ouverte en fr-FR (calculateur, exercice).
   etapesFormatees(OAD, etapes) {
-    return etapes.map(et => ({
-      titre: et.titre, formule: et.formule,
+    return etapes.map((et, k) => ({
+      num: k + 1, titre: et.titre, formule: et.formule,
       substitution: OAD.substituer(et.gabarit, et.operandes.map(o => fmtNombre(o.valeur, o.decimales))),
       resultat: avecUnite(fmtNombre(et.resultat.valeur, et.resultat.decimales), et.resultat.unite)
     }));

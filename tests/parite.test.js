@@ -1432,5 +1432,43 @@ test('rendu à blanc du catalogue, progression vide : bloc « Commencer » vers 
   assert.ok(out.domainesCatalogue.every(d => /^\d+ modules?$/.test(d.nbTxt)));
 });
 
+section('§22 v3 — pages module');
+
+const modQuiz = MODULES.find(m => !OAD.estModuleReference(m) &&
+  m.sections.some(s => s.type === 'quiz' && s.questions.some(q => q.bonnes.length === 1)));
+const secQuiz = modQuiz.sections.find(s => s.type === 'quiz' && s.questions.some(q => q.bonnes.length === 1));
+test('sommaire : pastilles numérotées, ✓ pour une section vue', () => {
+  delete MAGASIN['formation-machines:progression:v1'];
+  const vu = OAD.marquerVue(OAD.progressionVide(), modQuiz.id, modQuiz.sections[0].id);
+  MAGASIN['formation-machines:progression:v1'] = JSON.stringify(vu);
+  const out = rendre(new Component({}), '#/module/' + modQuiz.id + '/' + secQuiz.id);
+  delete MAGASIN['formation-machines:progression:v1'];
+  assert.strictEqual(out.sommaire[0].pastille, '✓');
+  assert.ok(out.sommaire[0].pastilleClasse.includes('pastille-vue'));
+  out.sommaire.slice(1).forEach((it, k) => { if (!it.vu) assert.strictEqual(it.pastille, String(k + 2)); });
+});
+test('quiz : marques A, B, C… ; ronde pour une réponse, carrée pour plusieurs ; ✓ et ✕ à la correction', () => {
+  const c = new Component({});
+  const avant = rendre(c, '#/module/' + modQuiz.id + '/' + secQuiz.id);
+  avant.quiz.questions.forEach((qu, i) => {
+    assert.deepStrictEqual(qu.choix.map(ch => ch.marque), qu.choix.map((_, k) => 'ABCDEFGHIJ'[k]));
+    assert.strictEqual(qu.marqueClasse, secQuiz.questions[i].bonnes.length > 1 ? 'marque marque-carree' : 'marque');
+  });
+  const q = secQuiz.questions.find(x => x.bonnes.length === 1);
+  const fausse = q.choix.findIndex((_, k) => !q.bonnes.includes(k));
+  c.onChoix(evt(secQuiz.id + '|' + q.id + '|' + fausse));
+  c.validerQuiz(evt(secQuiz.id));
+  const apres = rendre(c, '#/module/' + modQuiz.id + '/' + secQuiz.id);
+  const qu = apres.quiz.questions[secQuiz.questions.indexOf(q)];
+  assert.strictEqual(qu.choix[fausse].marque, '✕');
+  assert.strictEqual(qu.choix[q.bonnes[0]].marque, '✓');
+  delete MAGASIN['formation-machines:progression:v1'];
+});
+test('détail du calcul : étapes numérotées à partir de 1', () => {
+  const out = rendre(new Component({}), '#/outils/' + Object.keys(OAD.CALCULATEURS)[0]);
+  assert.ok(out.calcCourant.etapes.length > 0);
+  assert.deepStrictEqual(out.calcCourant.etapes.map(e => e.num), out.calcCourant.etapes.map((_, k) => k + 1));
+});
+
 console.log(`\n${passed} ok, ${failed} FAIL, ${skipped} skip`);
 if (failed > 0) process.exit(1);
