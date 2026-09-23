@@ -84,6 +84,10 @@ Lire ce document en entier avant toute modification ; le détail est dans
 | Comportement d'un bouton, texte affiché, mise en forme | `<script data-dc-script>` d'`index.html` |
 | `support.js`, `vendor/` | jamais |
 
+## Git
+
+- Travailler directement sur `main`, ne pas créer de branche.
+
 ## Vérification
 
 1. `node tests/parite.test.js` → `0 FAIL`.
