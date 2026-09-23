@@ -260,17 +260,21 @@ test('volHa.compute({Q:6, v:6, L:2.5}) : opérandes bruts et résultat 240', () 
   assert.strictEqual(r.etapes[0].resultat.valeur, 240);   // 600 × 6 / (6 × 2,5)
   assert.strictEqual(r.etapes[0].gabarit, '600 × {0} / ({1} × {2})');
 });
-test('pressionPourVolume avec les défauts : 8 × (180/150)² = 11,52 bar', () => {
+// Pourquoi : défauts recalés sur le corpus, B1 (était 8 bar → 11,52 bar).
+test('pressionPourVolume avec les défauts : 3 × (180/150)² = 4,32 bar', () => {
   const c = OAD.CALCULATEURS.pressionPourVolume;
   const r = c.compute(defauts(c));
-  assertClose(r.etapes[r.etapes.length - 1].resultat.valeur, 11.52, 1e-9);
-  assertClose(r.resultats[0].valeur, 11.52, 1e-9);
+  assertClose(r.etapes[r.etapes.length - 1].resultat.valeur, 4.32, 1e-9);
+  assertClose(r.resultats[0].valeur, 4.32, 1e-9);
 });
-test('alerte de pression : bornes lues dans PLAGE_PRESSION_ALERTE_BAR', () => {
-  assert.deepStrictEqual(OAD.PLAGE_PRESSION_ALERTE_BAR, [1, 25]);   // ASSUMÉ, voir README
-  const r = OAD.CALCULATEURS.pressionPourVolume.compute({ P1: 8, V1: 150, V2: 300, b: 0.5 });   // 32 bar
+// Pourquoi : défauts recalés sur le corpus, B1 — PLAGE_PRESSION_ALERTE_BAR
+// supprimée, la plage vient des entrées pMin / pMax (D-B1-2).
+test('alerte de pression : bornes lues dans les entrées pMin et pMax', () => {
+  const r = OAD.CALCULATEURS.pressionPourVolume.compute({ P1: 8, V1: 150, V2: 300, b: 0.5, pMin: 1, pMax: 25 });   // 32 bar
   assert.strictEqual(r.alertes.length, 1);
-  assert.ok(r.alertes[0].includes('1 à 25 bar'));
+  assert.deepStrictEqual(r.alertes[0].operandes, [{ valeur: 1, decimales: 2 }, { valeur: 25, decimales: 2 }]);
+  assert.ok(OAD.substituer(r.alertes[0].gabarit, ['1', '25'])
+    .startsWith('Pression calculée hors de la plage de la buse (1 à 25\u00a0bar) :'));
 });
 test('substituer(\'600 × {0} / ({1} × {2})\', [\'6\', \'6\', \'2,5\'])', () => {
   assert.strictEqual(OAD.substituer('600 × {0} / ({1} × {2})', ['6', '6', '2,5']), '600 × 6 / (6 × 2,5)');
@@ -288,20 +292,26 @@ test('enregistrerQuiz : la date vient de l\'appelant ; absente → null', () => 
   assert.strictEqual(OAD.progressionSection(p2, 'm', 'q').quiz.date, null);
   assert.strictEqual(OAD.progressionSection(OAD.enregistrerQuiz(p0, 'm', 'q', { taux: 1 }, 42), 'm', 'q').quiz.date, null);
 });
-test('chaque entrée de chaque calculateur a un origineDefaut non vide (15 entrées)', () => {
+// Pourquoi : défauts recalés sur le corpus, B1 — +pMin, +pMax (était 15).
+test('chaque entrée de chaque calculateur a un origineDefaut non vide (17 entrées)', () => {
   let n = 0;
   Object.values(OAD.CALCULATEURS).forEach(c => c.entrees.forEach(e => {
     n++;
     assert.ok(typeof e.origineDefaut === 'string' && e.origineDefaut.trim(), c.id + '.' + e.id);
   }));
-  assert.strictEqual(n, 15);   // 3 + 4 + 4 + 2 + 2
+  assert.strictEqual(n, 17);   // 3 + 4 + 6 + 2 + 2
 });
-test('origines non ASSUMÉ : b de pressionPourVolume, d et t de vitesseMesuree (D-A2-3)', () => {
+// Pourquoi : défauts recalés sur le corpus, B1 — seuls n et debitChantier
+// restent sans source (D-B1-3, D-B1-4).
+test('origines : b IFV, d et t F-VHA, Q déduit, n et debitChantier sans source', () => {
   const o = (c, e) => OAD.CALCULATEURS[c].entrees.find(x => x.id === e).origineDefaut;
+  const SANS_SOURCE = 'Valeur d\'exemple, sans source : à confirmer par le référent';
   assert.ok(o('pressionPourVolume', 'b').startsWith('Valeur fixe de l\'outil IFV'));
-  assert.strictEqual(o('vitesseMesuree', 'd'), 'Exemple de calcul, sans valeur de réglage');
-  assert.strictEqual(o('vitesseMesuree', 't'), 'Exemple de calcul, sans valeur de réglage');
-  assert.ok(o('volHa', 'Q').startsWith('ASSUMÉ'));
+  assert.strictEqual(o('vitesseMesuree', 'd'), 'Mesure sur 50 m (fiche Volume/hectare, CIVC, février 2014)');
+  assert.strictEqual(o('volHa', 'Q'), 'Exemple déduit de 150 L/ha à 5 km/h sur 7,7 m');
+  assert.strictEqual(o('debitBuse', 'n'), SANS_SOURCE);
+  assert.strictEqual(o('debitChantier', 'v'), SANS_SOURCE);
+  assert.strictEqual(o('debitChantier', 'L'), SANS_SOURCE);
 });
 const MOTEUR_SANS_COMMENTAIRES = fs.readFileSync(path.join(RACINE, 'moteur-oad.js'), 'utf8')
   .replace(/\/\*[\s\S]*?\*\//g, ' ').replace(/^[ \t]*\/\/.*$/gm, ' ');
@@ -476,30 +486,34 @@ test('routes : bon écran affiché', () => {
   assert.strictEqual(rendre(c, '#/outils').aCalc, false);
   assert.ok(rendre(c, '#/progression').tableauProgression);
 });
-test('calculateur « Volume par hectare » : Q = 12 → 480 L/ha, formule ouverte en fr-FR', () => {
+// Pourquoi : défauts recalés sur le corpus, B1 — v = 5, L = 7,7 (était
+// 480 L/ha avec v = 6, L = 2,5). 600 × 12 / (5 × 7,7) = 187,01.
+test('calculateur « Volume par hectare » : Q = 12 → 187 L/ha, formule ouverte en fr-FR', () => {
   const c = new Component({});
   rendre(c, '#/outils/volHa');
   c.onSaisie(evt('12', { 'data-calc': 'volHa', 'data-entree': 'Q' }));
   const out = rendre(c, '#/outils/volHa');
-  assert.strictEqual(out.calcCourant.resultats[0].texte, '480 L/ha');
-  assert.strictEqual(out.calcCourant.etapes[0].substitution, '600 × 12 / (6 × 2,5)');
-  assert.strictEqual(out.calcCourant.entrees[2].valeur, '2,5');
-  assert.ok(out.calcCourant.entrees[0].origine.startsWith('ASSUMÉ'));
+  assert.strictEqual(out.calcCourant.resultats[0].texte, '187 L/ha');
+  assert.strictEqual(out.calcCourant.etapes[0].substitution, '600 × 12 / (5 × 7,7)');
+  assert.strictEqual(out.calcCourant.entrees[2].valeur, '7,7');
+  assert.strictEqual(out.calcCourant.entrees[0].origine, 'Exemple déduit de 150 L/ha à 5 km/h sur 7,7 m');
 });
 test('calculateur : saisie « 12, » acceptée, saisie vide → tiret et alerte', () => {
   const c = new Component({});
   c.onSaisie(evt('12,', { 'data-calc': 'volHa', 'data-entree': 'Q' }));
-  assert.strictEqual(rendre(c, '#/outils/volHa').calcCourant.resultats[0].texte, '480 L/ha');
+  // Pourquoi : défauts recalés sur le corpus, B1 (était 480 puis 240 L/ha).
+  assert.strictEqual(rendre(c, '#/outils/volHa').calcCourant.resultats[0].texte, '187 L/ha');
   c.onSaisie(evt('', { 'data-calc': 'volHa', 'data-entree': 'Q' }));
   const out = rendre(c, '#/outils/volHa');
   assert.strictEqual(out.calcCourant.resultats[0].texte, '— L/ha');
   assert.strictEqual(out.calcCourant.aAlertes, true);
   c.reinitialiserCalc(evt('volHa'));
-  assert.strictEqual(rendre(c, '#/outils/volHa').calcCourant.resultats[0].texte, '240 L/ha');
+  assert.strictEqual(rendre(c, '#/outils/volHa').calcCourant.resultats[0].texte, '150 L/ha');   // 149,61
 });
-test('pression : 11,52 bar affiché 11,5 bar (1 décimale)', () => {
+// Pourquoi : défauts recalés sur le corpus, B1 (était 11,52 → « 11,5 bar »).
+test('pression : 4,32 bar affiché 4,3 bar (1 décimale)', () => {
   const c = new Component({});
-  assert.strictEqual(rendre(c, '#/outils/pressionPourVolume').calcCourant.resultats[0].texte, '11,5 bar');
+  assert.strictEqual(rendre(c, '#/outils/pressionPourVolume').calcCourant.resultats[0].texte, '4,3 bar');
 });
 test('quiz répondu puis validé : score affiché et enregistré avec la date', () => {
   const c = new Component({});
@@ -601,6 +615,64 @@ test('.github/workflows/tests.yml existe et lance node tests/parite.test.js (D-B
     });
   }
 })();
+
+// ----------------------------------------------------------------------
+section('§8 B1 — défauts recalés, plage de buse');
+// Valeurs calculées à la main, vérifiées sous Node le 23/09/2026.
+
+const CALC = OAD.CALCULATEURS;
+test('volHa({Q: 9,6, v: 5, L: 7,7}) = 5 760 / 38,5 = 149,6104 L/ha, affiché 150 L/ha', () => {
+  assertClose(CALC.volHa.compute({ Q: 9.6, v: 5, L: 7.7 }).resultats[0].valeur, 149.6104, 1e-4);
+  const c = new Component({});
+  assert.strictEqual(rendre(c, '#/outils/volHa').calcCourant.resultats[0].texte, '150 L/ha');
+});
+test('debitBuse({V: 150, v: 5, L: 7,7, n: 12}) → Q = 9,625 ; q = 0,80208', () => {
+  const r = CALC.debitBuse.compute({ V: 150, v: 5, L: 7.7, n: 12 });
+  assertClose(r.resultats[0].valeur, 9.625, 1e-9);
+  assertClose(r.resultats[1].valeur, 0.80208, 1e-5);
+});
+test('pression 3 bar, 150 → 180 L/ha, plage 3–4,5 : 4,32 bar, aucune alerte', () => {
+  const r = CALC.pressionPourVolume.compute({ P1: 3, V1: 150, V2: 180, b: 0.5, pMin: 3, pMax: 4.5 });
+  assertClose(r.resultats[0].valeur, 4.32, 1e-9);
+  assert.deepStrictEqual(r.alertes, []);
+});
+test('pression 3 bar, 100 → 150 L/ha : 6,75 bar, alerte « hors de la plage de la buse »', () => {
+  const r = CALC.pressionPourVolume.compute({ P1: 3, V1: 100, V2: 150, b: 0.5, pMin: 3, pMax: 4.5 });
+  assertClose(r.resultats[0].valeur, 6.75, 1e-9);
+  assert.strictEqual(r.alertes.length, 1);
+  assert.ok(r.alertes[0].gabarit.includes('hors de la plage de la buse'));
+  const c = new Component({});
+  c.onSaisie(evt('100', { 'data-calc': 'pressionPourVolume', 'data-entree': 'V1' }));
+  c.onSaisie(evt('150', { 'data-calc': 'pressionPourVolume', 'data-entree': 'V2' }));
+  const out = rendre(c, '#/outils/pressionPourVolume');
+  assert.ok(out.calcCourant.alertes[0].startsWith('Pression calculée hors de la plage de la buse (3 à 4,5\u00a0bar) :'),
+    out.calcCourant.alertes[0]);
+});
+test('plage pMin = 5, pMax = 4 : alerte « plage invalide », P2 reste calculé (4,32)', () => {
+  const r = CALC.pressionPourVolume.compute({ P1: 3, V1: 150, V2: 180, b: 0.5, pMin: 5, pMax: 4 });
+  assertClose(r.resultats[0].valeur, 4.32, 1e-9);
+  assert.strictEqual(r.alertes.length, 1);
+  assert.ok(r.alertes[0].startsWith('Plage de pression de la buse invalide'));
+});
+test('vitesseMesuree : 50 m / 30 s = 6 km/h ; 50 m / 35 s = 5,142857 (table F-VHA : 5,1)', () => {
+  assertClose(CALC.vitesseMesuree.compute({ d: 50, t: 30 }).resultats[0].valeur, 6, 1e-12);
+  assertClose(CALC.vitesseMesuree.compute({ d: 50, t: 35 }).resultats[0].valeur, 5.142857, 1e-6);
+});
+test('OAD.PLAGE_PRESSION_ALERTE_BAR n\'existe plus', () => {
+  assert.strictEqual(OAD.PLAGE_PRESSION_ALERTE_BAR, undefined);
+});
+test('pressionPourVolume : portée affichée sous la description', () => {
+  const c = new Component({});
+  const out = rendre(c, '#/outils/pressionPourVolume');
+  assert.strictEqual(out.calcCourant.aPortee, true);
+  assert.ok(out.calcCourant.portee.startsWith('Buses hydrauliques'));
+  assert.strictEqual(rendre(c, '#/outils/volHa').calcCourant.aPortee, false);
+});
+test('statique : aucun origineDefaut ne contient « O4 » ni « prompt » (D-B1-5)', () => {
+  Object.values(CALC).forEach(c => c.entrees.forEach(e => {
+    assert.ok(!/O4|prompt/i.test(e.origineDefaut), c.id + '.' + e.id + ' : ' + e.origineDefaut);
+  }));
+});
 
 console.log(`\n${passed} ok, ${failed} FAIL, ${skipped} skip`);
 if (failed > 0) process.exit(1);

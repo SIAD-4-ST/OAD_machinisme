@@ -140,6 +140,7 @@ button { font: inherit; cursor: pointer; }
 .perio-titre { font-size: 1rem; margin: 16px 0 0; }
 
 .calc-desc { color: var(--texte-doux); }
+.calc-portee { font-size: .92rem; color: var(--texte-doux); margin-top: -4px; }
 .champs { display: grid; gap: 12px; grid-template-columns: repeat(auto-fill, minmax(min(100%, 220px), 1fr)); }
 .champ label { display: block; font-weight: 600; }
 .champ input { width: 100%; min-height: 44px; font: inherit; font-size: 1.1rem; padding: 6px 10px; margin-top: 4px;
@@ -371,6 +372,7 @@ button { font: inherit; cursor: pointer; }
           <!-- Calculateur : fragment unique, section de module ou page Calculateurs -->
           <sc-if value="{{ aCalc }}">
             <p class="calc-desc">{{ calcCourant.description }}</p>
+            <sc-if value="{{ calcCourant.aPortee }}"><p class="calc-portee">{{ calcCourant.portee }}</p></sc-if>
             <div class="champs">
               <sc-for list="{{ calcCourant.entrees }}" as="en" hint-placeholder-count="3">
                 <div class="champ">
@@ -770,7 +772,7 @@ class Component extends DCLogic {
       quiz: { questions: [] }, cas: { options: [] },
       aPrec: false, aSuiv: false, prec: {}, suiv: {},
       outilsListe: [], outilsTitre: '', outilsMessage: '',
-      aCalc: false, calcCourant: { entrees: [], etapes: [], resultats: [], alertes: [] },
+      aCalc: false, calcCourant: { entrees: [], etapes: [], resultats: [], alertes: [], portee: '', aPortee: false },
       progResume: '', tableauProgression: null,
       basculerTheme: this.basculerTheme, onSaisie: this.onSaisie, reinitialiserCalc: this.reinitialiserCalc,
       onChoix: this.onChoix, validerQuiz: this.validerQuiz, recommencerQuiz: this.recommencerQuiz,
@@ -974,6 +976,12 @@ class Component extends DCLogic {
     };
   }
 
+  // Alerte du moteur : chaîne, ou { gabarit, operandes } dont les nombres sont mis en forme ici.
+  texteAlerte(OAD, a) {
+    if (typeof a === 'string') return a;
+    return OAD.substituer(a && a.gabarit, ((a && a.operandes) || []).map(o => fmtNombre(o.valeur, o.decimales)));
+  }
+
   // Fragment calculateur : entrées, résultats, formules ouvertes, tout formaté.
   valsCalc(OAD, calcId) {
     const C = OAD.CALCULATEURS[calcId];
@@ -1002,7 +1010,8 @@ class Component extends DCLogic {
         resultat: avecUnite(fmtNombre(et.resultat.valeur, et.resultat.decimales), et.resultat.unite)
       })),
       resultats: r.resultats.map(x => ({ label: x.label, texte: avecUnite(fmtNombre(x.valeur, x.decimales), x.unite) })),
-      alertes: r.alertes, aAlertes: r.alertes.length > 0
+      portee: C.portee || '', aPortee: !!C.portee,
+      alertes: r.alertes.map(a => this.texteAlerte(OAD, a)), aAlertes: r.alertes.length > 0
     };
   }
 

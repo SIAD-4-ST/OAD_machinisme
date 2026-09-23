@@ -92,41 +92,36 @@ questions ; `aria-pressed` sur les choix ; focus visible.
 
 | Calculateur | Formule | Défauts → résultat |
 |---|---|---|
-| Volume par hectare (`volHa`) | V = 600 × Q / (v × L) | 6 L/min, 6 km/h, 2,5 m → 240 L/ha |
-| Débit par buse (`debitBuse`) | Q = V × v × L / 600 ; q = Q / n | 150 L/ha, 6 km/h, 2,5 m, 12 buses → 3,75 L/min ; 0,31 L/min |
-| Pression pour un nouveau volume (`pressionPourVolume`) | P2 = P1 × (V2 / V1)^(1 / b) | 8 bar, 150 → 180 L/ha, b = 0,5 → 11,5 bar (11,52) |
-| Vitesse réelle mesurée (`vitesseMesuree`) | v = 3,6 × d / t | 100 m, 60 s → 6 km/h |
+| Volume par hectare (`volHa`) | V = 600 × Q / (v × L) | 9,6 L/min, 5 km/h, 7,7 m → 150 L/ha (149,61) |
+| Débit par buse (`debitBuse`) | Q = V × v × L / 600 ; q = Q / n | 150 L/ha, 5 km/h, 7,7 m, 12 buses → 9,63 L/min ; 0,8 L/min |
+| Pression pour un nouveau volume (`pressionPourVolume`) | P2 = P1 × (V2 / V1)^(1 / b) | 3 bar, 150 → 180 L/ha, b = 0,5, plage de la buse 3 à 4,5 bar → 4,3 bar (4,32), sans alerte |
+| Vitesse réelle mesurée (`vitesseMesuree`) | v = 3,6 × d / t | 50 m, 30 s → 6 km/h |
 | Débit de chantier théorique (`debitChantier`) | S = v × L / 10 | 6 km/h, 2,5 m → 1,5 ha/h |
 
 Les facteurs 600, 3,6 et 10 sont des conversions d'unités, démontrées en
-commentaire dans `moteur-oad.js`. Alerte de pression hors de
-`PLAGE_PRESSION_ALERTE_BAR`.
+commentaire dans `moteur-oad.js`. Alerte de pression : le résultat est
+comparé à la plage de la buse **saisie** (`pMin`, `pMax`) ; hors plage,
+l'écran conseille de changer de calibre ou de vitesse plutôt que de forcer
+la pression (D-B1-2). Le calculateur de pression indique sa portée : buses
+hydrauliques, pas les diffuseurs pneumatiques.
 
 ## 5. Valeurs ASSUMÉ
 
-Valeurs sans source, affichées comme telles à l'écran. Aucune n'est modifiée
-tant que le valideur désigné ne l'a pas tranchée (O4).
+Valeurs sans source, affichées à l'écran « Valeur d'exemple, sans source : à
+confirmer par le référent ». Aucune n'est modifiée tant que le référent
+désigné ne l'a pas tranchée.
 
 | Calculateur | Entrée | Valeur | Qui tranche |
 |---|---|---|---|
-| Volume par hectare | Débit total Q | 6 L/min | Valideur pulvérisation (O4) |
-| Volume par hectare | Vitesse v | 6 km/h | Valideur pulvérisation (O4) |
-| Volume par hectare | Largeur L | 2,5 m | Valideur pulvérisation (O4) |
-| Débit par buse | Volume visé V | 150 L/ha | Valideur pulvérisation (O4) |
-| Débit par buse | Vitesse v | 6 km/h | Valideur pulvérisation (O4) |
-| Débit par buse | Largeur L | 2,5 m | Valideur pulvérisation (O4) |
-| Débit par buse | Nombre de buses n | 12 | Valideur pulvérisation (O4) |
-| Pression pour un nouveau volume | Pression actuelle P1 | 8 bar | Valideur pulvérisation (O4) |
-| Pression pour un nouveau volume | Volume actuel V1 | 150 L/ha | Valideur pulvérisation (O4) |
-| Pression pour un nouveau volume | Volume visé V2 | 180 L/ha | Valideur pulvérisation (O4) |
-| Débit de chantier théorique | Vitesse v | 6 km/h | Valideur travail du sol (O4) |
-| Débit de chantier théorique | Largeur L | 2,5 m | Valideur travail du sol (O4) |
-| Pression pour un nouveau volume (alerte) | `PLAGE_PRESSION_ALERTE_BAR` | 1 à 25 bar | Valideur pulvérisation (O4) |
+| Débit par buse | Nombre de buses n | 12 | Référent pulvérisation (D-B1-3 : le corpus ne donne pas de nombre de buses par matériel) |
+| Débit de chantier théorique | Vitesse v | 6 km/h | Référent travail du sol (D-B1-4 : aucune vitesse d'interceps dans le corpus) |
+| Débit de chantier théorique | Largeur L | 2,5 m | Référent travail du sol (D-B1-4) |
 
-Hors tableau, parce que ce ne sont pas des réglages : `b = 0,5` (« Valeur fixe
-de l'outil IFV Mon réglage pulvé (code lu le 22/09/2026) ») ; `d = 100 m` et
-`t = 60 s` de la vitesse mesurée (« Exemple de calcul, sans valeur de
-réglage »).
+Depuis B1, les autres valeurs par défaut sont reprises de la synthèse du
+corpus et listées en section 13 (à contrôler au document primaire). Hors
+tableau, parce que ce n'est pas un réglage : `b = 0,5` (« Valeur fixe de
+l'outil IFV Mon réglage pulvé (code lu le 22/09/2026) »). `Q = 9,6 L/min` de
+`volHa` est **déduit** de 150 L/ha à 5 km/h sur 7,7 m (9,625 arrondi, D-B1-1).
 
 **Contenu des modules.** Les trois modules sont au statut `brouillon`, sans
 valideur ni source : rédaction initiale du 23/09/2026, à relire entièrement
@@ -168,7 +163,7 @@ fait : tout ce qui suit sur le matériel cible.**
    mémoire de progression).
 7. **Impression d'une procédure** : seule la section s'imprime, lisible.
 8. Parcours d'acceptation (Chrome de bureau, Wi-Fi coupé) : catalogue affiché ;
-   « Volume par hectare », Q = 12 (v = 6, L = 2,5) → 480 L/ha ; quiz validé →
+   « Volume par hectare », Q = 12 (v = 5, L = 7,7) → 187 L/ha ; quiz validé →
    score affiché ; page rechargée → progression conservée ; onglet réseau des
    outils de développement : aucune requête hors `file://`.
 
@@ -241,14 +236,14 @@ puis message d'échec) ; préférence de thème stockée à part.
 
 ## 11. Points ouverts
 
-- **O4** : valeurs ASSUMÉ (section 5) et seuil 1–25 bar, à trancher par les
-  valideurs.
+- ~~**O4** : valeurs ASSUMÉ (section 5) et seuil 1–25 bar~~ — clos par B1 :
+  défauts recalés sur le corpus, seuil remplacé par la plage de la buse
+  saisie. Restent ASSUMÉ : `n` et `debitChantier` (section 5).
 - Relecture et validation des trois modules (statut `brouillon`).
 - L'origine de `b = 0,5` (« outil IFV Mon réglage pulvé ») est reprise du
   prompt A2, non vérifiée lors de la création.
-- Les textes `origineDefaut` affichés contiennent « (O4) », référence interne
-  lisible par l'apprenant : texte imposé par D-A2-3, à reformuler si l'on
-  applique strictement la règle de vocabulaire visible.
+- ~~Les textes `origineDefaut` affichés contiennent « (O4) »~~ — clos par B1
+  (D-B1-5), testé.
 - Charte graphique éventuelle du Comité Champagne.
 - Recette sur la tablette cible (section 7).
 
@@ -285,6 +280,12 @@ contrôler une à une sur le document primaire.
 
 | Valeur | Où dans l'outil | Code source | Page | Contrôlé le | Par |
 |---|---|---|---|---|---|
+| Largeur traitée 7 × 1,10 m = 7,7 m | `volHa.L`, `debitBuse.L` | F-VHA | | | |
+| Vitesse 5 km/h | `volHa.v`, `debitBuse.v` | F-CGE, F-CGA, F-JET, F-PRE, F-IDE, F-GRE | | | |
+| 150 L/ha en pleine végétation | `debitBuse.V`, `pressionPourVolume.V1` | F-CGE, F-CGA, F-JET | | | |
+| 150–180 L/ha en pleine végétation (jets portés) | `pressionPourVolume.V2` (180) | F-PRE, F-IDE | | | |
+| 50 m en 30 s → 6 km/h | `vitesseMesuree.d`, `vitesseMesuree.t` | F-VHA | | | |
+| Pression de travail 3,0–4,5 bar, TeeJet Conejet TXA80 0050 | `pressionPourVolume.pMin`, `.pMax`, `.P1` (3) | F-PRE, F-IDE | | | |
 
 ## 14. Journal d'arbitrages — lot B
 
@@ -304,3 +305,27 @@ sur `support.js` et `vendor/`. Constat : sous Windows avec
 `core.autocrlf=true`, ces fichiers étaient extraits en CRLF, et les trois
 tests d'empreinte échouaient (64 ok, 3 FAIL au lieu de 67 ok). Les octets du
 dépôt n'ont jamais changé ; seule la copie de travail différait.
+
+### B1 — défauts recalés, plage de pression par buse (23/09/2026)
+
+- **D-B1-1** : `volHa.Q` = 9,6 L/min, déduit de 150 L/ha à 5 km/h sur 7,7 m
+  (9,625 exact), pour un résultat rond à la saisie.
+- **D-B1-2** : la plage de pression devient deux entrées, `pMin` = 3 et
+  `pMax` = 4,5 bar (buse TXA80 0050, F-PRE). `PLAGE_PRESSION_ALERTE_BAR`
+  supprimée. Alerte « plage invalide » si `pMin ≥ pMax` ou non positive ;
+  sinon alerte si P2 sort de la plage. Le moteur renvoie les bornes brutes
+  (alerte `{ gabarit, operandes }`), la vue les met en forme en fr-FR.
+- **D-B1-3** : `n` reste ASSUMÉ. **D-B1-4** : `debitChantier` reste ASSUMÉ.
+- **D-B1-5** : `ORIGINE_ASSUME` = « Valeur d'exemple, sans source : à
+  confirmer par le référent » ; aucune référence interne visible (testé).
+- Lecture retenue : P1 = 3 bar **et** V1 = 150 L/ha portent l'origine
+  « Exemple dans la plage de travail de la buse de référence » (le couple est
+  l'exemple).
+- Champ `portee` sur `pressionPourVolume`, affiché sous la description
+  (remplacé par `technologies` en B4).
+
+**Refusé.** Une plage de pression fixe (elle dépend de la buse) ; un nombre de
+buses « sourcé » (absent du corpus). **Point de révision.** `n` et
+`debitChantier` dès que le référent fournit des valeurs. Les formules
+(section 2 du moteur) sont inchangées : test §1 `volumeHectare(12, 6, 2,5) =
+480` toujours vert.

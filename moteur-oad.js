@@ -132,20 +132,38 @@ function debitChantierTheorique(v, L) {
    Chaque calculateur : entrées (avec l'origine de leur valeur par défaut)
    et compute(valeurs numériques) → { etapes, resultats, alertes }.
    Sorties BRUTES : la vue formate une seule fois, en fr-FR.
+     alerte   = chaîne, ou { gabarit, operandes } si elle cite des nombres
      etape    = { titre, formule, gabarit, operandes, resultat }
      gabarit  = substitution à marqueurs positionnels {0}, {1}…
      operande = { valeur, decimales }
      resultat = { valeur, unite, decimales }
    Une valeur non calculable vaut null (jamais NaN en sortie). */
 
-// ASSUMÉ — plage non documentée ; semble reprendre l'étendue de la courbe
-// ATR du test IFV (1 à 25 bar), sans source. À trancher par le valideur
-// pulvérisation (O4).
-const PLAGE_PRESSION_ALERTE_BAR = [1, 25];
-
-const ORIGINE_ASSUME = 'ASSUMÉ — exemple pédagogique, à confirmer par le valideur (O4)';
-const ORIGINE_EXEMPLE = 'Exemple de calcul, sans valeur de réglage';
+// ASSUMÉ par défaut : valeur d'exemple sans source. Liste au README, section 5.
+const ORIGINE_ASSUME = 'Valeur d\'exemple, sans source : à confirmer par le référent';
 const ORIGINE_B_IFV = 'Valeur fixe de l\'outil IFV Mon réglage pulvé (code lu le 22/09/2026)';
+
+/* Origines reprises de la synthèse du corpus (source secondaire, D-B0-4) :
+   chaque valeur figure au README, section 13, jusqu'au contrôle au document
+   primaire. Porte G1 (droits) avant fusion dans main. */
+// F-VHA : Fiche volume/hectare, CIVC, février 2014 (synthèse §2.1).
+const ORIGINE_LARGEUR_FVHA = 'Enjambeur 7 rangs à 1,10 m (fiche Volume/hectare, CIVC, février 2014)';
+// F-CGE, F-CGA, F-JET, F-PRE, F-IDE, F-GRE : fiches de réglage 2014–2016, vitesse 5 km/h.
+const ORIGINE_VITESSE_FICHES = 'Vitesse des fiches de réglage du Comité Champagne (2014–2016)';
+// F-CGE, F-CGA, F-JET : 150 L/ha en pleine végétation.
+const ORIGINE_VOLUME_FICHES = 'Volume de pleine végétation des fiches de réglage (2014–2016)';
+// F-PRE, F-IDE : 150–180 L/ha en pleine végétation, jets portés.
+const ORIGINE_VOLUME_180 = 'Haut de la plage de pleine végétation, jets portés (fiches Precijet et Idéal, 2014–2016)';
+// F-VHA : table temps → vitesse, 50 m en 30 s = 6 km/h.
+const ORIGINE_MESURE_FVHA = 'Mesure sur 50 m (fiche Volume/hectare, CIVC, février 2014)';
+// F-PRE, F-IDE : TXA80 0050, pression de travail 3,0–4,5 bar.
+const ORIGINE_PLAGE_BUSE = 'Exemple : plage d\'une buse TXA80 0050 en jets portés (fiche Precijet, Comité Champagne, mai 2016). Reportez la plage de votre buse (notice du fabricant)';
+// F-PRE (mai 2016) : 3 bar à 150 L/ha, exemple placé à la borne basse de la
+// plage 3,0–4,5 bar de la TXA80 0050.
+const ORIGINE_PLAGE_EXEMPLE = 'Exemple dans la plage de travail de la buse de référence';
+// D-B1-1 : Q déduit de V = 150 L/ha, v = 5 km/h, L = 7,7 m (Q exact = 9,625),
+// arrondi pour une saisie lisible.
+const ORIGINE_Q_DEDUIT = 'Exemple déduit de 150 L/ha à 5 km/h sur 7,7 m';
 
 const ALERTE_SAISIE = 'Calcul impossible : chaque valeur doit être un nombre strictement positif.';
 
@@ -157,6 +175,10 @@ function etape(titre, formule, gabarit, operandes, valeur, unite, decimales) {
 function resultat(label, valeur, unite, decimales) {
   return { label, valeur: sortie(valeur), unite, decimales };
 }
+/* Alerte chiffrée : gabarit à marqueurs + opérandes bruts, mis en forme par
+   la vue comme une étape (le moteur ne formate pas). Une alerte sans nombre
+   reste une chaîne. */
+function alerteChiffree(gabarit, operandes) { return { gabarit, operandes }; }
 function alertesSaisie(resultats) {
   return resultats.some(r => r.valeur === null) ? [ALERTE_SAISIE] : [];
 }
@@ -167,9 +189,9 @@ const CALCULATEURS = {
     titre: 'Volume par hectare',
     description: 'Volume de bouillie épandu à partir du débit mesuré, de la vitesse et de la largeur traitée.',
     entrees: [
-      { id: 'Q', label: 'Débit total de la rampe', unite: 'L/min', defaut: 6, origineDefaut: ORIGINE_ASSUME },
-      { id: 'v', label: 'Vitesse d\'avancement', unite: 'km/h', defaut: 6, origineDefaut: ORIGINE_ASSUME },
-      { id: 'L', label: 'Largeur traitée', unite: 'm', defaut: 2.5, origineDefaut: ORIGINE_ASSUME }
+      { id: 'Q', label: 'Débit total de la rampe', unite: 'L/min', defaut: 9.6, origineDefaut: ORIGINE_Q_DEDUIT },
+      { id: 'v', label: 'Vitesse d\'avancement', unite: 'km/h', defaut: 5, origineDefaut: ORIGINE_VITESSE_FICHES },
+      { id: 'L', label: 'Largeur traitée', unite: 'm', defaut: 7.7, origineDefaut: ORIGINE_LARGEUR_FVHA }
     ],
     compute(e) {
       const V = volumeHectare(e.Q, e.v, e.L);
@@ -188,9 +210,10 @@ const CALCULATEURS = {
     titre: 'Débit par buse pour un volume visé',
     description: 'Débit que chaque buse doit fournir pour épandre le volume visé à la vitesse et la largeur données.',
     entrees: [
-      { id: 'V', label: 'Volume visé', unite: 'L/ha', defaut: 150, origineDefaut: ORIGINE_ASSUME },
-      { id: 'v', label: 'Vitesse d\'avancement', unite: 'km/h', defaut: 6, origineDefaut: ORIGINE_ASSUME },
-      { id: 'L', label: 'Largeur traitée', unite: 'm', defaut: 2.5, origineDefaut: ORIGINE_ASSUME },
+      { id: 'V', label: 'Volume visé', unite: 'L/ha', defaut: 150, origineDefaut: ORIGINE_VOLUME_FICHES },
+      { id: 'v', label: 'Vitesse d\'avancement', unite: 'km/h', defaut: 5, origineDefaut: ORIGINE_VITESSE_FICHES },
+      { id: 'L', label: 'Largeur traitée', unite: 'm', defaut: 7.7, origineDefaut: ORIGINE_LARGEUR_FVHA },
+      // ASSUMÉ (D-B1-3) : le corpus ne donne pas de nombre de buses par matériel.
       { id: 'n', label: 'Nombre de buses ouvertes', unite: 'buses', defaut: 12, origineDefaut: ORIGINE_ASSUME }
     ],
     compute(e) {
@@ -217,21 +240,28 @@ const CALCULATEURS = {
     id: 'pressionPourVolume',
     titre: 'Pression pour un nouveau volume',
     description: 'Pression à régler pour passer d\'un volume à un autre sans changer de buse ni de vitesse.',
+    portee: 'Buses hydrauliques (jets portés, jets projetés). Ne s\'applique pas aux diffuseurs pneumatiques.',
     entrees: [
-      { id: 'P1', label: 'Pression actuelle', unite: 'bar', defaut: 8, origineDefaut: ORIGINE_ASSUME },
-      { id: 'V1', label: 'Volume actuel', unite: 'L/ha', defaut: 150, origineDefaut: ORIGINE_ASSUME },
-      { id: 'V2', label: 'Volume visé', unite: 'L/ha', defaut: 180, origineDefaut: ORIGINE_ASSUME },
-      { id: 'b', label: 'Exposant débit–pression de la buse (b)', unite: '', defaut: 0.5, origineDefaut: ORIGINE_B_IFV }
+      { id: 'P1', label: 'Pression actuelle', unite: 'bar', defaut: 3, origineDefaut: ORIGINE_PLAGE_EXEMPLE },
+      { id: 'V1', label: 'Volume actuel', unite: 'L/ha', defaut: 150, origineDefaut: ORIGINE_PLAGE_EXEMPLE },
+      { id: 'V2', label: 'Volume visé', unite: 'L/ha', defaut: 180, origineDefaut: ORIGINE_VOLUME_180 },
+      { id: 'b', label: 'Exposant débit–pression de la buse (b)', unite: '', defaut: 0.5, origineDefaut: ORIGINE_B_IFV },
+      // D-B1-2 : la plage dépend de la buse ; elle est saisie, pas fixée.
+      { id: 'pMin', label: 'Pression minimale de la buse', unite: 'bar', defaut: 3, origineDefaut: ORIGINE_PLAGE_BUSE },
+      { id: 'pMax', label: 'Pression maximale de la buse', unite: 'bar', defaut: 4.5, origineDefaut: ORIGINE_PLAGE_BUSE }
     ],
     compute(e) {
       const r = positif(e.V2) / positif(e.V1);
       const P2 = pressionPourVolume(e.P1, e.V1, e.V2, e.b);
       const resultats = [resultat('Pression à régler', P2, 'bar', 1)];
       const alertes = alertesSaisie(resultats);
-      const [pMin, pMax] = PLAGE_PRESSION_ALERTE_BAR;
-      if (resultats[0].valeur !== null && (P2 < pMin || P2 > pMax)) {
-        alertes.push('Pression calculée hors de la plage ' + pMin + ' à ' + pMax +
-          ' bar : vérifier la plage d\'utilisation de la buse.');
+      const pMin = positif(e.pMin), pMax = positif(e.pMax);
+      if (!(pMin < pMax)) {
+        alertes.push('Plage de pression de la buse invalide : la pression minimale doit être inférieure à la maximale.');
+      } else if (resultats[0].valeur !== null && (P2 < pMin || P2 > pMax)) {
+        alertes.push(alerteChiffree('Pression calculée hors de la plage de la buse ({0} à {1} bar) : ' +
+          'changez de calibre de buse ou de vitesse plutôt que de forcer la pression.',
+          [operande(pMin, 2), operande(pMax, 2)]));
       }
       return {
         etapes: [
@@ -251,8 +281,8 @@ const CALCULATEURS = {
     titre: 'Vitesse réelle mesurée',
     description: 'Vitesse d\'avancement mesurée sur une distance balisée, en conditions de travail.',
     entrees: [
-      { id: 'd', label: 'Distance parcourue', unite: 'm', defaut: 100, origineDefaut: ORIGINE_EXEMPLE },
-      { id: 't', label: 'Temps mesuré', unite: 's', defaut: 60, origineDefaut: ORIGINE_EXEMPLE }
+      { id: 'd', label: 'Distance parcourue', unite: 'm', defaut: 50, origineDefaut: ORIGINE_MESURE_FVHA },
+      { id: 't', label: 'Temps mesuré', unite: 's', defaut: 30, origineDefaut: ORIGINE_MESURE_FVHA }
     ],
     compute(e) {
       const v = vitesseMesuree(e.d, e.t);
@@ -271,6 +301,7 @@ const CALCULATEURS = {
     titre: 'Débit de chantier théorique',
     description: 'Surface travaillée par heure, sans temps morts ni demi-tours : un plafond, jamais atteint au champ.',
     entrees: [
+      // ASSUMÉ (D-B1-4) : le corpus ne donne ni vitesse ni largeur d'interceps.
       { id: 'v', label: 'Vitesse d\'avancement', unite: 'km/h', defaut: 6, origineDefaut: ORIGINE_ASSUME },
       { id: 'L', label: 'Largeur travaillée', unite: 'm', defaut: 2.5, origineDefaut: ORIGINE_ASSUME }
     ],
@@ -591,7 +622,7 @@ const OAD = {
   volumeHectare, debitTotalPourVolume, debitParBuse, ajustementPuissance,
   pressionPourVolume, vitesseMesuree, debitChantierTheorique,
   // calculateurs
-  PLAGE_PRESSION_ALERTE_BAR, CALCULATEURS, substituer,
+  CALCULATEURS, substituer,
   // schéma, quiz, progression
   validerModule, noterQuestion, noterQuiz,
   VERSION_PROGRESSION, progressionVide, marquerVue, basculerEtape, basculerTache,
