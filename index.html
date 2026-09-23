@@ -1245,7 +1245,8 @@ class Component extends DCLogic {
       e('tbody', null, detail.map(x => e('tr', { key: x.rang, className: x.horsSeuil ? 'hors-seuil' : null },
         e('th', { scope: 'row' }, 'n° ' + x.rang),
         e('td', null, fmtNombre(x.debit, 2)),
-        e('td', null, pourcentSigne(x.ecart, 2) + (x.horsSeuil ? ' — à contrôler' : ''))))));
+        e('td', null, x.bouche ? 'débit nul — bouché, à contrôler'
+          : pourcentSigne(x.ecart, 2) + (x.horsSeuil ? ' — à contrôler' : ''))))));
   }
 
   valsOutils(ctx) {
