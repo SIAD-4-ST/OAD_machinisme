@@ -129,6 +129,9 @@ button { font: inherit; cursor: pointer; }
 .formule { font-family: ui-monospace, "Cascadia Mono", Consolas, monospace; background: var(--surface-2);
   padding: 8px 12px; border-radius: 6px; margin: 4px 0; overflow-wrap: anywhere; }
 .alerte-bloc { background: var(--alerte-fond); border-left: 4px solid var(--alerte-bord); padding: 8px 12px; border-radius: 4px; }
+.source-element { display: block; font-size: .8rem; color: var(--texte-doux); margin: 2px 0 8px; }
+li > .source-element { margin: 0; }
+.badge-techno { text-transform: none; letter-spacing: 0; margin-left: 4px; }
 
 .compteur { color: var(--texte-doux); font-size: .92rem; }
 .coches { list-style: none; padding: 0; margin: 0; }
@@ -274,7 +277,7 @@ button { font: inherit; cursor: pointer; }
         <span>{{ mod.dureeTxt }}</span>
       </p>
       <sc-if value="{{ mod.nonValide }}" hint-placeholder-val="{{ true }}">
-        <p class="avertissement">Contenu en cours de rédaction, pas encore validé par un expert. {{ mod.sourcesTxt }}</p>
+        <p class="avertissement">Contenu en cours de rédaction, pas encore validé par un expert. {{ mod.sourcesTxt }}<sc-if value="{{ mod.aChiffresSansSource }}"> {{ mod.chiffresSansSourceTxt }}</sc-if></p>
       </sc-if>
     </sc-if>
 
@@ -318,9 +321,10 @@ button { font: inherit; cursor: pointer; }
 
         <article class="contenu" aria-labelledby="titre-contenu">
           <sc-if value="{{ estModule }}">
-            <p class="section-type">{{ section.typeLibelle }} · {{ section.position }}</p>
+            <p class="section-type">{{ section.typeLibelle }} · {{ section.position }}<sc-if value="{{ section.aTechno }}"> <span class="badge badge-techno">{{ section.technoLibelle }}</span></sc-if></p>
             <h2 id="titre-contenu">{{ section.titre }}</h2>
             <sc-if value="{{ section.aIntro }}"><p class="intro">{{ section.intro }}</p></sc-if>
+            <sc-if value="{{ section.aSourceEntete }}"><p class="source-element">{{ section.sourceTxt }}</p></sc-if>
           </sc-if>
           <sc-if value="{{ estOutils }}">
             <h2 id="titre-contenu">{{ outilsTitre }}</h2>
@@ -334,8 +338,11 @@ button { font: inherit; cursor: pointer; }
               <sc-if value="{{ bl.estFormule }}"><p class="formule">{{ bl.texte }}</p></sc-if>
               <sc-if value="{{ bl.estAlerte }}"><p class="alerte-bloc"><b>Attention :</b> {{ bl.texte }}</p></sc-if>
               <sc-if value="{{ bl.estListe }}">
-                <ul><sc-for list="{{ bl.items }}" as="item"><li>{{ item }}</li></sc-for></ul>
+                <ul><sc-for list="{{ bl.items }}" as="item"><li>{{ item.texte }}<sc-if value="{{ item.lectureGraphique }}"><span class="source-element">Valeur lue sur un graphique de la source.</span></sc-if><sc-if value="{{ item.aSource }}"><span class="source-element">{{ item.sourceTxt }}</span></sc-if></li></sc-for></ul>
               </sc-if>
+              <sc-if value="{{ bl.estTableau }}"><div class="tableau-conteneur">{{ bl.tableau }}</div></sc-if>
+              <sc-if value="{{ bl.lectureGraphique }}"><p class="source-element">Valeur lue sur un graphique de la source.</p></sc-if>
+              <sc-if value="{{ bl.aSource }}"><p class="source-element">{{ bl.sourceTxt }}</p></sc-if>
             </sc-for>
           </sc-if>
 
@@ -348,6 +355,7 @@ button { font: inherit; cursor: pointer; }
                   <input type="checkbox" id="{{ et.inputId }}" checked="{{ et.fait }}" onChange="{{ basculerEtape }}" data-etape="{{ et.id }}">
                   <label for="{{ et.inputId }}">{{ et.num }}. {{ et.texte }}</label>
                   <sc-if value="{{ et.aDetail }}"><p class="detail">{{ et.detail }}</p></sc-if>
+                  <sc-if value="{{ et.aSource }}"><p class="detail source-element">{{ et.sourceTxt }}</p></sc-if>
                 </li>
               </sc-for>
             </ol>
@@ -363,7 +371,8 @@ button { font: inherit; cursor: pointer; }
                 <sc-for list="{{ gr.taches }}" as="ta" hint-placeholder-count="2">
                   <li class="{{ ta.classe }}">
                     <input type="checkbox" id="{{ ta.inputId }}" checked="{{ ta.fait }}" onChange="{{ basculerTache }}" data-tache="{{ ta.id }}">
-                    <label for="{{ ta.inputId }}">{{ ta.texte }}</label>
+                    <label for="{{ ta.inputId }}">{{ ta.texte }}<sc-if value="{{ ta.aDetail }}"> ({{ ta.detail }})</sc-if></label>
+                    <sc-if value="{{ ta.aSource }}"><p class="detail source-element">{{ ta.sourceTxt }}</p></sc-if>
                   </li>
                 </sc-for>
               </ul>
@@ -374,7 +383,7 @@ button { font: inherit; cursor: pointer; }
           <!-- Calculateur : fragment unique, section de module ou page Calculateurs -->
           <sc-if value="{{ aCalc }}">
             <p class="calc-desc">{{ calcCourant.description }}</p>
-            <sc-if value="{{ calcCourant.aPortee }}"><p class="calc-portee">{{ calcCourant.portee }}</p></sc-if>
+            <sc-if value="{{ calcCourant.aTechnos }}"><p class="calc-portee">{{ calcCourant.technosTxt }}</p></sc-if>
             <div class="champs">
               <sc-for list="{{ calcCourant.entrees }}" as="en" hint-placeholder-count="3">
                 <div class="{{ en.classe }}">
@@ -426,6 +435,7 @@ button { font: inherit; cursor: pointer; }
                   </sc-for>
                 </div>
                 <sc-if value="{{ quiz.corrige }}"><p class="{{ qu.correctionClasse }}">{{ qu.correction }}</p></sc-if>
+                <sc-if value="{{ qu.aSource }}"><p class="source-element">{{ qu.sourceTxt }}</p></sc-if>
               </fieldset>
             </sc-for>
             <div aria-live="polite">
@@ -441,6 +451,7 @@ button { font: inherit; cursor: pointer; }
           <!-- Cas pratique -->
           <sc-if value="{{ estCas }}">
             <p class="situation">{{ cas.situation }}</p>
+            <sc-if value="{{ cas.aSource }}"><p class="source-element">{{ cas.sourceTxt }}</p></sc-if>
             <div class="choix">
               <sc-for list="{{ cas.options }}" as="op" hint-placeholder-count="3">
                 <button type="button" class="{{ op.classe }}" aria-pressed="{{ op.presse }}" value="{{ op.valeur }}" onClick="{{ choisirCas }}">{{ op.texte }}</button>
@@ -448,6 +459,7 @@ button { font: inherit; cursor: pointer; }
             </div>
             <div aria-live="polite">
               <sc-if value="{{ cas.aRetour }}"><p class="{{ cas.retourClasse }}"><b>{{ cas.verdict }}</b> {{ cas.retour }}</p></sc-if>
+              <sc-if value="{{ cas.aSourceRetour }}"><p class="source-element">{{ cas.sourceRetourTxt }}</p></sc-if>
             </div>
           </sc-if>
 
@@ -794,13 +806,15 @@ class Component extends DCLogic {
       estCatalogue: false, estModule: false, estOutils: false, estProgression: false, estInconnu: false,
       aGrille: false,
       domainesCatalogue: [],
-      mod: {}, sommaire: [], section: {},
+      mod: { aChiffresSansSource: false, chiffresSansSourceTxt: '' }, sommaire: [],
+      section: { aTechno: false, technoLibelle: '', aSourceEntete: false, sourceTxt: '' },
       estFiche: false, estProcedure: false, estEntretien: false, estCalculateur: false, estQuiz: false, estCas: false,
       blocs: [], procedure: { etapes: [] }, entretien: { groupes: [] },
-      quiz: { questions: [] }, cas: { options: [] },
+      quiz: { questions: [] },
+      cas: { options: [], aSource: false, sourceTxt: '', aSourceRetour: false, sourceRetourTxt: '' },
       aPrec: false, aSuiv: false, prec: {}, suiv: {},
       outilsListe: [], outilsTitre: '', outilsMessage: '',
-      aCalc: false, calcCourant: { entrees: [], etapes: [], resultats: [], alertes: [], portee: '', aPortee: false, tableau: null, aTableau: false },
+      aCalc: false, calcCourant: { entrees: [], etapes: [], resultats: [], alertes: [], technosTxt: '', aTechnos: false, tableau: null, aTableau: false },
       progResume: '', tableauProgression: null,
       basculerTheme: this.basculerTheme, onSaisie: this.onSaisie, reinitialiserCalc: this.reinitialiserCalc,
       onChoix: this.onChoix, validerQuiz: this.validerQuiz, recommencerQuiz: this.recommencerQuiz,
@@ -867,10 +881,32 @@ class Component extends DCLogic {
     };
   }
 
+  // « Source : <référence> (<date>) » d'un code de source du module ; '' si absent.
+  sourceTxt(m, code) {
+    const s = code && Array.isArray(m.sources) ? m.sources.find(x => x && x.code === code) : null;
+    return s ? 'Source : ' + s.reference + ' (' + s.date + (s.page ? ', p. ' + s.page : '') + ')' : '';
+  }
+  // Clés de source d'un élément pour le gabarit : { aSource, sourceTxt }.
+  sourceVals(m, el) {
+    const t = this.sourceTxt(m, el && el.source);
+    return { aSource: !!t, sourceTxt: t };
+  }
+
+  /* Bloc tableau d'une fiche (D-B4-4) : React.createElement, aucune directive
+     dans <table> (D-A3-3) ; en-têtes en <th scope="col">. */
+  tableauBloc(bloc) {
+    const e = React.createElement;
+    return e('table', { className: 'tableau' },
+      e('thead', null, e('tr', null, bloc.entetes.map((t, k) => e('th', { key: k, scope: 'col' }, t)))),
+      e('tbody', null, bloc.lignes.map((l, i) => e('tr', { key: i }, l.map((c, k) => e('td', { key: k }, c))))));
+  }
+
   valsModule(ctx, prog) {
     const OAD = ctx.OAD, m = ctx.module, sec = ctx.section;
     if (!m || !sec) return { estInconnu: true };
     const carte = this.carte(OAD, m, prog);
+    const sansSource = OAD.elementsChiffresSansSource(m).length;
+    const srcSection = this.sourceVals(m, sec);
     const ps = OAD.progressionSection(prog, m.id, sec.id);
     const i = m.sections.indexOf(sec), n = m.sections.length;
     const voisin = s => s ? { lien: OAD.lien('module', m.id, s.id), titre: s.titre } : {};
@@ -881,6 +917,8 @@ class Component extends DCLogic {
         statutLibelle: carte.statutLibelle, statutClasse: carte.statutClasse,
         public: m.public || '', dureeTxt: carte.dureeTxt,
         nonValide: m.statut !== 'valide',
+        aChiffresSansSource: sansSource > 0,
+        chiffresSansSourceTxt: sansSource + ' élément' + (sansSource > 1 ? 's' : '') + ' chiffré' + (sansSource > 1 ? 's' : '') + ' sans source.',
         sourcesTxt: (m.sources && m.sources.length)
           ? 'Sources : ' + m.sources.map(s => s.reference + ' (' + s.date + ')').join(' ; ') + '.'
           : 'Aucune source renseignée.',
@@ -896,7 +934,12 @@ class Component extends DCLogic {
       section: {
         titre: sec.titre, typeLibelle: OAD.TYPES_SECTION_LIBELLES[sec.type] || sec.type,
         position: 'section ' + (i + 1) + ' sur ' + n,
-        intro: sec.intro || '', aIntro: !!sec.intro
+        intro: sec.intro || '', aIntro: !!sec.intro,
+        aTechno: !!sec.technologie && sec.technologie !== 'toutes',
+        technoLibelle: OAD.TECHNOLOGIES_LIBELLES[sec.technologie] || '',
+        // Source de section : sous l'en-tête, sauf cas pratique (sous la situation).
+        aSourceEntete: srcSection.aSource && sec.type !== 'cas',
+        sourceTxt: srcSection.sourceTxt
       },
       estFiche: sec.type === 'fiche', estProcedure: sec.type === 'procedure',
       estEntretien: sec.type === 'entretien', estCalculateur: sec.type === 'calculateur',
@@ -906,21 +949,27 @@ class Component extends DCLogic {
     };
 
     if (sec.type === 'fiche') {
-      out.blocs = sec.blocs.map(b => ({
-        texte: b.texte || '', items: b.items || [],
+      out.blocs = sec.blocs.map(b => Object.assign({
+        texte: b.texte || '',
+        items: (b.items || []).map(it => {
+          const o = (it && typeof it === 'object') ? it : { texte: it };
+          return Object.assign({ texte: o.texte, lectureGraphique: !!o.lectureGraphique }, this.sourceVals(m, o));
+        }),
         estParagraphe: b.type === 'paragraphe', estListe: b.type === 'liste',
-        estAlerte: b.type === 'alerte', estFormule: b.type === 'formule'
-      }));
+        estAlerte: b.type === 'alerte', estFormule: b.type === 'formule', estTableau: b.type === 'tableau',
+        tableau: b.type === 'tableau' ? this.tableauBloc(b) : null,
+        lectureGraphique: !!b.lectureGraphique
+      }, this.sourceVals(m, b)));
     } else if (sec.type === 'procedure') {
       const faits = ps.etapes;
       const nb = sec.etapes.filter(e => faits.includes(e.id)).length;
       out.procedure = {
         compteur: nb + ' / ' + sec.etapes.length + ' étapes cochées',
-        etapes: sec.etapes.map((e, k) => ({
+        etapes: sec.etapes.map((e, k) => Object.assign({
           id: e.id, num: k + 1, texte: e.texte, detail: e.detail || '', aDetail: !!e.detail,
           inputId: 'etape-' + sec.id + '-' + e.id,
           fait: faits.includes(e.id), classe: faits.includes(e.id) ? 'fait' : ''
-        }))
+        }, this.sourceVals(m, e)))
       };
     } else if (sec.type === 'entretien') {
       const faits = ps.taches;
@@ -929,10 +978,11 @@ class Component extends DCLogic {
         compteur: nb + ' / ' + sec.taches.length + ' tâches cochées',
         groupes: OAD.PERIODICITES.map(p => ({
           libelle: OAD.PERIODICITES_LIBELLES[p],
-          taches: sec.taches.filter(t => t.periodicite === p).map(t => ({
-            id: t.id, texte: t.texte, inputId: 'tache-' + sec.id + '-' + t.id,
+          taches: sec.taches.filter(t => t.periodicite === p).map(t => Object.assign({
+            id: t.id, texte: t.texte, detail: t.detail || '', aDetail: !!t.detail,
+            inputId: 'tache-' + sec.id + '-' + t.id,
             fait: faits.includes(t.id), classe: faits.includes(t.id) ? 'fait' : ''
-          }))
+          }, this.sourceVals(m, t)))
         })).filter(g => g.taches.length > 0)
       };
     } else if (sec.type === 'calculateur') {
@@ -940,14 +990,14 @@ class Component extends DCLogic {
       out.aCalc = !!c;
       if (c) out.calcCourant = c;
     } else if (sec.type === 'quiz') {
-      out.quiz = this.valsQuiz(sec, ps);
+      out.quiz = this.valsQuiz(sec, ps, m);
     } else if (sec.type === 'cas') {
-      out.cas = this.valsCas(sec);
+      out.cas = this.valsCas(sec, m);
     }
     return out;
   }
 
-  valsQuiz(sec, ps) {
+  valsQuiz(sec, ps, m) {
     const sid = sec.id;
     const rep = this.state.quizRep[sid] || {};
     const score = this.state.quizScore[sid] || null;
@@ -960,7 +1010,7 @@ class Component extends DCLogic {
         const choisis = rep[q.id] || [];
         const d = details.find(x => x.qid === q.id);
         const juste = !!(d && d.juste);
-        return {
+        return Object.assign({
           num: i + 1, enonce: q.enonce, multiple: q.bonnes.length > 1,
           choix: q.choix.map((c, k) => {
             const pris = choisis.includes(k), bonne = q.bonnes.includes(k);
@@ -971,7 +1021,7 @@ class Component extends DCLogic {
           }),
           correction: (juste ? 'Juste. ' : 'À revoir. ') + (q.explication || ''),
           correctionClasse: 'correction ' + (juste ? 'juste' : 'fausse')
-        };
+        }, this.sourceVals(m || {}, q));
       }),
       scoreTxt: corrige
         ? 'Score : ' + score.bonnes + ' / ' + score.total + ' (' + pourcent(score.taux) + ')'
@@ -984,11 +1034,14 @@ class Component extends DCLogic {
     };
   }
 
-  valsCas(sec) {
+  valsCas(sec, m) {
     const sid = sec.id;
     const choix = this.state.casChoix[sid];
     const opt = Number.isInteger(choix) ? sec.options[choix] : null;
+    const srcSituation = this.sourceVals(m || {}, sec), srcRetour = this.sourceVals(m || {}, opt);
     return {
+      aSource: srcSituation.aSource, sourceTxt: srcSituation.sourceTxt,
+      aSourceRetour: srcRetour.aSource, sourceRetourTxt: srcRetour.sourceTxt,
       situation: sec.situation,
       options: sec.options.map((o, k) => {
         const pris = k === choix;
@@ -1045,7 +1098,9 @@ class Component extends DCLogic {
         resultat: avecUnite(fmtNombre(et.resultat.valeur, et.resultat.decimales), et.resultat.unite)
       })),
       resultats: r.resultats.map(x => ({ label: x.label, texte: avecUnite(fmtNombre(x.valeur, x.decimales), x.unite) })),
-      portee: C.portee || '', aPortee: !!C.portee,
+      // « S'applique à » seulement si le calculateur ne vaut pas pour toutes les technologies.
+      aTechnos: Array.isArray(C.technologies) && !(C.technologies.length === 1 && C.technologies[0] === 'toutes'),
+      technosTxt: 'S\'applique à : ' + (C.technologies || []).map(t => OAD.TECHNOLOGIES_LIBELLES[t] || t).join(', '),
       tableau: Array.isArray(r.detail) && r.detail.length ? this.tableauEcarts(r.detail) : null,
       aTableau: Array.isArray(r.detail) && r.detail.length > 0,
       alertes: r.alertes.map(a => this.texteAlerte(OAD, a)), aAlertes: r.alertes.length > 0

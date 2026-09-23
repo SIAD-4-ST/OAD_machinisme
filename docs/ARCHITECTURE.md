@@ -48,11 +48,20 @@ identifiants ; `OAD.lireRoute(hash)` et `OAD.lien(...segments)` sont purs.
 
 ## Types de section
 
-`fiche` (blocs `paragraphe`, `liste`, `alerte`, `formule`), `procedure`
+`fiche` (blocs `paragraphe`, `liste`, `alerte`, `formule`, `tableau`), `procedure`
 (étapes à cocher, imprimable), `entretien` (tâches à cocher groupées par
 périodicité, imprimable), `calculateur` (renvoie à un calculateur du moteur),
 `quiz` (choix simples ou multiples, notation exacte), `cas` (situation et
 options commentées).
+
+Champs transverses (B4) : `technologie` sur une section (vocabulaire
+`TECHNOLOGIES`), `technologies` sur un calculateur ; `code` sur chaque source
+du module et `source` sur chaque élément ; `lectureGraphique` sur un bloc ou
+une ligne de liste ; `detail` sur une tâche ; périodicité `semestrielle`.
+`elementsChiffresSansSource(m)` liste les éléments chiffrés non sourcés :
+erreur pour un module `valide`, compte affiché sinon. Les tableaux (bloc
+`tableau`, écart entre diffuseurs, progression) sont construits par
+`React.createElement` dans le composant.
 
 ## Calculateurs et formules ouvertes
 

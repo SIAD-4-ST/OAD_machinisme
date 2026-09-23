@@ -666,12 +666,13 @@ test('vitesseMesuree : 50 m / 30 s = 6 km/h ; 50 m / 35 s = 5,142857 (table F-VH
 test('OAD.PLAGE_PRESSION_ALERTE_BAR n\'existe plus', () => {
   assert.strictEqual(OAD.PLAGE_PRESSION_ALERTE_BAR, undefined);
 });
-test('pressionPourVolume : portée affichée sous la description', () => {
+// Pourquoi : champ portee remplacé par technologies, B4 (D-B4-1).
+test('pressionPourVolume : technologies affichées sous la description, pas pour volHa', () => {
   const c = new Component({});
   const out = rendre(c, '#/outils/pressionPourVolume');
-  assert.strictEqual(out.calcCourant.aPortee, true);
-  assert.ok(out.calcCourant.portee.startsWith('Buses hydrauliques'));
-  assert.strictEqual(rendre(c, '#/outils/volHa').calcCourant.aPortee, false);
+  assert.strictEqual(out.calcCourant.aTechnos, true);
+  assert.strictEqual(OAD.CALCULATEURS.pressionPourVolume.portee, undefined);
+  assert.strictEqual(rendre(c, '#/outils/volHa').calcCourant.aTechnos, false);
 });
 test('statique : aucun origineDefaut ne contient « O4 » ni « prompt » (D-B1-5)', () => {
   Object.values(CALC).forEach(c => c.entrees.forEach(e => {
@@ -785,6 +786,111 @@ test('saisie d\'une liste dans la vue : « 1,1 ; abc ; 0,9 » → alerte n° 2, 
   const out = rendre(c, '#/outils/ecartDiffuseurs');
   assert.ok(out.calcCourant.alertes.some(a => a.startsWith('Valeur n° 2 illisible')));
   assert.strictEqual([].concat(...out.calcCourant.tableau.c.find(x => x && x.t === 'tbody').c).length, 2);
+});
+
+// ----------------------------------------------------------------------
+section('§11 B4 — schéma');
+
+// Module minimal conforme, à décliner dans les tests.
+function moduleFabrique(sections, extra) {
+  return Object.assign({
+    id: 'fabrique', titre: 'Fabriqué', resume: 'r', domaine: 'pulverisation', statut: 'brouillon',
+    valideur: null, sources: [{ code: 'F-VHA', reference: 'Fiche volume/hectare, CIVC', date: 'février 2014' }],
+    sections
+  }, extra || {});
+}
+const ficheChiffree = [{ id: 'mesure', type: 'fiche', titre: 'Mesure', blocs: [{ type: 'paragraphe', texte: 'Mesurer sur 50 m' }] }];
+
+test('module « valide » avec un bloc chiffré sans source → erreur citant la section ; en brouillon, 1 élément compté', () => {
+  const v = moduleFabrique(ficheChiffree, { statut: 'valide', valideur: 'Valideur' });
+  const e = OAD.validerModule(v);
+  assert.ok(e.some(x => x.includes('« mesure »') && x.includes('élément chiffré sans source')), e.join('\n'));
+  const b = moduleFabrique(ficheChiffree);
+  assert.deepStrictEqual(OAD.validerModule(b), []);
+  assert.strictEqual(OAD.elementsChiffresSansSource(b).length, 1);
+  // Sourcé : plus rien à compter, et le module valide est conforme.
+  const src = moduleFabrique([{ id: 'mesure', type: 'fiche', titre: 'Mesure',
+    blocs: [{ type: 'paragraphe', texte: 'Mesurer sur 50 m', source: 'F-VHA' }] }], { statut: 'valide', valideur: 'Valideur' });
+  assert.deepStrictEqual(OAD.validerModule(src), []);
+});
+test('source d\'élément F-XXX absente des sources du module → « source inconnue »', () => {
+  const m = moduleFabrique([{ id: 's', type: 'fiche', titre: 'S', blocs: [{ type: 'paragraphe', texte: 't', source: 'F-XXX' }] }]);
+  assert.ok(OAD.validerModule(m).some(x => x.includes('source inconnue « F-XXX »')));
+});
+test('code de source f-vha (minuscules) → erreur de format ; code en double → erreur', () => {
+  const m = moduleFabrique(ficheChiffree, { sources: [{ code: 'f-vha', reference: 'r', date: 'd' }] });
+  assert.ok(OAD.validerModule(m).some(x => x.includes('non conforme')));
+  const d = moduleFabrique(ficheChiffree, { sources: [{ code: 'A', reference: 'r', date: 'd' }, { code: 'A', reference: 'r2', date: 'd' }] });
+  assert.ok(OAD.validerModule(d).some(x => x.includes('source en double « A »')));
+});
+test('bloc tableau : une ligne de 2 cellules pour 3 en-têtes → erreur', () => {
+  const m = moduleFabrique([{ id: 't', type: 'fiche', titre: 'T', blocs: [{ type: 'tableau',
+    entetes: ['a', 'b', 'c'], lignes: [['1', '2', '3'], ['1', '2']] }] }]);
+  assert.ok(OAD.validerModule(m).some(x => x.includes('3 cellules attendues')));
+});
+test('tâche « semestrielle » acceptée ; « mensuelle » refusée ; détail vide refusé', () => {
+  const t = (periodicite, detail) => moduleFabrique([{ id: 'e', type: 'entretien', titre: 'E',
+    taches: [Object.assign({ id: 'x', texte: 'Changer le filtre', periodicite }, detail === undefined ? {} : { detail })] }]);
+  assert.deepStrictEqual(OAD.validerModule(t('semestrielle')), []);
+  assert.ok(OAD.validerModule(t('mensuelle')).some(x => x.includes('périodicité inconnue')));
+  assert.ok(OAD.validerModule(t('annuelle', ' ')).some(x => x.includes('détail vide')));
+  assert.strictEqual(OAD.PERIODICITES.indexOf('semestrielle'), OAD.PERIODICITES.indexOf('hebdomadaire') + 1);
+  assert.strictEqual(OAD.PERIODICITES_LIBELLES.semestrielle, 'Au moins deux fois par an');
+});
+test('technologie de section hors vocabulaire → erreur ; libellés présents', () => {
+  const m = moduleFabrique([{ id: 't', type: 'fiche', titre: 'T', technologie: 'canon', blocs: [{ type: 'paragraphe', texte: 'x' }] }]);
+  assert.ok(OAD.validerModule(m).some(x => x.includes('technologie inconnue')));
+  OAD.TECHNOLOGIES.forEach(k => assert.ok(OAD.TECHNOLOGIES_LIBELLES[k], k));
+});
+test('calculateurs : pressionPourVolume = jets portés + jets projetés ; toutes les technologies du vocabulaire', () => {
+  assert.deepStrictEqual(OAD.CALCULATEURS.pressionPourVolume.technologies, ['jets-portes', 'jets-projetes']);
+  Object.values(OAD.CALCULATEURS).forEach(c =>
+    assert.ok(c.technologies.length && c.technologies.every(t => OAD.TECHNOLOGIES.includes(t)), c.id));
+  assert.deepStrictEqual(OAD.erreursRegistre(OAD.CALCULATEURS), []);
+});
+test('les modules actuels restent conformes', () => {
+  assert.deepStrictEqual(OAD.erreursContenu(MODULES), []);
+});
+
+// Rendu d'un module fabriqué : le composant lit window.OAD.modules().
+function avecModules(liste, fn) {
+  const sauve = window.OAD;
+  window.OAD = Object.assign({}, OAD, { modules: () => liste });
+  try { return fn(); } finally { window.OAD = sauve; }
+}
+test('rendu à blanc : fiche avec un tableau 3 × 2, sources et lecture graphique', () => {
+  const m = moduleFabrique([{ id: 'tab', type: 'fiche', titre: 'Tableau', technologie: 'jets-portes', blocs: [
+    { type: 'tableau', entetes: ['A', 'B', 'C'], lignes: [['1', '2', '3'], ['4', '5', '6']], source: 'F-VHA' },
+    { type: 'liste', items: ['sans chiffre', { texte: 'lu : 40 %', source: 'F-VHA', lectureGraphique: true }] }
+  ] }]);
+  avecModules([m], () => {
+    const c = new Component({});
+    const out = rendre(c, '#/module/fabrique/tab');
+    const bl = out.blocs[0];
+    assert.strictEqual(bl.estTableau, true);
+    const tbody = bl.tableau.c.find(x => x && x.t === 'tbody');
+    assert.strictEqual([].concat(...tbody.c).filter(x => x.t === 'tr').length, 2);
+    const thead = bl.tableau.c.find(x => x && x.t === 'thead');
+    assert.ok([].concat(...thead.c[0].c).every(th => th.t === 'th' && th.p.scope === 'col'));
+    assert.strictEqual(bl.sourceTxt, 'Source : Fiche volume/hectare, CIVC (février 2014)');
+    assert.strictEqual(out.blocs[1].items[1].lectureGraphique, true);
+    assert.strictEqual(out.blocs[1].items[1].aSource, true);
+    assert.strictEqual(out.blocs[1].items[0].aSource, false);
+    assert.strictEqual(out.section.aTechno, true);
+    assert.strictEqual(out.section.technoLibelle, 'Jets portés');
+    assert.strictEqual(out.mod.aChiffresSansSource, false);
+  });
+});
+test('bandeau : nombre d\'éléments chiffrés sans source d\'un module non validé', () => {
+  avecModules([moduleFabrique(ficheChiffree)], () => {
+    const out = rendre(new Component({}), '#/module/fabrique/mesure');
+    assert.strictEqual(out.mod.aChiffresSansSource, true);
+    assert.strictEqual(out.mod.chiffresSansSourceTxt, '1 élément chiffré sans source.');
+  });
+});
+test('rendu à blanc #/outils/pressionPourVolume : « S\'applique à : Jets portés, Jets projetés »', () => {
+  const out = rendre(new Component({}), '#/outils/pressionPourVolume');
+  assert.strictEqual(out.calcCourant.technosTxt, 'S\'applique à : Jets portés, Jets projetés');
 });
 
 console.log(`\n${passed} ok, ${failed} FAIL, ${skipped} skip`);

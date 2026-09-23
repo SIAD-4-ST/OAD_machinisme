@@ -385,3 +385,28 @@ seuls les négatifs et les illisibles sont écartés. Garde de schéma du
 registre `erreursRegistre` (entrée liste ⇒ défaut tableau), testée. Le test
 §1 « aucune alerte avec les défauts » admet l'alerte volontaire de
 `ecartDiffuseurs` (commentée).
+
+### B4 — schéma : technologie, sources par élément, tableau (23/09/2026)
+
+- **D-B4-1** : `TECHNOLOGIES` = toutes, pneumatique, jets portés, jets
+  projetés, confiné. `technologie` sur une section (badge), `technologies` sur
+  un calculateur (« S'applique à : … ») ; `pressionPourVolume` = jets portés,
+  jets projetés ; `portee` de B1 supprimé.
+- **D-B4-2** : `sources: [{ code, reference, date, page? }]`, code unique au
+  format `F-VHA` ; `source: '<code>'` sur bloc, ligne de liste, étape, tâche,
+  question, option, section ; référence inconnue = erreur.
+- **D-B4-3** : un module `valide` n'a aucun élément chiffré sans source ; en
+  brouillon, le nombre est affiché dans le bandeau.
+- **D-B4-4** : bloc `tableau`, construit par `createElement`.
+- **D-B4-5** : `lectureGraphique` sur un bloc ou une ligne de liste.
+- **D-B4-6** : périodicité `semestrielle` (« Au moins deux fois par an ») ;
+  `detail` de tâche.
+- **D-B4-7** : source affichée sous l'élément ; pas de filtre par
+  technologie.
+
+Choix de mise en œuvre : une ligne de liste peut être un objet `{ texte,
+source?, lectureGraphique? }` (nécessaire pour D-B4-5) ; l'introduction d'une
+section compte comme élément de la section (sa source est celle de la
+section) — plus strict que la liste du prompt, pour qu'aucun chiffre visible
+n'échappe à D-B4-3. Garde du registre : `technologies` de chaque
+calculateur dans le vocabulaire (testé).

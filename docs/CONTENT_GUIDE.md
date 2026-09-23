@@ -20,7 +20,7 @@ toucher au code de l'outil.
      resume: '…',
      public: '…',
      dureeMin: 20,
-     sources: [],                       // [{ reference: '…', date: 'jj/mm/aaaa' }], au moins une si 'valide'
+     sources: [],                       // [{ code: 'F-VHA', reference: '…', date: '…', page?: '…' }], au moins une si 'valide'
      sections: [ /* voir ci-dessous */ ]
    });
    ```
@@ -41,12 +41,37 @@ catalogue.
 
 | Type | Champs |
 |---|---|
-| `fiche` | `blocs: [{ type: 'paragraphe' \| 'alerte' \| 'formule', texte }, { type: 'liste', items: ['…'] }]` |
-| `procedure` | `intro?`, `etapes: [{ id, texte, detail? }]` |
-| `entretien` | `intro?`, `taches: [{ id, texte, periodicite }]` — périodicités : `chaque-utilisation`, `quotidienne`, `hebdomadaire`, `debut-campagne`, `fin-campagne`, `annuelle` |
+| `fiche` | `blocs: [{ type: 'paragraphe' \| 'alerte' \| 'formule', texte }, { type: 'liste', items: ['…' ou { texte, source?, lectureGraphique? }] }, { type: 'tableau', entetes: ['…'], lignes: [['…']] }]` — chaque bloc accepte `source?` et `lectureGraphique?` |
+| `procedure` | `intro?`, `etapes: [{ id, texte, detail?, source? }]` |
+| `entretien` | `intro?`, `taches: [{ id, texte, periodicite, detail?, source? }]` — périodicités : `chaque-utilisation`, `quotidienne`, `hebdomadaire`, `semestrielle` (« Au moins deux fois par an »), `debut-campagne`, `fin-campagne`, `annuelle` ; `detail` s'affiche entre parenthèses après le texte (ex. « ou toutes les 500 h ») |
 | `calculateur` | `intro?`, `calculateur: 'volHa' \| 'debitBuse' \| 'pressionPourVolume' \| 'vitesseMesuree' \| 'debitChantier' \| 'largeurTraitee' \| 'debitCuve' \| 'hauteursBuses' \| 'ecartDiffuseurs'` |
-| `quiz` | `questions: [{ id, enonce, choix: ['…'], bonnes: [indices à partir de 0], explication }]` — plusieurs bonnes réponses = question à choix multiples |
-| `cas` | `situation`, `options: [{ texte, correct: true/false, retour }]`, au moins une option correcte |
+| `quiz` | `questions: [{ id, enonce, choix: ['…'], bonnes: [indices à partir de 0], explication, source? }]` — plusieurs bonnes réponses = question à choix multiples |
+| `cas` | `situation`, `source?` (celle de la situation), `options: [{ texte, correct: true/false, retour, source? }]`, au moins une option correcte |
+
+Toute section accepte `technologie?` : `toutes` (défaut), `pneumatique`,
+`jets-portes`, `jets-projetes`, `confine`. Elle s'affiche en badge à côté du
+type. Le porteur (tracteur, chenillard) n'est pas une technologie. À utiliser
+dès qu'une consigne ne vaut que pour une technologie : certaines s'opposent
+d'une technologie à l'autre (buse anti-dérive, par exemple).
+
+## Sources et provenance
+
+- Chaque source du module a un **code** unique dans le module : majuscules,
+  chiffres, tirets (`F-VHA`, `B20-1`). Reprendre le code de la synthèse du
+  corpus quand la source y figure.
+- Un élément (bloc, ligne de liste, étape, tâche, question, option de cas,
+  section) cite sa source par `source: '<code>'`, qui doit exister dans les
+  `sources` du module (sinon « source inconnue »). À l'écran : « Source :
+  <référence> (<date>) » sous l'élément.
+- `lectureGraphique: true` (bloc ou ligne de liste) : la valeur a été lue sur
+  un graphique de la source ; l'écran l'indique.
+- Bloc `tableau` : `entetes` et `lignes`, chaque ligne de la longueur des
+  en-têtes, cellules en texte (`'0,3 (300)'`).
+- **Règle de validation (D-B4-3).** Un module `valide` n'a aucun élément dont
+  le texte visible contient un chiffre sans `source` (une liste sourcée couvre
+  ses lignes ; la source d'une section couvre son introduction, la situation
+  d'un cas, l'énoncé d'un exercice). En `brouillon`, ce n'est pas une erreur :
+  le bandeau du module affiche « N éléments chiffrés sans source ».
 
 ## Règles de rédaction
 

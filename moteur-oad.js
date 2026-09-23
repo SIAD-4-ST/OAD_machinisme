@@ -45,14 +45,28 @@ const TYPES_SECTION_LIBELLES = {
   cas: 'Cas pratique'
 };
 
-const TYPES_BLOC = ['paragraphe', 'liste', 'alerte', 'formule'];
+const TYPES_BLOC = ['paragraphe', 'liste', 'alerte', 'formule', 'tableau'];
+
+/* Technologie de pulvérisation à laquelle se rattache une section ou un
+   calculateur (D-B4-1, arbitrage A5) : des consignes s'opposent d'une
+   technologie à l'autre (synthèse §7.1). Le porteur (tracteur, chenillard)
+   n'est pas une technologie. */
+const TECHNOLOGIES = ['toutes', 'pneumatique', 'jets-portes', 'jets-projetes', 'confine'];
+const TECHNOLOGIES_LIBELLES = {
+  toutes: 'Toutes technologies',
+  pneumatique: 'Pneumatique',
+  'jets-portes': 'Jets portés',
+  'jets-projetes': 'Jets projetés',
+  confine: 'Confiné'
+};
 
 const PERIODICITES = ['chaque-utilisation', 'quotidienne', 'hebdomadaire',
-  'debut-campagne', 'fin-campagne', 'annuelle'];
+  'semestrielle', 'debut-campagne', 'fin-campagne', 'annuelle'];
 const PERIODICITES_LIBELLES = {
   'chaque-utilisation': 'Après chaque utilisation',
   quotidienne: 'Chaque jour',
   hebdomadaire: 'Chaque semaine',
+  semestrielle: 'Au moins deux fois par an',
   'debut-campagne': 'En début de campagne',
   'fin-campagne': 'En fin de campagne',
   annuelle: 'Chaque année'
@@ -257,6 +271,7 @@ function alertesSaisie(resultats) {
 const CALCULATEURS = {
   volHa: {
     id: 'volHa',
+    technologies: ['toutes'],
     titre: 'Volume par hectare',
     description: 'Volume de bouillie épandu à partir du débit mesuré, de la vitesse et de la largeur traitée.',
     entrees: [
@@ -278,6 +293,7 @@ const CALCULATEURS = {
 
   debitBuse: {
     id: 'debitBuse',
+    technologies: ['toutes'],
     titre: 'Débit par buse pour un volume visé',
     description: 'Débit que chaque buse doit fournir pour épandre le volume visé à la vitesse et la largeur données.',
     entrees: [
@@ -311,7 +327,8 @@ const CALCULATEURS = {
     id: 'pressionPourVolume',
     titre: 'Pression pour un nouveau volume',
     description: 'Pression à régler pour passer d\'un volume à un autre sans changer de buse ni de vitesse.',
-    portee: 'Buses hydrauliques (jets portés, jets projetés). Ne s\'applique pas aux diffuseurs pneumatiques.',
+    // Buses hydrauliques : ne s'applique pas aux diffuseurs pneumatiques (D-B4-1).
+    technologies: ['jets-portes', 'jets-projetes'],
     entrees: [
       { id: 'P1', label: 'Pression actuelle', unite: 'bar', defaut: 3, origineDefaut: ORIGINE_PLAGE_EXEMPLE },
       { id: 'V1', label: 'Volume actuel', unite: 'L/ha', defaut: 150, origineDefaut: ORIGINE_PLAGE_EXEMPLE },
@@ -349,6 +366,7 @@ const CALCULATEURS = {
 
   vitesseMesuree: {
     id: 'vitesseMesuree',
+    technologies: ['toutes'],
     titre: 'Vitesse réelle mesurée',
     description: 'Vitesse d\'avancement mesurée sur une distance balisée, en conditions de travail.',
     entrees: [
@@ -369,6 +387,7 @@ const CALCULATEURS = {
 
   debitChantier: {
     id: 'debitChantier',
+    technologies: ['toutes'],
     titre: 'Débit de chantier théorique',
     description: 'Surface travaillée par heure, sans temps morts ni demi-tours : un plafond, jamais atteint au champ.',
     entrees: [
@@ -390,6 +409,7 @@ const CALCULATEURS = {
 
   largeurTraitee: {
     id: 'largeurTraitee',
+    technologies: ['toutes'],
     titre: 'Largeur traitée',
     description: 'Enjambeur : nombre de rangs traités par passage × écartement. Chenillard : 1, 2 ou 3 écartements selon que l\'on passe toutes les routes, toutes les 2 ou toutes les 3 routes.',
     entrees: [
@@ -410,6 +430,7 @@ const CALCULATEURS = {
 
   debitCuve: {
     id: 'debitCuve',
+    technologies: ['toutes'],
     titre: 'Débit total par le niveau de la cuve',
     description: 'Remplir la ou les cuves à ras bord, pulvériser pendant la durée choisie, puis refaire le niveau en mesurant le volume ajouté : le débit total est ce volume divisé par la durée.',
     entrees: [
@@ -430,6 +451,7 @@ const CALCULATEURS = {
 
   hauteursBuses: {
     id: 'hauteursBuses',
+    technologies: ['toutes'],
     titre: 'Volume selon le nombre de hauteurs de buses',
     description: 'Volume obtenu en changeant le nombre de hauteurs de buses par descente, à vitesse égale et avec le même débit à chaque hauteur de buse.',
     entrees: [
@@ -452,6 +474,7 @@ const CALCULATEURS = {
 
   ecartDiffuseurs: {
     id: 'ecartDiffuseurs',
+    technologies: ['toutes'],
     titre: 'Écart entre diffuseurs',
     description: 'Débit mesuré diffuseur par diffuseur : écart de chacun à la moyenne. Au-delà de 10 %, intervenir : nettoyage, changement de buse ou de pastille, vérification des anti-gouttes.',
     entrees: [
@@ -512,6 +535,9 @@ function erreursRegistre(calculateurs) {
       else if (typeof en.defaut !== 'number' || !Number.isFinite(en.defaut)) err.push(ou + ' : défaut numérique attendu');
       if (en && !estTexte(en.origineDefaut)) err.push(ou + ' : origine du défaut manquante');
     });
+    if (!Array.isArray(c.technologies) || c.technologies.length === 0 ||
+      !c.technologies.every(t => TECHNOLOGIES.includes(t)))
+      err.push(k + ' : technologies hors du vocabulaire');
   });
   return err;
 }
@@ -536,31 +562,65 @@ function doublons(ids) {
   return [...d];
 }
 
-function validerSection(s, i, err) {
+// Code de source : majuscules, chiffres, tirets (F-VHA, B20-1…) — D-B4-2.
+const FORMAT_CODE_SOURCE = /^[A-Z0-9]+(-[A-Z0-9]+)*$/;
+// Un élément dont le texte visible contient un chiffre doit citer sa source
+// pour qu'un module passe en « valide » (D-B4-3).
+const CHIFFRE = /[0-9]/;
+
+// Ligne de liste : chaîne, ou { texte, source?, lectureGraphique? } (D-B4-5).
+function texteItem(it) { return (it && typeof it === 'object') ? it.texte : it; }
+
+function validerSection(s, i, err, codes) {
   const ou = 'section ' + (s && s.id ? '« ' + s.id + ' »' : '#' + (i + 1));
   if (!s || typeof s !== 'object') { err.push(ou + ' : objet attendu'); return; }
+  const connus = codes instanceof Set ? codes : new Set();
+  // Toute référence `source` d'un élément doit exister dans les sources du module.
+  const verifSource = (el, ici) => {
+    if (el && typeof el === 'object' && el.source !== undefined && !(estTexte(el.source) && connus.has(el.source)))
+      err.push(ici + ' : source inconnue « ' + el.source + ' »');
+  };
   if (!estTexte(s.id)) err.push(ou + ' : id manquant');
   if (!estTexte(s.titre)) err.push(ou + ' : titre manquant');
   if (!TYPES_SECTION.includes(s.type)) { err.push(ou + ' : type inconnu « ' + s.type + ' »'); return; }
+  if (s.technologie !== undefined && !TECHNOLOGIES.includes(s.technologie))
+    err.push(ou + ' : technologie inconnue « ' + s.technologie + ' »');
+  verifSource(s, ou);
 
   if (s.type === 'fiche') {
     if (!Array.isArray(s.blocs) || s.blocs.length === 0) { err.push(ou + ' : blocs manquants'); return; }
     s.blocs.forEach((b, j) => {
-      if (!b || !TYPES_BLOC.includes(b.type)) err.push(ou + ' : bloc ' + (j + 1) + ' de type inconnu');
-      else if (b.type === 'liste' ? !(Array.isArray(b.items) && b.items.length && b.items.every(estTexte)) : !estTexte(b.texte))
-        err.push(ou + ' : bloc ' + (j + 1) + ' vide');
+      const bo = ou + ' : bloc ' + (j + 1);
+      if (!b || !TYPES_BLOC.includes(b.type)) { err.push(bo + ' de type inconnu'); return; }
+      verifSource(b, bo);
+      if (b.type === 'liste') {
+        if (!(Array.isArray(b.items) && b.items.length && b.items.every(it => estTexte(texteItem(it))))) err.push(bo + ' vide');
+        else b.items.forEach((it, k) => verifSource(it, bo + ', ligne ' + (k + 1)));
+      } else if (b.type === 'tableau') {
+        // D-B4-4 : en-têtes non vides, chaque ligne de la longueur des en-têtes.
+        if (!(Array.isArray(b.entetes) && b.entetes.length && b.entetes.every(estTexte))) err.push(bo + ' : en-têtes manquants');
+        else if (!(Array.isArray(b.lignes) && b.lignes.length)) err.push(bo + ' : lignes manquantes');
+        else b.lignes.forEach((l, k) => {
+          if (!Array.isArray(l) || l.length !== b.entetes.length)
+            err.push(bo + ', ligne ' + (k + 1) + ' : ' + b.entetes.length + ' cellules attendues');
+          else if (!l.every(c => typeof c === 'string')) err.push(bo + ', ligne ' + (k + 1) + ' : cellules texte attendues');
+        });
+      } else if (!estTexte(b.texte)) err.push(bo + ' vide');
     });
   } else if (s.type === 'procedure') {
     if (!Array.isArray(s.etapes) || s.etapes.length === 0) { err.push(ou + ' : étapes manquantes'); return; }
     s.etapes.forEach((e, j) => {
       if (!e || !estTexte(e.id) || !estTexte(e.texte)) err.push(ou + ' : étape ' + (j + 1) + ' incomplète');
+      else verifSource(e, ou + ' : étape « ' + e.id + ' »');
     });
     doublons(s.etapes.map(e => e && e.id)).forEach(d => err.push(ou + ' : étape en double « ' + d + ' »'));
   } else if (s.type === 'entretien') {
     if (!Array.isArray(s.taches) || s.taches.length === 0) { err.push(ou + ' : tâches manquantes'); return; }
     s.taches.forEach((t, j) => {
-      if (!t || !estTexte(t.id) || !estTexte(t.texte)) err.push(ou + ' : tâche ' + (j + 1) + ' incomplète');
-      else if (!PERIODICITES.includes(t.periodicite)) err.push(ou + ' : périodicité inconnue « ' + t.periodicite + ' »');
+      if (!t || !estTexte(t.id) || !estTexte(t.texte)) { err.push(ou + ' : tâche ' + (j + 1) + ' incomplète'); return; }
+      if (!PERIODICITES.includes(t.periodicite)) err.push(ou + ' : périodicité inconnue « ' + t.periodicite + ' »');
+      if (t.detail !== undefined && !estTexte(t.detail)) err.push(ou + ' : tâche « ' + t.id + ' » : détail vide');
+      verifSource(t, ou + ' : tâche « ' + t.id + ' »');
     });
     doublons(s.taches.map(t => t && t.id)).forEach(d => err.push(ou + ' : tâche en double « ' + d + ' »'));
   } else if (s.type === 'calculateur') {
@@ -575,6 +635,7 @@ function validerSection(s, i, err) {
       else if (!Array.isArray(q.bonnes) || q.bonnes.length === 0 ||
         !q.bonnes.every(k => Number.isInteger(k) && k >= 0 && k < q.choix.length))
         err.push(qu + ' : bonnes réponses invalides');
+      verifSource(q, qu);
     });
     doublons(s.questions.map(q => q && q.id)).forEach(d => err.push(ou + ' : question en double « ' + d + ' »'));
   } else if (s.type === 'cas') {
@@ -583,9 +644,46 @@ function validerSection(s, i, err) {
     s.options.forEach((o, j) => {
       if (!o || !estTexte(o.texte) || !estTexte(o.retour) || typeof o.correct !== 'boolean')
         err.push(ou + ' : option ' + (j + 1) + ' incomplète');
+      else verifSource(o, ou + ' : option ' + (j + 1));
     });
     if (!s.options.some(o => o && o.correct === true)) err.push(ou + ' : aucune option correcte');
   }
+}
+
+/* Éléments dont le texte visible contient un chiffre sans `source` (D-B4-3) :
+   → [{ sectionId, element }]. Éléments : bloc (une liste sourcée couvre ses
+   lignes, sinon chaque ligne compte), étape, tâche, question, option de cas,
+   section (situation d'un cas, énoncé d'un exercice, introduction). Ne lève
+   jamais. Erreur seulement pour un module « valide » ; sinon compté à
+   l'écran. */
+function elementsChiffresSansSource(m) {
+  const res = [];
+  if (!m || typeof m !== 'object' || !Array.isArray(m.sections)) return res;
+  const chiffre = t => typeof t === 'string' && CHIFFRE.test(t);
+  const noter = (sid, el, textes) => {
+    const src = el && typeof el === 'object' ? el.source : undefined;
+    if (!estTexte(src) && textes.some(chiffre)) res.push({ sectionId: sid, element: el });
+  };
+  m.sections.forEach(s => {
+    if (!s || typeof s !== 'object') return;
+    const sid = s.id;
+    noter(sid, s, [s.intro, s.situation, s.enonce]);
+    const liste = (x) => Array.isArray(x) ? x : [];
+    if (s.type === 'fiche') liste(s.blocs).forEach(b => {
+      if (!b || typeof b !== 'object') return;
+      if (b.type === 'liste') {
+        if (estTexte(b.source)) return;
+        liste(b.items).forEach(it => noter(sid, it, [texteItem(it)]));
+      } else if (b.type === 'tableau') {
+        noter(sid, b, liste(b.entetes).concat(...liste(b.lignes).map(liste)));
+      } else noter(sid, b, [b.texte]);
+    });
+    else if (s.type === 'procedure') liste(s.etapes).forEach(e => e && noter(sid, e, [e.texte, e.detail]));
+    else if (s.type === 'entretien') liste(s.taches).forEach(t => t && noter(sid, t, [t.texte, t.detail]));
+    else if (s.type === 'quiz') liste(s.questions).forEach(q => q && noter(sid, q, [q.enonce, q.explication].concat(liste(q.choix))));
+    else if (s.type === 'cas') liste(s.options).forEach(o => o && noter(sid, o, [o.texte, o.retour]));
+  });
+  return res;
 }
 
 function validerModule(m) {
@@ -596,17 +694,28 @@ function validerModule(m) {
   if (!estTexte(m.resume)) err.push('résumé manquant');
   if (!DOMAINES.includes(m.domaine)) err.push('domaine inconnu « ' + m.domaine + ' »');
   if (!STATUTS.includes(m.statut)) err.push('statut inconnu « ' + m.statut + ' »');
+  const codes = new Set();
   if (!Array.isArray(m.sources)) err.push('sources : tableau attendu (vide autorisé hors statut validé)');
-  else m.sources.forEach((s, j) => {
-    if (!s || !estTexte(s.reference) || !estTexte(s.date)) err.push('source ' + (j + 1) + ' : référence et date attendues');
-  });
+  else {
+    m.sources.forEach((s, j) => {
+      if (!s || !estTexte(s.reference) || !estTexte(s.date)) err.push('source ' + (j + 1) + ' : référence et date attendues');
+      if (!s || !estTexte(s.code)) err.push('source ' + (j + 1) + ' : code manquant');
+      else if (!FORMAT_CODE_SOURCE.test(s.code)) err.push('source ' + (j + 1) + ' : code « ' + s.code + ' » non conforme (majuscules, chiffres, tirets)');
+      else codes.add(s.code);
+    });
+    doublons(m.sources.map(s => s && s.code).filter(estTexte)).forEach(d => err.push('source en double « ' + d + ' »'));
+  }
   if (m.statut === 'valide') {
     if (!estTexte(m.valideur)) err.push('statut validé sans valideur nommé');
     if (!Array.isArray(m.sources) || m.sources.length === 0) err.push('statut validé sans source');
   }
   if (!Array.isArray(m.sections) || m.sections.length === 0) { err.push('sections manquantes'); return err; }
-  m.sections.forEach((s, i) => validerSection(s, i, err));
+  m.sections.forEach((s, i) => validerSection(s, i, err, codes));
   doublons(m.sections.map(s => s && s.id)).forEach(d => err.push('section en double « ' + d + ' »'));
+  if (m.statut === 'valide') {
+    elementsChiffresSansSource(m).forEach(x => err.push('section « ' + x.sectionId + ' » : élément chiffré sans source (« ' +
+      String(texteItem(x.element) || x.element.texte || x.element.enonce || x.element.situation || x.element.intro || '').slice(0, 40) + ' »)'));
+  }
   return err;
 }
 
@@ -814,7 +923,7 @@ function lien(...segments) {
 const OAD = {
   // vocabulaires
   DOMAINES, DOMAINES_LIBELLES, STATUTS, STATUTS_LIBELLES,
-  TYPES_SECTION, TYPES_SECTION_LIBELLES, TYPES_BLOC,
+  TYPES_SECTION, TYPES_SECTION_LIBELLES, TYPES_BLOC, TECHNOLOGIES, TECHNOLOGIES_LIBELLES,
   PERIODICITES, PERIODICITES_LIBELLES, ETATS_MODULE, ETATS_MODULE_LIBELLES,
   // formules
   volumeHectare, debitTotalPourVolume, debitParBuse, ajustementPuissance,
@@ -824,7 +933,7 @@ const OAD = {
   // calculateurs
   CALCULATEURS, erreursRegistre, substituer,
   // schéma, quiz, progression
-  validerModule, noterQuestion, noterQuiz,
+  validerModule, elementsChiffresSansSource, noterQuestion, noterQuiz,
   VERSION_PROGRESSION, progressionVide, marquerVue, basculerEtape, basculerTache,
   enregistrerQuiz, progressionSection, avancement, etatModule,
   // registre de contenu, routes
