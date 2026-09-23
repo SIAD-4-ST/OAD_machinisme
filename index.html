@@ -132,6 +132,8 @@ button { font: inherit; cursor: pointer; }
 .source-element { display: block; font-size: .8rem; color: var(--texte-doux); margin: 2px 0 8px; }
 li > .source-element { margin: 0; }
 .badge-techno { text-transform: none; letter-spacing: 0; margin-left: 4px; }
+.glossaire dt { font-weight: 700; margin-top: 12px; }
+.glossaire dd { margin: 4px 0 0 0; padding-left: 12px; border-left: 3px solid var(--bord); }
 
 .compteur { color: var(--texte-doux); font-size: .92rem; }
 .coches { list-style: none; padding: 0; margin: 0; }
@@ -204,6 +206,7 @@ li > .source-element { margin: 0; }
 <script src="contenu/pulve-remise-en-route.js"></script>
 <script src="contenu/pulve-couverture.js"></script>
 <script src="contenu/sol-outil-interceps.js"></script>
+<script src="contenu/glossaire.js"></script>
 <script src="moteur-oad.js"></script>
 </helmet>
 <div class="app">
@@ -216,6 +219,7 @@ li > .source-element { margin: 0; }
       <a href="{{ lienCatalogue }}" aria-current="{{ navCatalogue }}">Modules</a>
       <a href="{{ lienOutils }}" aria-current="{{ navOutils }}">Calculateurs</a>
       <a href="{{ lienProgression }}" aria-current="{{ navProgression }}">Progression</a>
+      <a href="{{ lienGlossaire }}" aria-current="{{ navGlossaire }}">Glossaire</a>
     </nav>
   </header>
 
@@ -466,6 +470,16 @@ li > .source-element { margin: 0; }
               <sc-if value="{{ cas.aRetour }}"><p class="{{ cas.retourClasse }}"><b>{{ cas.verdict }}</b> {{ cas.retour }}</p></sc-if>
               <sc-if value="{{ cas.aSourceRetour }}"><p class="source-element">{{ cas.sourceRetourTxt }}</p></sc-if>
             </div>
+          </sc-if>
+
+          <!-- Glossaire : liste de définitions -->
+          <sc-if value="{{ estDefinitions }}">
+            <dl class="glossaire">
+              <sc-for list="{{ definitions }}" as="de" hint-placeholder-count="3">
+                <dt id="{{ de.ancre }}">{{ de.terme }}</dt>
+                <dd>{{ de.definition }}<sc-if value="{{ de.aSource }}"><span class="source-element">{{ de.sourceTxt }}</span></sc-if></dd>
+              </sc-for>
+            </dl>
           </sc-if>
 
           <!-- Exercice : réponse chiffrée corrigée par le moteur -->
@@ -857,8 +871,8 @@ class Component extends DCLogic {
     const t = this.state.theme;
     return {
       enChargement: true, echecChargement: false,
-      lienCatalogue: '#/', lienOutils: '#/outils', lienProgression: '#/progression',
-      navCatalogue: null, navOutils: null, navProgression: null,
+      lienCatalogue: '#/', lienOutils: '#/outils', lienProgression: '#/progression', lienGlossaire: '#/module/glossaire',
+      navCatalogue: null, navOutils: null, navProgression: null, navGlossaire: null,
       themeLibelle: 'Thème : ' + THEMES_LIBELLES[t],
       themeAria: 'Changer de thème (actuel : ' + THEMES_LIBELLES[t] + ')',
       aErreurs: false, erreursListe: [],
@@ -868,7 +882,7 @@ class Component extends DCLogic {
       mod: { aChiffresSansSource: false, chiffresSansSourceTxt: '' }, sommaire: [],
       section: { aTechno: false, technoLibelle: '', aSourceEntete: false, sourceTxt: '' },
       estFiche: false, estProcedure: false, estEntretien: false, estCalculateur: false, estQuiz: false, estCas: false,
-      estExercice: false,
+      estExercice: false, estDefinitions: false, definitions: [],
       exo: { sid: '', enonce: '', aSource: false, sourceTxt: '', inputId: '', uniteTxt: '', reponse: '', corrige: false,
         verdict: '', retourClasse: '', attenduTxt: '', etapes: [], aDernier: false, dernierTxt: '' },
       blocs: [], procedure: { etapes: [] }, entretien: { groupes: [] },
@@ -905,7 +919,10 @@ class Component extends DCLogic {
     out.lienCatalogue = OAD.lien();
     out.lienOutils = OAD.lien('outils');
     out.lienProgression = OAD.lien('progression');
-    out.navCatalogue = vue === 'catalogue' ? 'page' : (vue === 'module' ? 'true' : null);
+    const glossaire = vue === 'module' && OAD.estModuleReference(ctx.module);
+    out.lienGlossaire = OAD.lien('module', 'glossaire');
+    out.navGlossaire = glossaire ? 'page' : null;
+    out.navCatalogue = vue === 'catalogue' ? 'page' : (vue === 'module' && !glossaire ? 'true' : null);
     out.navOutils = vue === 'outils' ? 'page' : null;
     out.navProgression = vue === 'progression' ? 'page' : null;
 
@@ -946,7 +963,7 @@ class Component extends DCLogic {
     const OAD = ctx.OAD;
     return {
       estCatalogue: true,
-      domainesCatalogue: OAD.DOMAINES.map(d => ({
+      domainesCatalogue: OAD.DOMAINES.filter(d => d !== 'transversal').map(d => ({
         titreId: 'domaine-' + d,
         libelle: OAD.DOMAINES_LIBELLES[d],
         modules: OAD.listerModules(ctx.modules, { domaine: d }).map(m => this.carte(OAD, m, prog))
@@ -1017,6 +1034,7 @@ class Component extends DCLogic {
       estFiche: sec.type === 'fiche', estProcedure: sec.type === 'procedure',
       estEntretien: sec.type === 'entretien', estCalculateur: sec.type === 'calculateur',
       estQuiz: sec.type === 'quiz', estCas: sec.type === 'cas', estExercice: sec.type === 'exercice',
+      estDefinitions: sec.type === 'definitions',
       aPrec: i > 0, aSuiv: i < n - 1,
       prec: voisin(m.sections[i - 1]), suiv: voisin(m.sections[i + 1])
     };
@@ -1068,6 +1086,10 @@ class Component extends DCLogic {
       out.cas = this.valsCas(sec, m);
     } else if (sec.type === 'exercice') {
       out.exo = this.valsExo(OAD, sec, ps, m);
+    } else if (sec.type === 'definitions') {
+      out.definitions = sec.entrees.map(d => Object.assign({
+        terme: d.terme, definition: d.definition, ancre: 'terme-' + d.id
+      }, this.sourceVals(m, d)));
     }
     return out;
   }
@@ -1241,6 +1263,7 @@ class Component extends DCLogic {
 
   valsProgression(ctx, prog) {
     const OAD = ctx.OAD;
+    ctx = Object.assign({}, ctx, { modules: ctx.modules.filter(m => !OAD.estModuleReference(m)) });
     const n = etat => ctx.modules.filter(m => OAD.etatModule(prog, m) === etat).length;
     const pl = (k, mot) => k + ' ' + mot + (k > 1 ? 's' : '');
     return {

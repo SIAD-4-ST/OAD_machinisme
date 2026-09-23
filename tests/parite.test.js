@@ -199,11 +199,12 @@ test('chaque clé de DOMAINES, PERIODICITES, STATUTS et TYPES_SECTION a un libel
   OAD.TYPES_SECTION.forEach(k => assert.ok(OAD.TYPES_SECTION_LIBELLES[k], k));
   OAD.ETATS_MODULE.forEach(k => assert.ok(OAD.ETATS_MODULE_LIBELLES[k], k));
 });
-// Pourquoi : trois modules ajoutés après pulve-entretien, B9.
+// Pourquoi : trois modules ajoutés après pulve-entretien, B9 ; glossaire en
+// dernier, B10.
 test('modules() suit l\'ordre de contenu/index.js', () => {
   assert.deepStrictEqual(MODULES.map(m => m.id),
     ['pulve-reglage-volume', 'pulve-entretien', 'pulve-filtration', 'pulve-remise-en-route',
-      'pulve-couverture', 'sol-outil-interceps']);
+      'pulve-couverture', 'sol-outil-interceps', 'glossaire']);
 });
 test('navigateur : modules() lit window.OAD_CONTENU à l\'appel et dédoublonne par id', () => {
   const src = fs.readFileSync(path.join(RACINE, 'moteur-oad.js'), 'utf8');
@@ -1175,10 +1176,12 @@ test('rendu à blanc des sections du module interceps', () => {
 section('§16 B9 — nouveaux modules');
 
 const NOUVEAUX_B9 = ['pulve-filtration', 'pulve-remise-en-route', 'pulve-couverture'].map(id => MODULES.find(m => m.id === id));
-test('6 modules chargés dans l\'ordre déclaré ; les 3 nouveaux après pulve-entretien', () => {
-  assert.strictEqual(MODULES.length, 6);
+// Pourquoi : le catalogue continue de s'étendre (glossaire, B10) : l'ordre
+// est vérifié, plus le nombre total (6 à la fin de B9).
+test('modules B9 chargés dans l\'ordre déclaré, juste après pulve-entretien', () => {
   const ids = MODULES.map(m => m.id);
-  assert.strictEqual(ids.indexOf('pulve-filtration'), ids.indexOf('pulve-entretien') + 1);
+  const i = ids.indexOf('pulve-entretien');
+  assert.deepStrictEqual(ids.slice(i + 1, i + 4), ['pulve-filtration', 'pulve-remise-en-route', 'pulve-couverture']);
 });
 test('les 3 nouveaux modules : conformes, brouillon, aucun élément chiffré sans source', () => {
   NOUVEAUX_B9.forEach(m => {
@@ -1208,6 +1211,53 @@ test('rendu à blanc de chaque section des 3 nouveaux modules', () => {
   assert.strictEqual(rosee.blocs[1].lectureGraphique, true);
   const cat = rendre(c, '#/').domainesCatalogue.find(g => g.libelle === 'Pulvérisation');
   assert.strictEqual(cat.modules.length, 5);
+});
+
+// ----------------------------------------------------------------------
+section('§17 B10 — glossaire');
+
+const GLOSSAIRE = MODULES.find(m => m.id === 'glossaire');
+test('glossaire conforme ; au plus 8 entrées, toutes sourcées ; module de référence', () => {
+  assert.deepStrictEqual(OAD.validerModule(GLOSSAIRE), []);
+  const e = GLOSSAIRE.sections.find(s => s.type === 'definitions').entrees;
+  assert.ok(e.length >= 1 && e.length <= 8, String(e.length));
+  e.forEach(d => assert.ok(GLOSSAIRE.sources.some(s => s.code === d.source), d.terme));
+  assert.strictEqual(OAD.estModuleReference(GLOSSAIRE), true);
+  assert.strictEqual(OAD.estModuleReference(MODULES[0]), false);
+  assert.strictEqual(GLOSSAIRE.domaine, 'transversal');
+});
+test('validation : définition sans source, terme en double → erreurs', () => {
+  const m = moduleFabrique([{ id: 'g', type: 'definitions', titre: 'G', entrees: [
+    { id: 'a', terme: 'Mesh', definition: 'x' },
+    { id: 'b', terme: 'mesh', definition: 'y', source: 'F-VHA' }] }]);
+  const e = OAD.validerModule(m);
+  assert.ok(e.some(x => x.includes('source obligatoire')));
+  assert.ok(e.some(x => x.includes('terme en double')));
+});
+test('statique : aucune entrée pour cellule, régime, prise de force, main, tronçon (D-B10-3)', () => {
+  const termes = GLOSSAIRE.sections[0].entrees.map(d => d.terme.toLowerCase());
+  ['cellule', 'régime', 'prise de force', 'main', 'tronçon'].forEach(t =>
+    assert.ok(!termes.some(x => x === t || x.startsWith(t + ' ') || x.includes(' ' + t)), t));
+});
+test('catalogue sans groupe « Glossaire » ; navigation avec le lien « Glossaire »', () => {
+  const c = new Component({});
+  const out = rendre(c, '#/');
+  assert.ok(!out.domainesCatalogue.some(g => g.libelle === 'Glossaire'));
+  assert.strictEqual(out.lienGlossaire, '#/module/glossaire');
+  assert.ok(/<a href="\{\{ lienGlossaire \}\}"[^>]*>Glossaire<\/a>/.test(GABARIT));
+  const g = rendre(c, '#/module/glossaire');
+  assert.strictEqual(g.estDefinitions, true);
+  assert.strictEqual(g.navGlossaire, 'page');
+  assert.strictEqual(g.navCatalogue, null);
+  assert.strictEqual(g.definitions.length, GLOSSAIRE.sections[0].entrees.length);
+  assert.ok(g.definitions.every(d => d.aSource));
+});
+test('progression : le glossaire n\'entre pas dans le tableau', () => {
+  const t = rendre(new Component({}), '#/progression').tableauProgression;
+  const lignes = [].concat(...t.c.find(x => x && x.t === 'tbody').c);
+  const titres = lignes.map(l => l.c[0].c[0].c[0]);
+  assert.ok(!titres.includes('Glossaire'), titres.join(', '));
+  assert.strictEqual(lignes.length, MODULES.filter(m => !OAD.estModuleReference(m)).length);
 });
 
 console.log(`\n${passed} ok, ${failed} FAIL, ${skipped} skip`);

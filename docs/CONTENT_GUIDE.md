@@ -14,7 +14,7 @@ toucher au code de l'outil.
    })({
      id: 'mon-module',
      titre: '…',
-     domaine: 'pulverisation',          // ou 'travail-du-sol'
+     domaine: 'pulverisation',          // ou 'travail-du-sol' ; 'transversal' = module de référence (glossaire)
      statut: 'brouillon',               // 'brouillon' | 'a-valider' | 'valide'
      valideur: null,                    // nom du valideur, obligatoire si 'valide'
      resume: '…',
@@ -47,6 +47,7 @@ sur tout le catalogue.
 | `calculateur` | `intro?`, `calculateur: 'volHa' \| 'debitBuse' \| 'pressionPourVolume' \| 'vitesseMesuree' \| 'debitChantier' \| 'largeurTraitee' \| 'debitCuve' \| 'hauteursBuses' \| 'ecartDiffuseurs'` |
 | `quiz` | `questions: [{ id, enonce, choix: ['…'], bonnes: [indices à partir de 0], explication, source? }]` — plusieurs bonnes réponses = question à choix multiples |
 | `cas` | `situation`, `source?` (celle de la situation), `options: [{ texte, correct: true/false, retour, source? }]`, au moins une option correcte |
+| `definitions` | `entrees: [{ id, terme, definition, source }]` — glossaire : termes uniques, `source` obligatoire ; rendu en liste de définitions |
 | `exercice` | `enonce`, `calculateur`, `valeurs: { … }` (toutes les entrées du calculateur), `resultat` (indice du résultat attendu, à partir de 0), `source?` — voir ci-dessous |
 
 Toute section accepte `technologie?` : `toutes` (défaut), `pneumatique`,

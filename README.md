@@ -375,6 +375,7 @@ sont retirées (pas reformulées) et attendent la décision du valideur.
 | sol-outil-interceps | « Mettre l'outil d'aplomb et régler la hauteur de travail sur sol plat » ; « Régler la profondeur selon l'état du sol et l'objectif » ; « … puis vérifier l'effacement sur quelques ceps » | Remplacées par les réglages communs F-BOI / F-BRA (porte-outil horizontal, 3 à 6 cm, palpeur) | |
 | sol-outil-interceps | Familles : « lames : travail en profondeur » ; « disques : buttage ou débuttage » ; « outils rotatifs ou à doigts : sans palpeur » ; « fils ou brosses : sans travail du sol » | Caractérisations absentes du corpus ; remplacées par les familles de D-SOL | |
 | sol-outil-interceps | Alerte « palpeur trop peu sensible : blesse les ceps ; trop sensible : laisse de l'herbe » et question associée | Absente du corpus ; remplacée par « sensibilité selon l'âge de la vigne » (F-BOI, F-BRA) | |
+| glossaire | **À rédiger par le valideur** : cellule, régime moteur, prise de force, « main », « tronçon » | Termes confus relevés par l'enquête de 2013 (D-ENQ, 690 questionnaires) mais **non définis** dans la synthèse : l'outil ne les définit pas (D-B10-3) | |
 | sol-outil-interceps | **À rédiger par le valideur** : plan d'entretien (nettoyage à chaque utilisation, usure et hydraulique chaque jour, graissage chaque semaine, remisage) | Conservé tel quel, sans source (D-B8-4) : le corpus ne contient aucune consigne d'entretien des outils de sol ; périodicités à valider | |
 
 ## 15. Édition du contenu
@@ -605,3 +606,23 @@ Choix et points à vérifier :
   « Consulté » (D-B6-3). Consignes EPI : relecture du valideur requise.
 - `cas-passage` : nombres (−50 %, −60 %) contrôlés par `CAS_CHIFFRES` contre
   le tableau D-IDR du même module (pas de formule).
+
+### B10 — glossaire (23/09/2026, porte G1)
+
+- **D-B10-1** : module `glossaire` du domaine `transversal`, section de type
+  `definitions` (`entrees: [{ id, terme, definition, source }]`, source
+  obligatoire, termes uniques). Toujours un seul accès global au contenu.
+- **D-B10-2** : 8 termes définis dans la synthèse, reformulés avec leur code :
+  largeur traitée (F-VHA), mesh (F-FIL), jets projetés (A-LVC), goutte en
+  pneumatique (D-ENQ), VMD, NMD, SMD (B20-1), palpeur (F-BOI).
+- **D-B10-3** : cellule, régime moteur, prise de force, « main », « tronçon »
+  non définis (section 14, à rédiger par le valideur) — testé.
+- **D-B10-4** : lien « Glossaire » dans la navigation principale
+  (`#/module/glossaire`) ; domaine `transversal` exclu du catalogue ;
+  `estModuleReference(m)` exclut le glossaire du tableau et du résumé de
+  progression.
+
+Point à vérifier : la définition de « jets projetés » (sans assistance
+d'air, pendillards) s'appuie sur l'opposition « sans air / avec air » de la
+synthèse (§7.1) ; code A-LVC retenu. Date de D-ENQ : « 2013 » (enquête), la
+synthèse ne donne pas la date du diaporama.

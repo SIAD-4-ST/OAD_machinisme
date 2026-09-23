@@ -20,10 +20,13 @@ if (typeof window === "undefined" || !window.OAD) {
    Vocabulaires fermés du contenu (validés par validerModule) et leurs
    libellés d'écran. */
 
-const DOMAINES = ['pulverisation', 'travail-du-sol'];
+// `transversal` : modules de référence (glossaire), hors catalogue, hors
+// avancement et hors états (D-B10-1, D-B10-4).
+const DOMAINES = ['pulverisation', 'travail-du-sol', 'transversal'];
 const DOMAINES_LIBELLES = {
   pulverisation: 'Pulvérisation',
-  'travail-du-sol': 'Travail du sol'
+  'travail-du-sol': 'Travail du sol',
+  transversal: 'Glossaire'
 };
 
 // Un module « valide » exige un valideur nommé et au moins une source (voir
@@ -35,7 +38,7 @@ const STATUTS_LIBELLES = {
   valide: 'Validé'
 };
 
-const TYPES_SECTION = ['fiche', 'procedure', 'entretien', 'calculateur', 'quiz', 'cas', 'exercice'];
+const TYPES_SECTION = ['fiche', 'procedure', 'entretien', 'calculateur', 'quiz', 'cas', 'exercice', 'definitions'];
 const TYPES_SECTION_LIBELLES = {
   fiche: 'Fiche',
   procedure: 'Procédure',
@@ -43,7 +46,8 @@ const TYPES_SECTION_LIBELLES = {
   calculateur: 'Calculateur',
   quiz: 'Quiz',
   cas: 'Cas pratique',
-  exercice: 'Exercice'
+  exercice: 'Exercice',
+  definitions: 'Glossaire'
 };
 // Sections dont l'id est une clé d'état de l'écran : uniques sur tout le catalogue.
 const TYPES_SECTION_EVALUES = ['quiz', 'cas', 'exercice'];
@@ -653,6 +657,18 @@ function validerSection(s, i, err, codes) {
       else verifSource(o, ou + ' : option ' + (j + 1));
     });
     if (!s.options.some(o => o && o.correct === true)) err.push(ou + ' : aucune option correcte');
+  } else if (s.type === 'definitions') {
+    // D-B10-1 : termes non vides et uniques, chaque définition sourcée.
+    if (!Array.isArray(s.entrees) || s.entrees.length === 0) { err.push(ou + ' : entrées manquantes'); return; }
+    s.entrees.forEach((d, j) => {
+      const du = ou + ' : entrée ' + (j + 1);
+      if (!d || !estTexte(d.id) || !estTexte(d.terme) || !estTexte(d.definition)) { err.push(du + ' incomplète'); return; }
+      if (!estTexte(d.source)) err.push(du + ' (« ' + d.terme + ' ») : source obligatoire');
+      else verifSource(d, du);
+    });
+    doublons(s.entrees.map(d => d && d.id)).forEach(d => err.push(ou + ' : entrée en double « ' + d + ' »'));
+    doublons(s.entrees.map(d => d && typeof d.terme === 'string' ? d.terme.trim().toLowerCase() : d))
+      .forEach(d => err.push(ou + ' : terme en double « ' + d + ' »'));
   } else if (s.type === 'exercice') {
     // D-B5-1 : la réponse attendue est calculée par un calculateur du moteur.
     if (!estTexte(s.enonce)) err.push(ou + ' : énoncé manquant');
@@ -701,6 +717,7 @@ function elementsChiffresSansSource(m) {
     else if (s.type === 'entretien') liste(s.taches).forEach(t => t && noter(sid, t, [t.texte, t.detail]));
     else if (s.type === 'quiz') liste(s.questions).forEach(q => q && noter(sid, q, [q.enonce, q.explication].concat(liste(q.choix))));
     else if (s.type === 'cas') liste(s.options).forEach(o => o && noter(sid, o, [o.texte, o.retour]));
+    else if (s.type === 'definitions') liste(s.entrees).forEach(d => d && noter(sid, d, [d.terme, d.definition]));
   });
   return res;
 }
@@ -863,6 +880,9 @@ function avancement(p, module) {
   return { vues: n, total: sections.length, taux: sections.length ? n / sections.length : 0 };
 }
 
+// Module de référence (glossaire) : ni avancement, ni état, ni catalogue.
+function estModuleReference(m) { return !!m && m.domaine === 'transversal'; }
+
 /* ASSUMÉ — formation, pas certification : tentatives illimitées, toutes les
    réponses justes (dernier taux ≥ 1). À trancher par le référent
    pédagogique si un usage certifiant apparaît (D-B6-2, arbitrage A4). */
@@ -1018,7 +1038,7 @@ const OAD = {
   validerModule, elementsChiffresSansSource, noterQuestion, noterQuiz, attenduExercice, corrigerExercice,
   VERSION_PROGRESSION, progressionVide, marquerVue, basculerEtape, basculerTache,
   enregistrerQuiz, progressionSection, avancement, etatModule,
-  SEUIL_MAITRISE, sectionsEvaluees, bilanEvaluation, EDITION_CONTENU,
+  SEUIL_MAITRISE, sectionsEvaluees, bilanEvaluation, estModuleReference, EDITION_CONTENU,
   // registre de contenu, routes
   modules, ordonnerModules, erreursContenu, listerModules, trouverModule, trouverSection,
   lireRoute, lien
